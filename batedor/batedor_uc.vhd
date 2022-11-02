@@ -32,17 +32,17 @@ begin
     -- logica de proximo estado
     process (Eatual, bater, fim_timer) 
     begin
-      case Eatual is
-        when repouso   => if bater = '1' then Eprox <= movimento;
-                          else Eprox <= repouso;
-                          end if;
+        case Eatual is
+            when repouso =>     if bater = '1' then Eprox <= movimento;
+                                else Eprox <= repouso;
+                                end if;
 
-        when movimento => if fim_timer = '1' then Eprox <= repouso;
-                          else Eprox <= movimento;
-                          end if;
+            when movimento =>   if fim_timer = '1' then Eprox <= repouso;
+                                else Eprox <= movimento;
+                                end if;
 
-        when others => Eprox <= repouso;
-      end case;
+            when others =>      Eprox <= repouso;
+        end case;
     end process;
 
     -- saidas de controle
@@ -65,4 +65,4 @@ begin
                      '1' when movimento,
                      '0' when others;
 
-end architecture fsm_arch;
+end architecture;
