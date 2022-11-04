@@ -7,7 +7,7 @@ entity penalti_uc is
         reset             : in  std_logic;
         iniciar           : in  std_logic;
         fim_preparacao    : in  std_logic;
-        bater             : in  std_logic;
+        bateu             : in  std_logic;
         fim_penalti       : in  std_logic;
         fim_jogo          : in  std_logic;
         reset_preparacao  : out std_logic;
@@ -17,13 +17,12 @@ entity penalti_uc is
         reset_placar      : out std_logic;
         reset_transmissor : out std_logic;
         conta_preparacao  : out std_logic;
-        muda_jogador      : out std_logic;
         transmite         : out std_logic;
         habilita_batedor  : out std_logic;
         posiciona_goleiro : out std_logic;
         verifica_gol      : out std_logic;
         atualiza_placar   : out std_logic;
-        atualiza_rodada   : out std_logic;
+        atualiza_jogada   : out std_logic;
         db_estado         : out std_logic_vector (2 downto 0)
     );
 end entity;
@@ -51,7 +50,7 @@ begin
     end process;
 
     -- logica de proximo estado
-    process (Eatual, iniciar, fim_preparacao, bater, fim_penalti, fim_jogo) 
+    process (Eatual, iniciar, fim_preparacao, bateu, fim_penalti, fim_jogo) 
     begin
         case Eatual is
             when inicial =>             if iniciar = '1' then Eprox <= reset_componentes;
@@ -64,7 +63,7 @@ begin
                                         else Eprox <= preparacao;
                                         end if;
 
-            when batedor =>             if bater = '1' then Eprox <= chute;
+            when batedor =>             if bateu = '1' then Eprox <= chute;
                                         else Eprox <= batedor;
                                         end if;
         
@@ -105,9 +104,6 @@ begin
     
     with Eatual select 
         conta_preparacao <= '1' when preparacao, '0' when others;
-
-    with Eatual select 
-        muda_jogador <= '1' when preparacao, '0' when others;
     
     with Eatual select 
         transmite <= '1' when inicial, 
@@ -129,7 +125,7 @@ begin
         atualiza_placar <= '1' when placar, '0' when others;
 
     with Eatual select 
-        atualiza_rodada <= '1' when placar, '0' when others;
+        atualiza_jogada <= '1' when placar, '0' when others;
 
     -- db_estado
     with Eatual select
