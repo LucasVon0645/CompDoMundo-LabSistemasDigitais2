@@ -2,7 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity jogador is
+entity placar_jogador is
     port (
         -- entradas
         clock               : in  std_logic;
@@ -15,7 +15,7 @@ entity jogador is
     );
 end entity;
 
-architecture jogador_arch of jogador is
+architecture jogador_arch of placar_jogador is
 
 	component contador_m is
 		generic (

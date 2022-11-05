@@ -11,7 +11,10 @@ entity placar is
 		atualiza_placar     : in  std_logic;
 		gol                 : in  std_logic;
         -- saidas
-        placar              : out std_logic_vector (12 downto 0);
+		gols_A              : out std_logic_vector(3 downto 0);
+		gols_B              : out std_logic_vector(3 downto 0);
+		rodada              : out std_logic_vector(3 downto 0);
+		jogador             : out std_logic;
 		ganhador            : out std_logic;
         fim_jogo            : out std_logic
     );
@@ -19,7 +22,7 @@ end entity;
 
 architecture placar_arch of placar is
 
-	component jogador is
+	component placar_jogador is
 		port (
 			-- entradas
 			clock               : in  std_logic;
@@ -80,7 +83,7 @@ architecture placar_arch of placar is
 
 begin
 
-    jogador_A: jogador
+    jogador_A: placar_jogador
 			port map (
 			clock           => clock,
             reset           => reset,
@@ -91,7 +94,7 @@ begin
 		);
 			
 			
-    jogador_B: jogador
+    jogador_B: placar_jogador
 			port map (
 			clock           => clock,
             reset           => reset,
@@ -185,7 +188,11 @@ begin
 	rodada_atual <= jogada_atual_A;
 	 
 	-- saidas
-	placar <= rodada_atual & gols_atuais_A & gols_atuais_B & jogador_atual;
+	gols_A  <= gols_atuais_A;
+	gols_B  <= gols_atuais_B;
+	rodada  <= rodada_atual;
+	jogador <= jogador_atual;
+
 	with mata_a_mata select
 		fim_jogo <= fim_jogo_mata_mata when '1',
 					fim_jogo_padrao when others;

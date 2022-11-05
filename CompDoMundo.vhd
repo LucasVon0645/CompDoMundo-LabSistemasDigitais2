@@ -36,7 +36,10 @@ architecture arch_comp_do_mundo of CompDoMundo is
             atualiza_placar     : in  std_logic;
             gol                 : in  std_logic;
             -- saidas
-            placar              : out std_logic_vector (12 downto 0);
+            gols_A              : out std_logic_vector(3 downto 0);
+            gols_B              : out std_logic_vector(3 downto 0);
+            rodada              : out std_logic_vector(3 downto 0);
+            jogador             : out std_logic;
             ganhador            : out std_logic;
             fim_jogo            : out std_logic
         );
@@ -90,6 +93,23 @@ architecture arch_comp_do_mundo of CompDoMundo is
     end component;
 
 
+    component super_transmissor is
+        port (
+            clock              : in std_logic;
+            reset              : in std_logic;
+            transmite          : in std_logic;
+            transcode          : in  std_logic_vector(1 downto 0);
+            gols_A             : in  std_logic_vector(3 downto 0);
+            gols_B             : in  std_logic_vector(3 downto 0);
+            rodada             : in  std_logic_vector(3 downto 0);
+            jogador            : in  std_logic;
+            direcao_batedor    : in  std_logic;
+            saida_serial       : out std_logic;
+            fim_transmissao    : out std_logic
+        );
+    end component;
+
+
     component penalti_uc is
         port ( 
             clock             : in  std_logic;
@@ -99,6 +119,7 @@ architecture arch_comp_do_mundo of CompDoMundo is
             bateu             : in  std_logic;
             fim_penalti       : in  std_logic;
             fim_jogo          : in  std_logic;
+            fim_transmissao   : in  std_logic;
             reset_preparacao  : out std_logic;
             reset_goleiro     : out std_logic;
             reset_batedor     : out std_logic;
@@ -112,6 +133,7 @@ architecture arch_comp_do_mundo of CompDoMundo is
             verifica_gol      : out std_logic;
             atualiza_placar   : out std_logic;
             atualiza_jogada   : out std_logic;
+            transcode         : out std_logic_vector (1 downto 0);
             db_estado         : out std_logic_vector (2 downto 0)
         );
     end component;
@@ -122,7 +144,10 @@ architecture arch_comp_do_mundo of CompDoMundo is
     signal s_reset_gol, s_gol, s_fim_jogo                           : std_logic;
     signal s_fim_penalti, s_verifica_gol                            : std_logic;
     signal s_reset_goleiro, s_posiciona_goleiro                     : std_logic;
-    signal s_placar                            : std_logic_vector (12 downto 0);
+    signal s_jogador                                                : std_logic;
+    signal s_transmite, s_reset_transmissor, s_fim_transmissao      : std_logic;
+    signal s_transcode                          : std_logic_vector (1 downto 0);
+    signal s_gols_A, s_gols_B, s_rodada         : std_logic_vector (3 downto 0);
   
 begin
 
@@ -135,19 +160,21 @@ begin
         bateu             => s_bateu,
         fim_penalti       => s_fim_penalti,
         fim_jogo          => s_fim_jogo,
+        fim_transmissao   => s_fim_transmissao,
         reset_preparacao  => s_reset_preparacao,
         reset_goleiro     => s_reset_goleiro,
         reset_batedor     => s_reset_batedor,
         reset_gol         => s_reset_gol,
         reset_placar      => s_reset_placar,
-        reset_transmissor => open,
+        reset_transmissor => s_reset_transmissor,
         conta_preparacao  => s_conta_preparacao,
-        transmite         => open,
+        transmite         => s_transmite,
         habilita_batedor  => s_habilita_batedor,
         posiciona_goleiro => s_posiciona_goleiro,
         verifica_gol      => s_verifica_gol,
         atualiza_placar   => s_atualiza_placar,
         atualiza_jogada   => s_atualiza_jogada,
+        transcode         => s_transcode,
         db_estado         => db_estado
     );
 
@@ -177,7 +204,10 @@ begin
         atualiza_jogada   => s_atualiza_jogada,
         atualiza_placar   => s_atualiza_placar,
         gol               => s_gol,
-        placar            => s_placar,
+        gols_A            => s_gols_A,
+        gols_B            => s_gols_B,
+        rodada            => s_rodada,
+        jogador           => s_jogador,
         ganhador          => db_ganhador,
         fim_jogo          => s_fim_jogo
     );
@@ -201,7 +231,20 @@ begin
         pwm             => pwm_goleiro,
         db_posicao      => open
     );
-	 
-	 saida_serial <= '1';
+
+    transmissor: super_transmissor
+        port map(
+            clock            => clock,
+            reset            => s_reset_transmissor,
+            transmite        => s_transmite,
+            transcode        => s_transcode,
+            gols_A           => s_gols_A,
+            gols_B           => s_gols_B,
+            rodada           => s_rodada,
+            jogador          => s_jogador,
+            direcao_batedor  => posicao_batedor,
+            saida_serial     => saida_serial,
+            fim_transmissao  => s_fim_transmissao
+        );
   
 end architecture;
