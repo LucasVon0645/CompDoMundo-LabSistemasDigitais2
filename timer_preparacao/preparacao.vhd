@@ -31,7 +31,8 @@ architecture preparacao_arch of preparacao is
 begin
   
 	timer: contador_m generic map (
-		M => 100000000, -- 2 segs
+        -- M => 100000000, -- 2 seg (experimento pratico)
+        M => 1000, -- 20 usegs (simulacao testbench)
 		N => 27
 	) port map (
 		clock => clock,
