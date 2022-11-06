@@ -131,7 +131,7 @@ architecture arch_comp_do_mundo of comp_do_mundo is
             atualiza_placar   : out std_logic;
             atualiza_jogada   : out std_logic;
             transcode         : out std_logic_vector (1 downto 0);
-            db_estado         : out std_logic_vector (2 downto 0)
+            db_estado         : out std_logic_vector (3 downto 0)
         );
     end component;
 

@@ -152,7 +152,7 @@ begin
     -- db_estado
     with Eatual select
         db_estado <= "0000" when inicial,
-                     "0001" when espera_partida
+                     "0001" when espera_partida,
                      "0010" when reset_componentes,
                      "0011" when transmite_preparacao,
                      "0100" when preparacao,

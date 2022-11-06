@@ -19,14 +19,14 @@
 #
 # Quartus Prime
 # Version 16.1.0 Build 196 10/24/2016 SJ Lite Edition
-# Date created = 16:42:01  November 04, 2022
+# Date created = 16:44:49  November 06, 2022
 #
 # -------------------------------------------------------------------------- #
 #
 # Notes:
 #
 # 1) The default values for assignments are stored in the file:
-#		CompDoMundo_assignment_defaults.qdf
+#		comp_do_mundo_assignment_defaults.qdf
 #    If this file doesn't exist, see file:
 #		assignment_defaults.qdf
 #
@@ -39,17 +39,19 @@
 
 set_global_assignment -name FAMILY "Cyclone V"
 set_global_assignment -name DEVICE 5CEBA4F23C7
-set_global_assignment -name TOP_LEVEL_ENTITY CompDoMundo
+set_global_assignment -name TOP_LEVEL_ENTITY comp_do_mundo
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 16.1.0
-set_global_assignment -name PROJECT_CREATION_TIME_DATE "16:42:01  NOVEMBER 04, 2022"
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "16:44:49  NOVEMBER 06, 2022"
 set_global_assignment -name LAST_QUARTUS_VERSION "16.1.0 Lite Edition"
-set_global_assignment -name VHDL_FILE placar/subtractor_abs.vhd
-set_global_assignment -name VHDL_FILE placar/placar.vhd
+set_global_assignment -name VHDL_FILE uc/unidade_controle.vhd
 set_global_assignment -name VHDL_FILE timer_preparacao/preparacao.vhd
+set_global_assignment -name VHDL_FILE super_transmissor/super_transmissor.vhd
+set_global_assignment -name VHDL_FILE super_transmissor/construtor_mensagem.vhd
+set_global_assignment -name VHDL_FILE placar/subtractor_abs.vhd
+set_global_assignment -name VHDL_FILE placar/placar_jogador.vhd
+set_global_assignment -name VHDL_FILE placar/placar.vhd
 set_global_assignment -name VHDL_FILE goleiro/goleiro.vhd
 set_global_assignment -name VHDL_FILE goleiro/definidor_posicao.vhd
-set_global_assignment -name VHDL_FILE goleiro/controle_servo.vhd
-set_global_assignment -name VHDL_FILE uc/penalti_uc.vhd
 set_global_assignment -name VHDL_FILE detector_gol/detector_gol_uc.vhd
 set_global_assignment -name VHDL_FILE detector_gol/detector_gol_fd.vhd
 set_global_assignment -name VHDL_FILE detector_gol/detector_gol.vhd
@@ -63,34 +65,31 @@ set_global_assignment -name VHDL_FILE detector_gol/interface_hcsr04/contador_cm/
 set_global_assignment -name VHDL_FILE detector_gol/interface_hcsr04/contador_cm/contador_cm.vhd
 set_global_assignment -name VHDL_FILE detector_gol/interface_hcsr04/contador_cm/contador_bcd_3digitos.vhd
 set_global_assignment -name VHDL_FILE detector_gol/interface_hcsr04/contador_cm/analisa_m.vhd
-set_global_assignment -name VHDL_FILE batedor/controle_servo.vhd
+set_global_assignment -name VHDL_FILE componentes/tx_serial_7E2/tx_serial_tick_uc.vhd
+set_global_assignment -name VHDL_FILE componentes/tx_serial_7E2/tx_serial_7E2_fd.vhd
+set_global_assignment -name VHDL_FILE componentes/tx_serial_7E2/tx_serial_7E2.vhd
+set_global_assignment -name VHDL_FILE componentes/rx_serial_7E2/testador_paridade.vhd
+set_global_assignment -name VHDL_FILE componentes/rx_serial_7E2/rx_serial_tick_uc.vhd
+set_global_assignment -name VHDL_FILE componentes/rx_serial_7E2/rx_serial_7E2_fd.vhd
+set_global_assignment -name VHDL_FILE componentes/rx_serial_7E2/rx_serial_7E2.vhd
+set_global_assignment -name VHDL_FILE componentes/registrador_n.vhd
+set_global_assignment -name VHDL_FILE componentes/hex2ascii.vhd
+set_global_assignment -name VHDL_FILE componentes/deslocador_n.vhd
+set_global_assignment -name VHDL_FILE componentes/demux2x1.vhd
+set_global_assignment -name VHDL_FILE componentes/contador_m.vhd
+set_global_assignment -name VHDL_FILE componentes/comparador_n.vhd
 set_global_assignment -name VHDL_FILE batedor/batedor_uc.vhd
 set_global_assignment -name VHDL_FILE batedor/batedor_fd.vhd
 set_global_assignment -name VHDL_FILE batedor/batedor.vhd
+set_global_assignment -name VHDL_FILE comp_do_mundo.vhd
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
 set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
 set_global_assignment -name DEVICE_FILTER_PIN_COUNT 484
 set_global_assignment -name DEVICE_FILTER_SPEED_GRADE 7
 set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 256
-set_global_assignment -name VHDL_FILE CompDoMundo.vhd
-set_global_assignment -name VHDL_FILE componentes/comparador_n.vhd
-set_global_assignment -name VHDL_FILE componentes/demux2x1.vhd
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
-set_global_assignment -name VHDL_FILE componentes/contador_m.vhd
-set_global_assignment -name VHDL_FILE componentes/registrador_n.vhd
-set_global_assignment -name VHDL_FILE componentes/tx_serial_7E2/tx_serial_7E2.vhd
-set_global_assignment -name VHDL_FILE componentes/tx_serial_7E2/tx_serial_7E2_fd.vhd
-set_global_assignment -name VHDL_FILE componentes/tx_serial_7E2/tx_serial_tick_uc.vhd
-set_global_assignment -name VHDL_FILE super_transmissor/super_transmissor.vhd
-set_global_assignment -name VHDL_FILE super_transmissor/construtor_mensagem.vhd
-set_global_assignment -name VHDL_FILE componentes/hex2ascii.vhd
-set_global_assignment -name VHDL_FILE placar/placar_jogador.vhd
-set_global_assignment -name VHDL_FILE componentes/rx_serial_7E2/rx_serial_7E2.vhd
-set_global_assignment -name VHDL_FILE componentes/rx_serial_7E2/rx_serial_7E2_fd.vhd
-set_global_assignment -name VHDL_FILE componentes/rx_serial_7E2/rx_serial_tick_uc.vhd
-set_global_assignment -name VHDL_FILE componentes/rx_serial_7E2/testador_paridade.vhd
-set_global_assignment -name VHDL_FILE componentes/deslocador_n.vhd
+set_global_assignment -name VHDL_FILE componentes/controle_servo.vhd
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
