@@ -91,35 +91,35 @@ architecture tb of comp_do_mundo_tb is
   type posicoes_teste_array is array (natural range <>) of posicoes_teste_type;
   constant posicoes_teste : posicoes_teste_array :=
       ( 
-        ( 1, 1, '0', "01100001", 118, '1', "01100001", 294), -- A: 1, B: 0 - A faz gol
-        ( 1, 2, '1', "01100100", 118, '0', "01100101", 294), -- A: 2, B: 0 - A faz gol
-        ( 1, 3, '1', "01100011", 118, '1', "01100010", 294), -- A: 3, B: 0 - A faz gol = A vence
+        ( 1, 1, '0', "01100011", 118, '1', "01100011", 294), -- A: 1, B: 0 - A faz gol
+        ( 1, 2, '1', "01101001", 118, '0', "01101010", 294), -- A: 2, B: 0 - A faz gol
+        ( 1, 3, '1', "01100110", 118, '1', "01100101", 294), -- A: 3, B: 0 - A faz gol = A vence
 
-        ( 2, 1, '1', "01100101", 118, '0', "01100101", 294), -- A: 1, B: 0 - A faz gol
-        ( 2, 2, '1', "01100010", 118, '1', "01100101", 118), -- A: 2, B: 1 - A e B fazem gol
-        ( 2, 3, '0', "01100011", 118, '0', "01100100", 294), -- A: 3, B: 1 - A faz gol
-        ( 2, 4, '0', "01100001", 118, '0', "00000000", 0),   -- A: 4, B: 1 - A faz gol = A vence
+        ( 2, 1, '1', "01101010", 118, '0', "01101010", 294), -- A: 1, B: 0 - A faz gol
+        ( 2, 2, '1', "01100101", 118, '1', "01101010", 118), -- A: 2, B: 1 - A e B fazem gol
+        ( 2, 3, '0', "01100110", 118, '0', "01101001", 294), -- A: 3, B: 1 - A faz gol
+        ( 2, 4, '0', "01100011", 118, '0', "00000000", 0),   -- A: 4, B: 1 - A faz gol = A vence
 
-        ( 3, 1, '0', "01100100", 294, '1', "01100010", 294), -- A: 0, B: 0 - Ninguem faz gol
-        ( 3, 2, '1', "01100010", 294, '0', "01100101", 294), -- A: 0, B: 0 - Ninguem faz gol
-        ( 3, 3, '1', "01100001", 294, '1', "01100100", 118), -- A: 0, B: 1 - B faz gol
-        ( 3, 4, '0', "01100101", 294, '0', "01100011", 118), -- A: 0, B: 2 - B faz gol = B vence
+        ( 3, 1, '0', "01101001", 294, '1', "01100101", 294), -- A: 0, B: 0 - Ninguem faz gol
+        ( 3, 2, '1', "01100101", 294, '0', "01101010", 294), -- A: 0, B: 0 - Ninguem faz gol
+        ( 3, 3, '1', "01100011", 294, '1', "01101001", 118), -- A: 0, B: 1 - B faz gol
+        ( 3, 4, '0', "01101011", 294, '0', "01100110", 118), -- A: 0, B: 2 - B faz gol = B vence
 
-        ( 4, 1, '1', "01100010", 294, '0', "01100001", 118), -- A: 0, B: 1 - B faz gol
-        ( 4, 2, '1', "01100001", 294, '1', "01100011", 118), -- A: 0, B: 2 - B faz gol
-        ( 4, 3, '0', "01100011", 118, '1', "01100101", 118), -- A: 1, B: 3 - A e B fazem gol
-        ( 4, 4, '0', "01100100", 118, '1', "01100010", 294), -- A: 2, B: 3 - A faz gol
-        ( 4, 5, '1', "01100001", 294, '0', "00000000", 0),   -- A: 2, B: 3 - Ninguem faz gol = B vence
+        ( 4, 1, '1', "01100101", 294, '0', "01100011", 118), -- A: 0, B: 1 - B faz gol
+        ( 4, 2, '1', "01100011", 294, '1', "01100110", 118), -- A: 0, B: 2 - B faz gol
+        ( 4, 3, '0', "01100110", 118, '1', "01101010", 118), -- A: 1, B: 3 - A e B fazem gol
+        ( 4, 4, '0', "01101001", 118, '1', "01100101", 294), -- A: 2, B: 3 - A faz gol
+        ( 4, 5, '1', "01100011", 294, '0', "00000000", 0),   -- A: 2, B: 3 - Ninguem faz gol = B vence
 
-        ( 5, 1, '0', "01100010", 118, '1', "01100010", 294), -- A: 1, B: 0 - A faz gol
-        ( 5, 2, '0', "01100101", 294, '0', "01100001", 118), -- A: 1, B: 1 - B faz gol
-        ( 5, 3, '1', "01100011", 118, '1', "01100010", 294), -- A: 2, B: 1 - A faz gol
-        ( 5, 4, '0', "01100101", 294, '1', "01100100", 118), -- A: 2, B: 2 - B faz gol
-        ( 5, 5, '0', "01100001", 118, '0', "01100011", 118), -- A: 3, B: 3 - A e B fazem gol
-        ( 5, 6, '1', "01100010", 294, '1', "01100101", 118)  -- A: 3, B: 4 - B faz gol = B vence
+        ( 5, 1, '0', "01100101", 118, '1', "01100101", 294), -- A: 1, B: 0 - A faz gol
+        ( 5, 2, '0', "01101010", 294, '0', "01100011", 118), -- A: 1, B: 1 - B faz gol
+        ( 5, 3, '1', "01100110", 118, '1', "01100101", 294), -- A: 2, B: 1 - A faz gol
+        ( 5, 4, '0', "01101010", 294, '1', "01101001", 118), -- A: 2, B: 2 - B faz gol
+        ( 5, 5, '0', "01100011", 118, '0', "01100110", 118), -- A: 3, B: 3 - A e B fazem gol
+        ( 5, 6, '1', "01100101", 294, '1', "01101010", 118)  -- A: 3, B: 4 - B faz gol = B vence
       );
 
-  signal larguraPulso: time := 1 ns;
+  signal larguraPulsoA, larguraPulsoB: time := 1 ns;
 
 begin
   -- Gerador de clock: executa enquanto 'keep_simulating = 1', com o periodo
@@ -189,15 +189,15 @@ begin
         wait for 500 us; -- transmite preparacao
 
         -- envia dadoB
-        serialData <= posicoes_teste(i).dadoB;
+        serial_data <= posicoes_teste(i).dadoB;
         wait for 2*bitPeriod; -- aguarda 2 periodos de bit antes de enviar
-        UART_WRITE_BYTE ( Data_In=>serialData, Serial_Out=>entrada_serial_in );
+        UART_WRITE_BYTE ( Data_In=>serial_data, Serial_Out=>entrada_serial_in );
         entrada_serial_in <= '1'; -- repouso
         wait for bitPeriod;
 
         wait for 500 us; -- transmite espera batedor
 
-        posicao_batedor_in <= posicoes_teste(i).posicaoA
+        posicao_batedor_in <= posicoes_teste(i).posicaoA;
 
         wait for 1 us;
         bater_in <= '1';
@@ -215,7 +215,7 @@ begin
      
         -- gera pulso de echo (largura = larguraPulso)
         echo_in <= '1';
-        wait for larguraPulso;
+        wait for larguraPulsoA;
         echo_in <= '0';
 
         wait for 500 us; -- transmite informacoes
@@ -225,15 +225,15 @@ begin
         wait for 500 us; -- transmite preparacao
 
         -- envia dadoB
-        serialData <= posicoes_teste(i).dadoA;
+        serial_data <= posicoes_teste(i).dadoA;
         wait for 2*bitPeriod; -- aguarda 2 periodos de bit antes de enviar
-        UART_WRITE_BYTE ( Data_In=>serialData, Serial_Out=>entrada_serial_in );
+        UART_WRITE_BYTE ( Data_In=>serial_data, Serial_Out=>entrada_serial_in );
         entrada_serial_in <= '1'; -- repouso
         wait for bitPeriod;
 
         wait for 500 us; -- transmite espera batedor
 
-        posicao_batedor_in <= posicoes_teste(i).posicaoB
+        posicao_batedor_in <= posicoes_teste(i).posicaoB;
 
         wait for 1 us;
         bater_in <= '1';
@@ -241,7 +241,7 @@ begin
         bater_in <= '0';
 
         -- determina largura do pulso echo para A
-        larguraPulsoA <= posicoes_teste(i).tempoB * 1 us;
+        larguraPulsoB <= posicoes_teste(i).tempoB * 1 us;
         
         -- espera pelo pulso trigger
         wait until falling_edge(trigger_out);
@@ -251,7 +251,7 @@ begin
      
         -- gera pulso de echo (largura = larguraPulso)
         echo_in <= '1';
-        wait for larguraPulso;
+        wait for larguraPulsoB;
         echo_in <= '0';
 
         wait for 500 us; -- transmite informacoes
