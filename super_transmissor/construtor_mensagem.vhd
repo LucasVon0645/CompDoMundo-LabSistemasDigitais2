@@ -45,7 +45,7 @@ architecture construtor_arch of construtor_mensagem is
 		);
 	end component;
 
-	signal s_fim_mensagem, s_zera             : std_logic;
+	signal s_fim_mensagem, s_conta            : std_logic;
 	signal sel_caracter                       : std_logic_vector(2 downto 0);
 	signal corpo_mensagem                     : std_logic_vector(8 downto 0);
 	signal caracter_0_ascii, caracter_1_ascii : std_logic_vector(6 downto 0);
@@ -94,7 +94,7 @@ begin
 						  caracter_3_ascii when "011",
 						  caracter_0_ascii when others;
 
-	s_zera <= reset or s_fim_mensagem;
+	s_conta <= fim_caracter or s_fim_mensagem;
 
 	conta_mensagem: contador_m
 		generic map (
@@ -103,8 +103,8 @@ begin
 		)
 		port map (
 			clock  => clock,
-            zera   => s_zera,
-			conta  => fim_caracter,
+            zera   => reset,
+			conta  => s_conta,
 			Q      => sel_caracter,
 			fim    => s_fim_mensagem,
 			meio   => open
