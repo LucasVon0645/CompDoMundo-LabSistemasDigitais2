@@ -25,7 +25,7 @@ entity unidade_controle is
         atualiza_placar   : out std_logic;
         atualiza_jogada   : out std_logic;
         transcode         : out std_logic_vector (1 downto 0);
-        db_estado         : out std_logic_vector (2 downto 0)
+        db_estado         : out std_logic_vector (3 downto 0)
     );
 end entity;
 
@@ -151,14 +151,17 @@ begin
 
     -- db_estado
     with Eatual select
-        db_estado <= "000" when inicial, 
-                     "001" when reset_componentes,
-                     "010" when preparacao,
-                     "011" when batedor,
-                     "100" when chute,
-                     "101" when gol,
-                     "110" when placar,
-                     "111" when transmissao,
-                     "000" when others;
+        db_estado <= "0000" when inicial,
+                     "0001" when espera_partida
+                     "0010" when reset_componentes,
+                     "0011" when transmite_preparacao,
+                     "0100" when preparacao,
+                     "0101" when transmite_batedor,
+                     "0110" when batedor,
+                     "0111" when chute,
+                     "1000" when gol,
+                     "1001" when placar,
+                     "1010" when transmissao,
+                     "1111" when others;
 
 end architecture;

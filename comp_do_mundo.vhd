@@ -20,7 +20,7 @@ entity comp_do_mundo is
         saida_serial    : out std_logic;
         -- depuracao
 		db_ganhador     : out std_logic;
-        db_estado       : out std_logic_vector(2 downto 0)
+        db_estado       : out std_logic_vector (3 downto 0)
     );
 end entity;
 
