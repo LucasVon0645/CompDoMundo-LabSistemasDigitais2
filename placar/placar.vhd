@@ -80,6 +80,7 @@ architecture placar_arch of placar is
 	signal empatado                             : std_logic;
 	signal mata_a_mata                          : std_logic;
 	signal fim_jogo_padrao, fim_jogo_mata_mata  : std_logic;
+	signal s_I_gol                              : std_logic;
 
 begin
 
@@ -165,11 +166,12 @@ begin
             A_lt_B   => open,
             A_eq_B   => open
         );
-		  
+
+	s_I_gol <= atualiza_placar and gol;
 		  
 	demux_gol: demux_1x2
         port map (
-            I   => (atualiza_placar and gol),
+            I   => s_I_gol,
             S   => jogador_atual,
             O   => novos_gols
         );
