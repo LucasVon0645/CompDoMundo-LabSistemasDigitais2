@@ -32,7 +32,7 @@ posicao_process:
 		
 		if tem_dado = '1' then
 	     	case dado is
-		      when "0110001" => s_prox_posicao <= "000";
+		      	when "0110001" => s_prox_posicao <= "000";
 				when "0110010" => s_prox_posicao <= "001";
 				when "0110011" => s_prox_posicao <= "010";
 				when "0110100" => s_prox_posicao <= "011";
