@@ -2,30 +2,76 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity CompDoMundo is
+entity comp_do_mundo is
     port (
-        -- Entradas
-        clock             : in  std_logic;
-        restart           : in  std_logic;
-        start             : in  std_logic;
-        posicao_batedor   : in  std_logic;
-		bater             : in  std_logic;
-        echo              : in  std_logic;
-		entrada_serial    : in  std_logic;
-        -- Saidas
-		pwm_goleiro       : out std_logic;
-        pwm_batedor_esq   : out std_logic;
-        pwm_batedor_dir   : out std_logic;
-        trigger           : out std_logic;
-        saida_serial      : out std_logic;
-        -- Depuracao
-		  db_ganhador       : out std_logic;
-        db_estado         : out std_logic_vector(2 downto 0)
+        -- entradas
+        clock           : in  std_logic;
+        reset           : in  std_logic;
+        iniciar         : in  std_logic;
+        posicao_batedor : in  std_logic;
+		bater           : in  std_logic;
+        echo            : in  std_logic;
+		entrada_serial  : in  std_logic;
+        -- saidas
+		pwm_goleiro     : out std_logic;
+        pwm_batedor_dir : out std_logic;
+        pwm_batedor_esq : out std_logic;
+        trigger         : out std_logic;
+        saida_serial    : out std_logic;
+        -- depuracao
+		db_ganhador     : out std_logic;
+        db_estado       : out std_logic_vector(2 downto 0)
     );
-end CompDoMundo;
+end entity;
 
 
-architecture arch_comp_do_mundo of CompDoMundo is
+architecture arch_comp_do_mundo of comp_do_mundo is
+
+    component preparacao is
+        port (
+            clock : in  std_logic;
+            reset : in  std_logic;
+            conta : in  std_logic;
+            fim   : out std_logic
+        );
+    end component;
+
+    component batedor is
+        port (
+            clock        : in  std_logic;
+            reset        : in  std_logic;
+            habilitar    : in  std_logic;
+            bater        : in  std_logic;
+            direcao      : in  std_logic; -- 0: direita; 1: esquerda
+            pwm_direita  : out std_logic;
+            pwm_esquerda : out std_logic;
+            db_estado    : out std_logic
+        );
+    end component;
+
+    component goleiro is
+        port (
+            clock          : in  std_logic;
+            reset          : in  std_logic;
+            entrada_serial : in  std_logic;
+            posicionar     : in  std_logic;
+            pwm            : out std_logic;
+            db_posicao     : out std_logic_vector (2 downto 0)
+        );
+    end component;
+
+    component detector_gol is
+        port (
+            clock     : in  std_logic;
+            reset     : in  std_logic;
+            echo      : in  std_logic;
+            verificar : in  std_logic;
+            gol       : out std_logic;
+            pronto    : out std_logic;
+            trigger   : out std_logic;
+            db_estado : out std_logic_vector (3 downto 0)
+        );
+    end component;
 
     component placar is
         port (
@@ -45,54 +91,6 @@ architecture arch_comp_do_mundo of CompDoMundo is
         );
     end component;
 
-    component batedor is
-        port (
-            clock        : in  std_logic;
-            reset        : in  std_logic;
-            habilitar    : in  std_logic;
-            bater        : in  std_logic;
-            direcao      : in  std_logic; -- 0: direita; 1: esquerda
-            pwm_direita  : out std_logic;
-            pwm_esquerda : out std_logic;
-            bateu        : out std_logic;
-            db_estado    : out std_logic
-        );
-    end component;
-
-    component detector_gol is
-        port (
-            clock     : in  std_logic;
-            reset     : in  std_logic;
-            echo      : in  std_logic;
-            verificar : in  std_logic;
-            gol       : out std_logic;
-            pronto    : out std_logic;
-            trigger   : out std_logic;
-            db_estado : out std_logic_vector (3 downto 0)
-        );
-    end component;
-
-    component goleiro is
-        port (
-            clock          : in  std_logic;
-            reset          : in  std_logic;
-            entrada_serial : in  std_logic;
-            posicionar     : in  std_logic;
-            pwm            : out std_logic;
-            db_posicao     : out std_logic_vector (2 downto 0)
-        );
-    end component;
-
-    component preparacao is
-        port (
-            clock : in  std_logic;
-            reset : in  std_logic;
-            conta : in  std_logic;
-            fim   : out std_logic
-        );
-    end component;
-
-
     component super_transmissor is
         port (
             clock              : in std_logic;
@@ -109,14 +107,13 @@ architecture arch_comp_do_mundo of CompDoMundo is
         );
     end component;
 
-
-    component penalti_uc is
+    component unidade_controle is
         port ( 
             clock             : in  std_logic;
             reset             : in  std_logic;
             iniciar           : in  std_logic;
+            bater             : in  std_logic;
             fim_preparacao    : in  std_logic;
-            bateu             : in  std_logic;
             fim_penalti       : in  std_logic;
             fim_jogo          : in  std_logic;
             fim_transmissao   : in  std_logic;
@@ -139,7 +136,7 @@ architecture arch_comp_do_mundo of CompDoMundo is
     end component;
 
     signal s_reset_preparacao, s_conta_preparacao, s_fim_preparacao : std_logic;
-    signal s_reset_batedor, s_habilita_batedor, s_bateu             : std_logic;
+    signal s_reset_batedor, s_habilita_batedor                      : std_logic;
     signal s_reset_placar, s_atualiza_jogada, s_atualiza_placar     : std_logic;
     signal s_reset_gol, s_gol, s_fim_jogo                           : std_logic;
     signal s_fim_penalti, s_verifica_gol                            : std_logic;
@@ -151,13 +148,85 @@ architecture arch_comp_do_mundo of CompDoMundo is
   
 begin
 
-    UC: penalti_uc
+    timer_preparacao: preparacao
+    port map (
+        clock => clock,
+        reset => s_reset_preparacao,
+        conta => s_conta_preparacao,
+        fim   => s_fim_preparacao
+    );
+
+    cobrador: batedor
+    port map (
+        clock        => clock,
+        reset        => s_reset_batedor,
+        habilitar    => s_habilita_batedor,
+        bater        => bater,
+        direcao      => posicao_batedor, -- 0: direita; 1: esquerda
+        pwm_direita  => pwm_batedor_dir,
+        pwm_esquerda => pwm_batedor_esq,
+        db_estado    => open
+    );
+
+    defensor: goleiro
+    port map (
+        clock           => clock,
+        reset           => s_reset_goleiro,
+        entrada_serial  => entrada_serial,
+        posicionar      => s_posiciona_goleiro,
+        pwm             => pwm_goleiro,
+        db_posicao      => open
+    );
+
+    gol: detector_gol
+    port map (
+        clock      => clock,
+        reset      => s_reset_gol,
+        echo       => echo,
+        verificar  => s_verifica_gol,
+        gol        => s_gol,
+        pronto     => s_fim_penalti,
+        trigger    => trigger,
+        db_estado  => open
+    );
+
+    placar_info: placar
     port map (
         clock             => clock,
-        reset             => restart,
-        iniciar           => start,
+        reset             => s_reset_placar,
+        atualiza_jogada   => s_atualiza_jogada,
+        atualiza_placar   => s_atualiza_placar,
+        gol               => s_gol,
+        gols_A            => s_gols_A,
+        gols_B            => s_gols_B,
+        rodada            => s_rodada,
+        jogador           => s_jogador,
+        ganhador          => db_ganhador,
+        fim_jogo          => s_fim_jogo
+    );
+
+    transmissor: super_transmissor
+    port map(
+        clock            => clock,
+        reset            => s_reset_transmissor,
+        transmite        => s_transmite,
+        transcode        => s_transcode,
+        gols_A           => s_gols_A,
+        gols_B           => s_gols_B,
+        rodada           => s_rodada,
+        jogador          => s_jogador,
+        direcao_batedor  => posicao_batedor,
+        saida_serial     => saida_serial,
+        fim_transmissao  => s_fim_transmissao
+    );
+
+    UC: unidade_controle
+    port map (
+        clock             => clock,
+        reset             => reset,
+        iniciar           => iniciar,
         fim_preparacao    => s_fim_preparacao,
-        bateu             => s_bateu,
+        bater             => bater,
         fim_penalti       => s_fim_penalti,
         fim_jogo          => s_fim_jogo,
         fim_transmissao   => s_fim_transmissao,
@@ -177,74 +246,5 @@ begin
         transcode         => s_transcode,
         db_estado         => db_estado
     );
-
-    timer_preparacao: preparacao
-    port map (
-        clock => clock,
-        reset => s_reset_preparacao,
-        conta => s_conta_preparacao,
-        fim   => s_fim_preparacao
-    );
-
-    cobrador: batedor port map (
-        clock        => clock,
-        reset        => s_reset_batedor,
-        habilitar    => s_habilita_batedor,
-        bater        => bater,
-        direcao      => posicao_batedor, -- 0: direita; 1: esquerda
-        pwm_direita  => pwm_batedor_dir,
-        pwm_esquerda => pwm_batedor_esq,
-        bateu        => s_bateu,
-        db_estado    => open
-    );
-
-    placar_info: placar port map (
-        clock             => clock,
-        reset             => s_reset_placar,
-        atualiza_jogada   => s_atualiza_jogada,
-        atualiza_placar   => s_atualiza_placar,
-        gol               => s_gol,
-        gols_A            => s_gols_A,
-        gols_B            => s_gols_B,
-        rodada            => s_rodada,
-        jogador           => s_jogador,
-        ganhador          => db_ganhador,
-        fim_jogo          => s_fim_jogo
-    );
-
-    gol: detector_gol port map (
-        clock      => clock,
-        reset      => s_reset_gol,
-        echo       => echo,
-        verificar  => s_verifica_gol,
-        gol        => s_gol,
-        pronto     => s_fim_penalti,
-        trigger    => trigger,
-        db_estado  => open
-    );
-
-    defensor: goleiro port map (
-        clock           => clock,
-        reset           => s_reset_goleiro,
-        entrada_serial  => entrada_serial,
-        posicionar      => s_posiciona_goleiro,
-        pwm             => pwm_goleiro,
-        db_posicao      => open
-    );
-
-    transmissor: super_transmissor
-        port map(
-            clock            => clock,
-            reset            => s_reset_transmissor,
-            transmite        => s_transmite,
-            transcode        => s_transcode,
-            gols_A           => s_gols_A,
-            gols_B           => s_gols_B,
-            rodada           => s_rodada,
-            jogador          => s_jogador,
-            direcao_batedor  => posicao_batedor,
-            saida_serial     => saida_serial,
-            fim_transmissao  => s_fim_transmissao
-        );
   
 end architecture;
