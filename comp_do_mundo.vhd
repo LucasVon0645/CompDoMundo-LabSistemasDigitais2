@@ -56,6 +56,7 @@ architecture arch_comp_do_mundo of comp_do_mundo is
             reset          : in  std_logic;
             entrada_serial : in  std_logic;
             posicionar     : in  std_logic;
+            reposicionar   : in  std_logic;
             pwm            : out std_logic;
             db_posicao     : out std_logic_vector (2 downto 0)
         );
@@ -110,42 +111,43 @@ architecture arch_comp_do_mundo of comp_do_mundo is
 
     component unidade_controle is
         port ( 
-            clock             : in  std_logic;
-            reset             : in  std_logic;
-            iniciar           : in  std_logic;
-            bater             : in  std_logic;
-            fim_preparacao    : in  std_logic;
-            fim_penalti       : in  std_logic;
-            fim_jogo          : in  std_logic;
-            fim_transmissao   : in  std_logic;
-            reset_preparacao  : out std_logic;
-            reset_goleiro     : out std_logic;
-            reset_batedor     : out std_logic;
-            reset_gol         : out std_logic;
-            reset_placar      : out std_logic;
-            reset_transmissor : out std_logic;
-            conta_preparacao  : out std_logic;
-            transmite         : out std_logic;
-            habilita_batedor  : out std_logic;
-            posiciona_goleiro : out std_logic;
-            verifica_gol      : out std_logic;
-            atualiza_placar   : out std_logic;
-            atualiza_jogada   : out std_logic;
-            transcode         : out std_logic_vector (1 downto 0);
-            db_estado         : out std_logic_vector (3 downto 0)
+            clock               : in  std_logic;
+            reset               : in  std_logic;
+            iniciar             : in  std_logic;
+            bater               : in  std_logic;
+            fim_preparacao      : in  std_logic;
+            fim_penalti         : in  std_logic;
+            fim_jogo            : in  std_logic;
+            fim_transmissao     : in  std_logic;
+            reset_preparacao    : out std_logic;
+            reset_goleiro       : out std_logic;
+            reset_batedor       : out std_logic;
+            reset_gol           : out std_logic;
+            reset_placar        : out std_logic;
+            reset_transmissor   : out std_logic;
+            conta_preparacao    : out std_logic;
+            reposiciona_goleiro : out std_logic;
+            transmite           : out std_logic;
+            habilita_batedor    : out std_logic;
+            posiciona_goleiro   : out std_logic;
+            verifica_gol        : out std_logic;
+            atualiza_placar     : out std_logic;
+            atualiza_jogada     : out std_logic;
+            transcode           : out std_logic_vector (1 downto 0);
+            db_estado           : out std_logic_vector (3 downto 0)
         );
     end component;
 
-    signal s_reset_preparacao, s_conta_preparacao, s_fim_preparacao : std_logic;
-    signal s_reset_batedor, s_habilita_batedor                      : std_logic;
-    signal s_reset_placar, s_atualiza_jogada, s_atualiza_placar     : std_logic;
-    signal s_reset_gol, s_gol, s_fim_jogo                           : std_logic;
-    signal s_fim_penalti, s_verifica_gol                            : std_logic;
-    signal s_reset_goleiro, s_posiciona_goleiro                     : std_logic;
-    signal s_jogador                                                : std_logic;
-    signal s_transmite, s_reset_transmissor, s_fim_transmissao      : std_logic;
-    signal s_transcode                          : std_logic_vector (1 downto 0);
-    signal s_gols_A, s_gols_B, s_rodada         : std_logic_vector (3 downto 0);
+    signal s_reset_preparacao, s_conta_preparacao, s_fim_preparacao    : std_logic;
+    signal s_reset_batedor, s_habilita_batedor                         : std_logic;
+    signal s_reset_placar, s_atualiza_jogada, s_atualiza_placar        : std_logic;
+    signal s_reset_gol, s_gol, s_fim_jogo                              : std_logic;
+    signal s_fim_penalti, s_verifica_gol                               : std_logic;
+    signal s_reset_goleiro, s_posiciona_goleiro, s_reposiciona_goleiro : std_logic;
+    signal s_jogador                                                   : std_logic;
+    signal s_transmite, s_reset_transmissor, s_fim_transmissao         : std_logic;
+    signal s_transcode                             : std_logic_vector (1 downto 0);
+    signal s_gols_A, s_gols_B, s_rodada            : std_logic_vector (3 downto 0);
   
 begin
 
@@ -174,6 +176,7 @@ begin
         reset           => s_reset_goleiro,
         entrada_serial  => entrada_serial,
         posicionar      => s_posiciona_goleiro,
+        reposicionar    => s_reposiciona_goleiro,
         pwm             => pwm_goleiro,
         db_posicao      => open
     );
@@ -222,29 +225,30 @@ begin
 
     UC: unidade_controle
     port map (
-        clock             => clock,
-        reset             => reset,
-        iniciar           => iniciar,
-        fim_preparacao    => s_fim_preparacao,
-        bater             => bater,
-        fim_penalti       => s_fim_penalti,
-        fim_jogo          => s_fim_jogo,
-        fim_transmissao   => s_fim_transmissao,
-        reset_preparacao  => s_reset_preparacao,
-        reset_goleiro     => s_reset_goleiro,
-        reset_batedor     => s_reset_batedor,
-        reset_gol         => s_reset_gol,
-        reset_placar      => s_reset_placar,
-        reset_transmissor => s_reset_transmissor,
-        conta_preparacao  => s_conta_preparacao,
-        transmite         => s_transmite,
-        habilita_batedor  => s_habilita_batedor,
-        posiciona_goleiro => s_posiciona_goleiro,
-        verifica_gol      => s_verifica_gol,
-        atualiza_placar   => s_atualiza_placar,
-        atualiza_jogada   => s_atualiza_jogada,
-        transcode         => s_transcode,
-        db_estado         => db_estado
+        clock               => clock,
+        reset               => reset,
+        iniciar             => iniciar,
+        fim_preparacao      => s_fim_preparacao,
+        bater               => bater,
+        fim_penalti         => s_fim_penalti,
+        fim_jogo            => s_fim_jogo,
+        fim_transmissao     => s_fim_transmissao,
+        reset_preparacao    => s_reset_preparacao,
+        reset_goleiro       => s_reset_goleiro,
+        reset_batedor       => s_reset_batedor,
+        reset_gol           => s_reset_gol,
+        reset_placar        => s_reset_placar,
+        reset_transmissor   => s_reset_transmissor,
+        conta_preparacao    => s_conta_preparacao,
+        reposiciona_goleiro => s_reposiciona_goleiro,
+        transmite           => s_transmite,
+        habilita_batedor    => s_habilita_batedor,
+        posiciona_goleiro   => s_posiciona_goleiro,
+        verifica_gol        => s_verifica_gol,
+        atualiza_placar     => s_atualiza_placar,
+        atualiza_jogada     => s_atualiza_jogada,
+        transcode           => s_transcode,
+        db_estado           => db_estado
     );
 
     db_fim_preparacao  <= s_fim_preparacao;

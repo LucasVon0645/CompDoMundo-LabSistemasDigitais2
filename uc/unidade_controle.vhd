@@ -3,29 +3,30 @@ use ieee.std_logic_1164.all;
 
 entity unidade_controle is
     port ( 
-        clock             : in  std_logic;
-        reset             : in  std_logic;
-        iniciar           : in  std_logic;
-        bater             : in  std_logic;
-        fim_preparacao    : in  std_logic;
-        fim_penalti       : in  std_logic;
-        fim_jogo          : in  std_logic;
-        fim_transmissao   : in  std_logic;
-        reset_preparacao  : out std_logic;
-        reset_goleiro     : out std_logic;
-        reset_batedor     : out std_logic;
-        reset_gol         : out std_logic;
-        reset_placar      : out std_logic;
-        reset_transmissor : out std_logic;
-        conta_preparacao  : out std_logic;
-        transmite         : out std_logic;
-        habilita_batedor  : out std_logic;
-        posiciona_goleiro : out std_logic;
-        verifica_gol      : out std_logic;
-        atualiza_placar   : out std_logic;
-        atualiza_jogada   : out std_logic;
-        transcode         : out std_logic_vector (1 downto 0);
-        db_estado         : out std_logic_vector (3 downto 0)
+        clock               : in  std_logic;
+        reset               : in  std_logic;
+        iniciar             : in  std_logic;
+        bater               : in  std_logic;
+        fim_preparacao      : in  std_logic;
+        fim_penalti         : in  std_logic;
+        fim_jogo            : in  std_logic;
+        fim_transmissao     : in  std_logic;
+        reset_preparacao    : out std_logic;
+        reset_goleiro       : out std_logic;
+        reset_batedor       : out std_logic;
+        reset_gol           : out std_logic;
+        reset_placar        : out std_logic;
+        reset_transmissor   : out std_logic;
+        conta_preparacao    : out std_logic;
+        reposiciona_goleiro : out std_logic;
+        transmite           : out std_logic;
+        habilita_batedor    : out std_logic;
+        posiciona_goleiro   : out std_logic;
+        verifica_gol        : out std_logic;
+        atualiza_placar     : out std_logic;
+        atualiza_jogada     : out std_logic;
+        transcode           : out std_logic_vector (1 downto 0);
+        db_estado           : out std_logic_vector (3 downto 0)
     );
 end entity;
 
@@ -122,6 +123,9 @@ begin
     
     with Eatual select 
         conta_preparacao <= '1' when preparacao, '0' when others;
+
+    with Eatual select 
+        reposiona_goleiro <= '1' when preparacao, '0' when others;
     
     with Eatual select 
         transmite <= '1' when inicial | transmite_preparacao | transmite_batedor | transmissao,

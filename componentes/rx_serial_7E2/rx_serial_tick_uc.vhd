@@ -7,7 +7,7 @@ entity rx_serial_uc is
         reset       : in  std_logic;
         dado_serial : in  std_logic;
         tick        : in  std_logic;
-		  recebe_dado : in  std_logic;
+		recebe_dado : in  std_logic;
         fim         : in  std_logic;
         limpa       : out std_logic;
         carrega     : out std_logic;

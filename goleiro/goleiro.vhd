@@ -8,6 +8,7 @@ entity goleiro is
         reset          : in  std_logic;
         entrada_serial : in  std_logic;
         posicionar     : in  std_logic;
+		reposicionar   : in  std_logic;
         pwm            : out std_logic;
 		db_posicao     : out std_logic_vector (2 downto 0)
     );
@@ -42,19 +43,22 @@ architecture arch_goleiro of goleiro is
         );
     end component;
 
-	component definidor_posicao is
+	component registrador_n is
+		generic (
+			constant N: integer := 8 
+		);
 		port (
-			clock    : in  std_logic;
-			reset    : in  std_logic;
-			dado     : in  std_logic_vector (6 downto 0);
-			tem_dado : in  std_logic;
-			posicao  : out std_logic_vector (2 downto 0)
+			clock  : in  std_logic;
+			clear  : in  std_logic;
+			enable : in  std_logic;
+			D      : in  std_logic_vector (N-1 downto 0);
+			Q      : out std_logic_vector (N-1 downto 0) 
 		);
 	end component;
 	 
 	signal s_dado_recebido : std_logic_vector (6 downto 0);
-	signal s_tem_dado, s_pwm : std_logic;
-    signal s_posicao : std_logic_vector (2 downto 0);
+	signal s_tem_dado, s_pwm, s_registra : std_logic;
+    signal s_posicao, s_posicao_servo : std_logic_vector (2 downto 0);
 
 begin
 		
@@ -76,23 +80,35 @@ begin
 	port map (
         clock      => clock,
         reset      => reset,
-        posicao    => s_posicao,
-        pwm        => s_pwm,
+        posicao    => s_posicao_servo,
+        pwm        => pwm,
         db_reset   => open,
         db_pwm     => open,
         db_posicao => open
 	);
 
-    posicao: definidor_posicao
+	s_registra <= posicionar or reposicionar;
+
+    reg_posicao: registrador_n
+	generic map (
+		N => 3
+	)
 	port map (
-        clock      => clock,
-        reset      => reset,
-		dado       => s_dado_recebido,
-		tem_dado   => s_tem_dado,
-		posicao    => s_posicao
+		clock  => clock,
+		clear  => reset,
+		enable => s_registra,
+		D      => s_posicao,
+		Q      => s_posicao_servo
 	);
 
+	s_posicao <= "010" when s_tem_dado = '0' or reposicionar = '1' else
+				 "000" when s_dado_recebido = "0110001" else
+				 "001" when s_dado_recebido = "0110010" else
+				 "010" when s_dado_recebido = "0110011" else
+				 "011" when s_dado_recebido = "0110100" else
+				 "100" when s_dado_recebido = "0110101" else
+				 "010" when others;
+
 	db_posicao <= s_posicao;
-	pwm <= posicionar and s_pwm;
     
 end architecture;
