@@ -11,7 +11,6 @@ entity batedor is
         direcao      : in  std_logic; -- 0: direita; 1: esquerda
         pwm_direita  : out std_logic;
 		pwm_esquerda : out std_logic;
-	    bateu        : out std_logic;
         db_estado    : out std_logic
     );
 end batedor;
@@ -79,7 +78,5 @@ begin
         posicao     => s_posicao,
         db_estado   => db_estado
     );
-
-    bateu <= bater;
   
 end architecture;
