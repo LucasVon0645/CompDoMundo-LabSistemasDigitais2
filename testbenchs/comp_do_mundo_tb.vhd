@@ -173,7 +173,7 @@ begin
     reset_in <= '0';
     wait until falling_edge(clock_in);
 
-    wait for 500 us; -- transmite inicio
+    wait until fim_transmissao_out = '1'; -- espera transmitir inicio
 
     ---- loop pelas posicoes de teste ----
     for i in posicoes_teste'range loop
@@ -188,11 +188,12 @@ begin
           wait for 1 us;
           iniciar_in <= '1';
           wait for 1 us;
+          iniciar_in <= '0';
         end if;
 
         -- Jogada de A
 
-        wait for 500 us; -- transmite preparacao
+        wait until fim_transmissao_out = '1'; -- espera transmitir preparacao
 
         -- envia dadoB
         serial_data <= posicoes_teste(i).dadoB;
@@ -201,7 +202,9 @@ begin
         entrada_serial_in <= '1'; -- repouso
         wait for bitPeriod;
 
-        wait for 500 us; -- transmite espera batedor
+        -- wait until fim_preparacao_out = '1'; -- espera fim de preparacao
+
+        wait until fim_transmissao_out = '1'; -- espera transmitir batedor
 
         posicao_batedor_in <= posicoes_teste(i).posicaoA;
 
@@ -224,11 +227,11 @@ begin
         wait for larguraPulsoA;
         echo_in <= '0';
 
-        wait for 500 us; -- transmite informacoes
+        wait until fim_transmissao_out = '1'; -- espera transmitir informacoes
         
         -- Jogada de B
 
-        wait for 500 us; -- transmite preparacao
+        wait until fim_transmissao_out = '1'; -- espera transmitir preparacao
 
         -- envia dadoB
         serial_data <= posicoes_teste(i).dadoA;
@@ -237,7 +240,7 @@ begin
         entrada_serial_in <= '1'; -- repouso
         wait for bitPeriod;
 
-        wait for 500 us; -- transmite espera batedor
+        wait until fim_transmissao_out = '1'; -- espera transmitir batedor
 
         posicao_batedor_in <= posicoes_teste(i).posicaoB;
 
@@ -260,7 +263,7 @@ begin
         wait for larguraPulsoB;
         echo_in <= '0';
 
-        wait for 500 us; -- transmite informacoes
+        wait until fim_transmissao_out = '1'; -- espera transmitir informacoes
     end loop;
 
     ---- final dos casos de teste da simulacao
