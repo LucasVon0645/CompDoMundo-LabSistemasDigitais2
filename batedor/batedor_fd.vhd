@@ -4,17 +4,17 @@ use ieee.numeric_std.all;
 
 entity batedor_fd is
     port (
-        clock        : in  std_logic;
-        reset        : in  std_logic;
-        habilitar    : in  std_logic;
-        bater        : in  std_logic;
-        direcao      : in  std_logic; -- 0: direita; 1: esquerda
-        posicao      : in  std_logic_vector (2 downto 0);
-        zera_timer   : in  std_logic;
-        conta_timer  : in  std_logic;
-        pwm_direita  : out std_logic;
-		pwm_esquerda : out std_logic;
-        fim_timer    : out std_logic
+        clock            : in  std_logic;
+        reset            : in  std_logic;
+        habilitar        : in  std_logic;
+        direcao          : in  std_logic; -- 0: direita; 1: esquerda
+        posicao_direita  : in  std_logic_vector (2 downto 0);
+        posicao_esquerda : in  std_logic_vector (2 downto 0);
+        zera_timer       : in  std_logic;
+        conta_timer      : in  std_logic;
+        pwm_direita      : out std_logic;
+		pwm_esquerda     : out std_logic;
+        fim_timer        : out std_logic
     );
 end batedor_fd;
 
@@ -56,8 +56,8 @@ begin
     port map (
         clock      => clock,
         reset      => reset,
-        posicao    => posicao,
-        pwm        => s_pwm_direita,
+        posicao    => posicao_direita,
+        pwm        => pwm_direita,
         db_reset   => open,
         db_pwm     => open,
         db_posicao => open
@@ -67,8 +67,8 @@ begin
     port map (
         clock      => clock,
         reset      => reset,
-        posicao    => posicao,
-        pwm        => s_pwm_esquerda,
+        posicao    => posicao_esquerda,
+        pwm        => pwm_esquerda,
         db_reset   => open,
         db_pwm     => open,
         db_posicao => open
@@ -88,8 +88,5 @@ begin
         fim   => fim_timer,
         meio  => open
     );
-
-    pwm_direita  <= habilitar and not(direcao) and s_pwm_direita;
-    pwm_esquerda <= habilitar and direcao      and s_pwm_esquerda;
   
 end architecture;

@@ -43,11 +43,10 @@ architecture arch_comp_do_mundo of comp_do_mundo is
             clock        : in  std_logic;
             reset        : in  std_logic;
             habilitar    : in  std_logic;
-            bater        : in  std_logic;
             direcao      : in  std_logic; -- 0: direita; 1: esquerda
             pwm_direita  : out std_logic;
             pwm_esquerda : out std_logic;
-            db_estado    : out std_logic
+            db_estado    : out std_logic_vector (1 downto 0)
         );
     end component;
 
@@ -163,7 +162,6 @@ begin
         clock        => clock,
         reset        => s_reset_batedor,
         habilitar    => s_habilita_batedor,
-        bater        => bater,
         direcao      => posicao_batedor, -- 0: direita; 1: esquerda
         pwm_direita  => pwm_batedor_dir,
         pwm_esquerda => pwm_batedor_esq,
