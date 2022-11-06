@@ -10,14 +10,14 @@ entity construtor_mensagem is
 		fim_caracter       : in std_logic;
 		-- dados
 		header             : in  std_logic_vector(1 downto 0);
-      gols_A             : in  std_logic_vector(3 downto 0);
-      gols_B             : in  std_logic_vector(3 downto 0);
+      	gols_A             : in  std_logic_vector(3 downto 0);
+      	gols_B             : in  std_logic_vector(3 downto 0);
 		rodada             : in  std_logic_vector(3 downto 0);
 		jogador            : in  std_logic;
 		direcao_batedor    : in  std_logic;
         -- saidas
 		caracter_trans     : out std_logic_vector(6 downto 0);
-      fim_mensagem       : out std_logic
+      	fim_mensagem       : out std_logic
     );
 end entity;
 
@@ -45,28 +45,33 @@ architecture construtor_arch of construtor_mensagem is
 		);
 	end component;
 
-	signal s_fim_mensagem                     : std_logic;
+	signal s_fim_mensagem, s_zera             : std_logic;
 	signal sel_caracter                       : std_logic_vector(2 downto 0);
 	signal corpo_mensagem                     : std_logic_vector(8 downto 0);
 	signal caracter_0_ascii, caracter_1_ascii : std_logic_vector(6 downto 0);
 	signal caracter_2_ascii, caracter_3_ascii : std_logic_vector(6 downto 0);
+	signal s_hex_header, s_hex_c1             :std_logic_vector (3 downto 0);
 
 begin
 
 	with header select
 		corpo_mensagem <= (jogador & rodada & "0000")         when "01",
 		                  (direcao_batedor & gols_A & gols_B) when "11",
-				            (others => '0')                     when others;
+				          (others => '0')                     when others;
+
+	s_hex_header <= "00" & header;
 
 	conv_header: hex2ascii
 		port map(
-			hex    => "00" & header,
+			hex    => s_hex_header,
 			ascii  => caracter_0_ascii
 		);
 
+	s_hex_c1 <= "000" & corpo_mensagem(8);
+
 	conv_caracter_1: hex2ascii
 		port map(
-			hex    => "000" & corpo_mensagem(8),
+			hex    => s_hex_c1,
 			ascii  => caracter_1_ascii
 		);
 
@@ -89,6 +94,8 @@ begin
 						  caracter_3_ascii when "011",
 						  caracter_0_ascii when others;
 
+	s_zera <= reset or s_fim_mensagem;
+
 	conta_mensagem: contador_m
 		generic map (
 			M => 5,
@@ -96,7 +103,7 @@ begin
 		)
 		port map (
 			clock  => clock,
-            zera   => (reset or s_fim_mensagem),
+            zera   => s_zera,
 			conta  => fim_caracter,
 			Q      => sel_caracter,
 			fim    => s_fim_mensagem,
