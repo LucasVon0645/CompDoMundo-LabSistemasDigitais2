@@ -10,22 +10,24 @@ architecture tb of comp_do_mundo_tb is
   component comp_do_mundo
   port (
     -- entradas
-    clock           : in  std_logic;
-    reset           : in  std_logic;
-    iniciar         : in  std_logic;
-    posicao_batedor : in  std_logic;
-    bater           : in  std_logic;
-    echo            : in  std_logic;
-    entrada_serial  : in  std_logic;
+    clock              : in  std_logic;
+    reset              : in  std_logic;
+    iniciar            : in  std_logic;
+    posicao_batedor    : in  std_logic;
+		bater              : in  std_logic;
+    echo               : in  std_logic;
+		entrada_serial     : in  std_logic;
     -- saidas
-    pwm_goleiro     : out std_logic;
-    pwm_batedor_dir : out std_logic;
-    pwm_batedor_esq : out std_logic;
-    trigger         : out std_logic;
-    saida_serial    : out std_logic;
+		pwm_goleiro        : out std_logic;
+    pwm_batedor_dir    : out std_logic;
+    pwm_batedor_esq    : out std_logic;
+    trigger            : out std_logic;
+    saida_serial       : out std_logic;
     -- depuracao
-    db_ganhador     : out std_logic;
-    db_estado       : out std_logic_vector (3 downto 0)
+    db_fim_preparacao  : out std_logic;
+    db_fim_transmissao : out std_logic;
+		db_ganhador        : out std_logic;
+    db_estado          : out std_logic_vector (3 downto 0)
   );
   end component;
   
@@ -46,6 +48,8 @@ architecture tb of comp_do_mundo_tb is
   signal pwm_batedor_esq_out : std_logic := '0';
   signal trigger_out         : std_logic := '0';
   signal saida_serial_out    : std_logic := '1';
+  signal fim_preparacao_out  : std_logic := '0';
+  signal fim_transmissao_out : std_logic := '0';
 
 
   -- Configuracoes do clock
@@ -131,22 +135,24 @@ begin
   dut: comp_do_mundo
     port map ( 
       -- entradas
-      clock           => clock_in,
-      reset           => reset_in,
-      iniciar         => iniciar_in,
-      posicao_batedor => posicao_batedor_in,
-      bater           => bater_in,
-      echo            => echo_in,
-      entrada_serial  => entrada_serial_in,
+      clock              => clock_in,
+      reset              => reset_in,
+      iniciar            => iniciar_in,
+      posicao_batedor    => posicao_batedor_in,
+      bater              => bater_in,
+      echo               => echo_in,
+      entrada_serial     => entrada_serial_in,
       -- saidas
-      pwm_goleiro     => pwm_goleiro_out,
-      pwm_batedor_dir => pwm_batedor_dir_out,
-      pwm_batedor_esq => pwm_batedor_esq_out,
-      trigger         => trigger_out,
-      saida_serial    => saida_serial_out,
+      pwm_goleiro        => pwm_goleiro_out,
+      pwm_batedor_dir    => pwm_batedor_dir_out,
+      pwm_batedor_esq    => pwm_batedor_esq_out,
+      trigger            => trigger_out,
+      saida_serial       => saida_serial_out,
       -- depuracao
-      db_ganhador     => open,
-      db_estado       => open
+      db_fim_preparacao  => fim_preparacao_out,
+      db_fim_transmissao => fim_transmissao_out,
+      db_ganhador        => open,
+      db_estado          => open
     );
 
   -- geracao dos sinais de entrada (estimulos)

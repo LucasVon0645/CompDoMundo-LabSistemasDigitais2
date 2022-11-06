@@ -5,22 +5,24 @@ use ieee.numeric_std.all;
 entity comp_do_mundo is
     port (
         -- entradas
-        clock           : in  std_logic;
-        reset           : in  std_logic;
-        iniciar         : in  std_logic;
-        posicao_batedor : in  std_logic;
-		bater           : in  std_logic;
-        echo            : in  std_logic;
-		entrada_serial  : in  std_logic;
+        clock              : in  std_logic;
+        reset              : in  std_logic;
+        iniciar            : in  std_logic;
+        posicao_batedor    : in  std_logic;
+		bater              : in  std_logic;
+        echo               : in  std_logic;
+		entrada_serial     : in  std_logic;
         -- saidas
-		pwm_goleiro     : out std_logic;
-        pwm_batedor_dir : out std_logic;
-        pwm_batedor_esq : out std_logic;
-        trigger         : out std_logic;
-        saida_serial    : out std_logic;
+		pwm_goleiro        : out std_logic;
+        pwm_batedor_dir    : out std_logic;
+        pwm_batedor_esq    : out std_logic;
+        trigger            : out std_logic;
+        saida_serial       : out std_logic;
         -- depuracao
-		db_ganhador     : out std_logic;
-        db_estado       : out std_logic_vector (3 downto 0)
+        db_fim_preparacao  : out std_logic;
+        db_fim_transmissao : out std_logic;
+		db_ganhador        : out std_logic;
+        db_estado          : out std_logic_vector (3 downto 0)
     );
 end entity;
 
@@ -246,5 +248,8 @@ begin
         transcode         => s_transcode,
         db_estado         => db_estado
     );
+
+    db_fim_preparacao  <= s_fim_preparacao;
+    db_fim_transmissao <= s_fim_transmissao;
   
 end architecture;
