@@ -1,13 +1,13 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-entity penalti_uc is
+entity unidade_controle is
     port ( 
         clock             : in  std_logic;
         reset             : in  std_logic;
         iniciar           : in  std_logic;
+        bater             : in  std_logic;
         fim_preparacao    : in  std_logic;
-        bateu             : in  std_logic;
         fim_penalti       : in  std_logic;
         fim_jogo          : in  std_logic;
         fim_transmissao   : in  std_logic;
@@ -29,7 +29,7 @@ entity penalti_uc is
     );
 end entity;
 
-architecture fsm_arch of penalti_uc is
+architecture fsm_arch of unidade_controle is
     type tipo_estado is (inicial,
                          espera_partida,
                          reset_componentes,
@@ -55,7 +55,7 @@ begin
     end process;
 
     -- logica de proximo estado
-    process (Eatual, iniciar, fim_preparacao, bateu, fim_penalti, fim_jogo, fim_transmissao) 
+    process (Eatual, iniciar, fim_preparacao, bater, fim_penalti, fim_jogo, fim_transmissao) 
     begin
         case Eatual is
             when inicial => if fim_transmissao = '1' then Eprox <= espera_partida;
@@ -80,7 +80,7 @@ begin
                                          else Eprox <= transmite_batedor;
                                          end if;
 
-            when batedor =>              if bateu = '1' then Eprox <= chute;
+            when batedor =>              if bater = '1' then Eprox <= chute;
                                          else Eprox <= batedor;
                                          end if;
         
