@@ -126,7 +126,7 @@ begin
                      "0101" when compara,
                      "0110" when nova_medicao,
                      "0111" when final_sem_gol,
-							"1000" when final_com_gol,
+					 "1000" when final_com_gol,
                      "1111" when others;
 
 end architecture fsm_arch;
