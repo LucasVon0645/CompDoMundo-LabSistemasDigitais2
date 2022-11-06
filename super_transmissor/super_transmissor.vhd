@@ -53,8 +53,10 @@ architecture super_arch of super_transmissor is
 		);
 	end component;
 
-	signal s_fim_caracter : std_logic;
-	signal s_dado_trans   : std_logic_vector(6 downto 0);
+	signal s_transmite       : std_logic;
+	signal s_fim_caracter    : std_logic;
+	signal s_fim_transmissao : std_logic;
+	signal s_dado_trans      : std_logic_vector(6 downto 0);
 
 begin
 
@@ -70,14 +72,16 @@ begin
 			jogador          => jogador,
 			direcao_batedor  => direcao_batedor,
 			caracter_trans   => s_dado_trans,
-			fim_mensagem     => fim_transmissao
+			fim_mensagem     => s_fim_transmissao
 		);
+
+	s_transmite <= transmite and not s_fim_transmissao;
 
 	transmissor: tx_serial_7E2
 		port map (
 			clock            => clock,
 			reset            => reset,
-			partida          => transmite,
+			partida          => s_transmite,
 			dados_ascii      => s_dado_trans,
 			saida_serial     => saida_serial,
 			pronto           => s_fim_caracter,
@@ -85,5 +89,8 @@ begin
 			db_saida_serial  => open,
 			db_estado        => open
 		);
+
+	-- Saidas
+	fim_transmissao <= s_fim_transmissao;
 
 end architecture;
