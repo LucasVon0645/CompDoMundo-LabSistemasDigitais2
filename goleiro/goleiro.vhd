@@ -101,13 +101,13 @@ begin
 		Q      => s_posicao_servo
 	);
 
-	s_posicao <= "010" when s_tem_dado = '0' or reposicionar = '1' else
+	s_posicao <= "010" when reposicionar = '1'          else
 				 "000" when s_dado_recebido = "0110001" else
 				 "001" when s_dado_recebido = "0110010" else
 				 "010" when s_dado_recebido = "0110011" else
 				 "011" when s_dado_recebido = "0110100" else
 				 "100" when s_dado_recebido = "0110101" else
-				 "010" when others;
+				 "010";
 
 	db_posicao <= s_posicao;
     

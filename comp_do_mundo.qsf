@@ -51,7 +51,6 @@ set_global_assignment -name VHDL_FILE placar/subtractor_abs.vhd
 set_global_assignment -name VHDL_FILE placar/placar_jogador.vhd
 set_global_assignment -name VHDL_FILE placar/placar.vhd
 set_global_assignment -name VHDL_FILE goleiro/goleiro.vhd
-set_global_assignment -name VHDL_FILE goleiro/definidor_posicao.vhd
 set_global_assignment -name VHDL_FILE detector_gol/detector_gol_uc.vhd
 set_global_assignment -name VHDL_FILE detector_gol/detector_gol_fd.vhd
 set_global_assignment -name VHDL_FILE detector_gol/detector_gol.vhd
