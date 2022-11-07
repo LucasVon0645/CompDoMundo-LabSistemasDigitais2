@@ -40,7 +40,7 @@ architecture tb of comp_do_mundo_tb is
   signal bater_in            : std_logic := '0';
   signal echo_in             : std_logic := '0';
 
-  signal entrada_serial_in   : std_logic := '0';
+  signal entrada_serial_in   : std_logic := '1';
   signal serial_data         : std_logic_vector(7 downto 0) := "00000000";
 
   signal pwm_goleiro_out     : std_logic := '0';
