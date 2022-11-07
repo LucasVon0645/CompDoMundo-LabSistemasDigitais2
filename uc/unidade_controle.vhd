@@ -125,7 +125,7 @@ begin
         conta_preparacao <= '1' when preparacao, '0' when others;
 
     with Eatual select 
-        reposiona_goleiro <= '1' when preparacao, '0' when others;
+        reposiciona_goleiro <= '1' when preparacao, '0' when others;
     
     with Eatual select 
         transmite <= '1' when inicial | transmite_preparacao | transmite_batedor | transmissao,

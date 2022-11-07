@@ -56,8 +56,8 @@ architecture arch_goleiro of goleiro is
 		);
 	end component;
 	 
-	signal s_dado_recebido : std_logic_vector (6 downto 0);
-	signal s_tem_dado, s_pwm, s_registra : std_logic;
+	signal  s_dado_recebido : std_logic_vector (6 downto 0);
+	signal  s_pwm, s_registra : std_logic;
     signal s_posicao, s_posicao_servo : std_logic_vector (2 downto 0);
 
 begin
@@ -69,7 +69,7 @@ begin
 		dado_serial    => entrada_serial,
 		recebe_dado    => '1',
 		dado_recebido  => s_dado_recebido,
-		tem_dado       => s_tem_dado,
+		tem_dado       => open,
 		paridade_ok    => open,
 		pronto         => open,
 		db_dado_serial => open,
