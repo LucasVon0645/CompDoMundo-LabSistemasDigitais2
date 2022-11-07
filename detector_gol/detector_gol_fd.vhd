@@ -82,8 +82,8 @@ begin
     
     timer_medicao: contador_m
         generic map (
-            -- M => 100_000_000, -- 2 seg (experimento pratico)
-            M => 10000, -- 20 useg (simulacao testbench)
+            -- M => 10_000_000, -- 200 mseg (experimento pratico)
+            M => 200000, -- 400 useg (simulacao testbench)
             N => 27
         )
         port map (
@@ -98,7 +98,7 @@ begin
     timeout: contador_m
     generic map (
         -- M => 100_000_000, -- 2 seg (experimento pratico)
-        M => 10000, -- 20 useg (simulacao testbench)
+        M => 600000, -- 1.2 mseg (simulacao testbench)
         N => 27
     )
     port map (

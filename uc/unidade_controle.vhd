@@ -23,8 +23,6 @@ entity unidade_controle is
         habilita_batedor    : out std_logic;
         posiciona_goleiro   : out std_logic;
         verifica_gol        : out std_logic;
-        atualiza_placar     : out std_logic;
-        atualiza_jogada     : out std_logic;
         transcode           : out std_logic_vector (1 downto 0);
         db_estado           : out std_logic_vector (3 downto 0)
     );
@@ -140,11 +138,6 @@ begin
     with Eatual select 
         verifica_gol <= '1' when chute, '0' when others;
     
-    with Eatual select 
-        atualiza_placar <= '1' when placar, '0' when others;
-
-    with Eatual select 
-        atualiza_jogada <= '1' when placar, '0' when others;
 
     with Eatual select
         transcode <= "00" when inicial, 

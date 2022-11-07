@@ -16,8 +16,8 @@ begin
 		O <= "00";
 
 		case S is
-			when '0' => O <=  I  & '0';
-			when '1' => O <= '0' &  I ;
+			when '0' => O <= '0' &  I;
+			when '1' => O <=  I  & '0';
 			when others => O <= "00";
 		end case;
 	end process;

@@ -80,7 +80,6 @@ architecture arch_comp_do_mundo of comp_do_mundo is
             -- entradas
             clock               : in  std_logic;
             reset               : in  std_logic;
-            atualiza_jogada     : in  std_logic;
             atualiza_placar     : in  std_logic;
             gol                 : in  std_logic;
             -- saidas
@@ -131,8 +130,6 @@ architecture arch_comp_do_mundo of comp_do_mundo is
             habilita_batedor    : out std_logic;
             posiciona_goleiro   : out std_logic;
             verifica_gol        : out std_logic;
-            atualiza_placar     : out std_logic;
-            atualiza_jogada     : out std_logic;
             transcode           : out std_logic_vector (1 downto 0);
             db_estado           : out std_logic_vector (3 downto 0)
         );
@@ -197,8 +194,7 @@ begin
     port map (
         clock             => clock,
         reset             => s_reset_placar,
-        atualiza_jogada   => s_atualiza_jogada,
-        atualiza_placar   => s_atualiza_placar,
+        atualiza_placar   => s_fim_penalti,
         gol               => s_gol,
         gols_A            => s_gols_A,
         gols_B            => s_gols_B,
@@ -245,8 +241,6 @@ begin
         habilita_batedor    => s_habilita_batedor,
         posiciona_goleiro   => s_posiciona_goleiro,
         verifica_gol        => s_verifica_gol,
-        atualiza_placar     => s_atualiza_placar,
-        atualiza_jogada     => s_atualiza_jogada,
         transcode           => s_transcode,
         db_estado           => db_estado
     );
