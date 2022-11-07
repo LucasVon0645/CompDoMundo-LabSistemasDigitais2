@@ -230,40 +230,42 @@ begin
         wait until fim_transmissao_out = '1'; -- espera transmitir informacoes
         
         -- Jogada de B
-
-        wait until fim_transmissao_out = '1'; -- espera transmitir preparacao
-
-        -- envia dadoB
-        serial_data <= posicoes_teste(i).dadoA;
-        wait for 2*bitPeriod; -- aguarda 2 periodos de bit antes de enviar
-        UART_WRITE_BYTE ( Data_In=>serial_data, Serial_Out=>entrada_serial_in );
-        entrada_serial_in <= '1'; -- repouso
-        wait for bitPeriod;
-
-        wait until fim_transmissao_out = '1'; -- espera transmitir batedor
-
-        posicao_batedor_in <= posicoes_teste(i).posicaoB;
-
-        wait for 1 us;
-        bater_in <= '1';
-        wait for 1 us;
-        bater_in <= '0';
-
-        -- determina largura do pulso echo para A
-        larguraPulsoB <= posicoes_teste(i).tempoB * 1 us;
         
-        -- espera pelo pulso trigger
-        wait until falling_edge(trigger_out);
+        if posicoes_teste(i).tempoB /= 0 then
+          wait until fim_transmissao_out = '1'; -- espera transmitir preparacao
 
-        -- espera por 400us (simula tempo entre trigger e echo)
-        wait for 400 us;
-     
-        -- gera pulso de echo (largura = larguraPulso)
-        echo_in <= '1';
-        wait for larguraPulsoB;
-        echo_in <= '0';
+          -- envia dadoB
+          serial_data <= posicoes_teste(i).dadoA;
+          wait for 2*bitPeriod; -- aguarda 2 periodos de bit antes de enviar
+          UART_WRITE_BYTE ( Data_In=>serial_data, Serial_Out=>entrada_serial_in );
+          entrada_serial_in <= '1'; -- repouso
+          wait for bitPeriod;
 
-        wait until fim_transmissao_out = '1'; -- espera transmitir informacoes
+          wait until fim_transmissao_out = '1'; -- espera transmitir batedor
+
+          posicao_batedor_in <= posicoes_teste(i).posicaoB;
+
+          wait for 1 us;
+          bater_in <= '1';
+          wait for 1 us;
+          bater_in <= '0';
+
+          -- determina largura do pulso echo para A
+          larguraPulsoB <= posicoes_teste(i).tempoB * 1 us;
+          
+          -- espera pelo pulso trigger
+          wait until falling_edge(trigger_out);
+
+          -- espera por 400us (simula tempo entre trigger e echo)
+          wait for 400 us;
+      
+          -- gera pulso de echo (largura = larguraPulso)
+          echo_in <= '1';
+          wait for larguraPulsoB;
+          echo_in <= '0';
+
+          wait until fim_transmissao_out = '1'; -- espera transmitir informacoes
+        end if;
     end loop;
 
     ---- final dos casos de teste da simulacao
