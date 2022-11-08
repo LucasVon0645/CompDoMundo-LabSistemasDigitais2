@@ -22,7 +22,12 @@ entity comp_do_mundo is
         db_fim_preparacao  : out std_logic;
         db_fim_transmissao : out std_logic;
 		db_ganhador        : out std_logic;
-        db_estado          : out std_logic_vector (3 downto 0)
+		db_gols_A          : out std_logic_vector (6 downto 0);
+		db_gols_B          : out std_logic_vector (6 downto 0);
+		db_rodada          : out std_logic_vector (6 downto 0);
+		db_trigger         : out std_logic;
+		db_echo            : out std_logic;
+        db_estado          : out std_logic_vector (6 downto 0)
     );
 end entity;
 
@@ -134,7 +139,15 @@ architecture arch_comp_do_mundo of comp_do_mundo is
             db_estado           : out std_logic_vector (3 downto 0)
         );
     end component;
+	 
+	component hex7seg is
+		 port (
+			  hexa : in  std_logic_vector(3 downto 0);
+			  sseg : out std_logic_vector(6 downto 0)
+		 );
+	end component;
 
+	 signal s_trigger, s_echo: std_logic;
     signal s_reset_preparacao, s_conta_preparacao, s_fim_preparacao    : std_logic;
     signal s_reset_batedor, s_habilita_batedor                         : std_logic;
     signal s_reset_placar, s_atualiza_jogada, s_atualiza_placar        : std_logic;
@@ -143,8 +156,8 @@ architecture arch_comp_do_mundo of comp_do_mundo is
     signal s_reset_goleiro, s_posiciona_goleiro, s_reposiciona_goleiro : std_logic;
     signal s_jogador                                                   : std_logic;
     signal s_transmite, s_reset_transmissor, s_fim_transmissao         : std_logic;
-    signal s_transcode                             : std_logic_vector (1 downto 0);
-    signal s_gols_A, s_gols_B, s_rodada            : std_logic_vector (3 downto 0);
+    signal s_transcode                               : std_logic_vector (1 downto 0);
+    signal s_gols_A, s_gols_B, s_rodada, s_db_estado : std_logic_vector (3 downto 0);
   
 begin
 
@@ -182,11 +195,11 @@ begin
     port map (
         clock      => clock,
         reset      => s_reset_gol,
-        echo       => echo,
+        echo       => s_echo,
         verificar  => s_verifica_gol,
         gol        => s_gol,
         pronto     => s_fim_penalti,
-        trigger    => trigger,
+        trigger    => s_trigger,
         db_estado  => open
     );
 
@@ -242,8 +255,39 @@ begin
         posiciona_goleiro   => s_posiciona_goleiro,
         verifica_gol        => s_verifica_gol,
         transcode           => s_transcode,
-        db_estado           => db_estado
+        db_estado           => s_db_estado
     );
+	 
+	 hex_rodadas: hex7seg
+	 	port map (
+			 hexa => s_rodada,
+			 sseg => db_rodada
+		);
+		
+	 hex_gols_A: hex7seg
+	 	port map (
+			 hexa => s_gols_A,
+			 sseg => db_gols_A
+		);
+
+	 hex_gols_B: hex7seg
+	 	port map (
+			 hexa => s_gols_B,
+			 sseg => db_gols_B
+		);
+
+	 hex_estado: hex7seg
+	 	port map (
+			 hexa => s_db_estado,
+			 sseg => db_estado
+		);
+		
+		trigger <= s_trigger;
+		s_echo <= echo;
+		
+		db_echo <= s_echo;
+		db_trigger <= s_trigger;
+		
 
     db_fim_preparacao  <= s_fim_preparacao;
     db_fim_transmissao <= s_fim_transmissao;

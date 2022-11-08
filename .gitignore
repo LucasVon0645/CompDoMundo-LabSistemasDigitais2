@@ -4,6 +4,7 @@ output_files
 work
 *.bak
 *.qws
+*.qdf
 *.cf
 *.mti
 *.wlf
