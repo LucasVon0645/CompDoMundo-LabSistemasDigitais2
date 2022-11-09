@@ -30,6 +30,7 @@ end entity;
 
 architecture fsm_arch of unidade_controle is
     type tipo_estado is (inicial,
+                         transmite_inicio,
                          espera_partida,
                          reset_componentes,
                          transmite_preparacao,
@@ -57,13 +58,15 @@ begin
     process (Eatual, iniciar, fim_preparacao, bater, fim_penalti, fim_jogo, fim_transmissao) 
     begin
         case Eatual is
-            when inicial => if fim_transmissao = '1' then Eprox <= espera_partida;
-                            else Eprox <= inicial;
-                            end if;
+            when inicial  =>  Eprox <= transmite_inicio;
 
-            when espera_partida => if iniciar = '1' then Eprox <= reset_componentes;
-                                   else Eprox <= espera_partida;
-                                   end if;
+            when transmite_inicio =>  if fim_transmissao = '1' then Eprox <= espera_partida;
+                                      else Eprox <= transmite_inicio;
+                                      end if;
+
+            when espera_partida  =>  if iniciar = '1' then Eprox <= reset_componentes;
+                                     else Eprox <= espera_partida;
+                                     end if;
 
             when reset_componentes =>    Eprox <= transmite_preparacao;
 
