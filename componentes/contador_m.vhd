@@ -54,7 +54,7 @@ begin
         if IQ=M-1 then fim <= '1'; 
         else fim <= '0'; 
         end if;
-	    
+        
         -- meio da contagem
         if IQ=M/2-1 then meio <= '1'; 
         else meio <= '0'; 

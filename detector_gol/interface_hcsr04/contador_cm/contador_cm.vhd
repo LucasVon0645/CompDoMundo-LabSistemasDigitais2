@@ -27,32 +27,32 @@ architecture contador_cm_arch of contador_cm is
             arredonda   : in  std_logic;
             zera_bcd    : out std_logic;
             conta_bcd   : out std_logic;
-		        zera_tick   : out std_logic;
-		        conta_tick  : out std_logic;
-		        pronto      : out std_logic;
+                zera_tick   : out std_logic;
+                conta_tick  : out std_logic;
+                pronto      : out std_logic;
             db_estado   : out std_logic_vector (2 downto 0)
         );
     end component;
 
-	  component contador_cm_fd is
+    component contador_cm_fd is
         port (
             clock             : in  std_logic;
             zera_bcd          : in  std_logic;
             conta_bcd         : in  std_logic;
-		        zera_tick         : in  std_logic;
-		        conta_tick        : in  std_logic;
-		        arredonda         : out std_logic;
-		        tick              : out std_logic;
-		        fim               : out std_logic;
-		        digito0           : out std_logic_vector(3 downto 0);
-		        digito1           : out std_logic_vector(3 downto 0);
-		        digito2           : out std_logic_vector(3 downto 0)
+            zera_tick         : in  std_logic;
+            conta_tick        : in  std_logic;
+            arredonda         : out std_logic;
+            tick              : out std_logic;
+            fim               : out std_logic;
+            digito0           : out std_logic_vector(3 downto 0);
+            digito1           : out std_logic_vector(3 downto 0);
+            digito2           : out std_logic_vector(3 downto 0)
         );
     end component;
 
     signal s_zera_bcd, s_conta_bcd   : std_logic;
     signal s_zera_tick, s_conta_tick : std_logic;
-	  signal s_tick, s_arredonda       : std_logic;
+    signal s_tick, s_arredonda       : std_logic;
 
 begin
 
@@ -80,10 +80,10 @@ begin
             conta_tick => s_conta_tick,
             arredonda  => s_arredonda,
             tick       => s_tick,
-			      fim        => fim,
-			      digito0    => digito0,
-			      digito1    => digito1,
-			      digito2    => digito2
+            fim        => fim,
+            digito0    => digito0,
+            digito1    => digito1,
+            digito2    => digito2
         );
 
 end architecture;

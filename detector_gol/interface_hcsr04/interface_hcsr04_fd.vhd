@@ -8,10 +8,10 @@ entity interface_hcsr04_fd is
         reset      : in  std_logic;
         pulso      : in  std_logic;
         zera       : in  std_logic;
-		registra   : in  std_logic;
-		gera       : in  std_logic;
+        registra   : in  std_logic;
+        gera       : in  std_logic;
         distancia  : out std_logic_vector(11 downto 0);
-		fim_medida : out std_logic;
+        fim_medida : out std_logic;
         trigger    : out std_logic
     );
 end entity;
@@ -30,7 +30,7 @@ architecture interface_hcsr04_fd_arch of interface_hcsr04_fd is
             Q      : out std_logic_vector (N-1 downto 0) 
         );
     end component;
-	 
+     
     component gerador_pulso is
         generic (
             largura: integer:= 25
@@ -60,7 +60,7 @@ architecture interface_hcsr04_fd_arch of interface_hcsr04_fd is
     end component;
 
     signal s_fim, s_pronto, s_clear        : std_logic;
-	  signal s_digitos_concatenados        : std_logic_vector(11 downto 0);
+    signal s_digitos_concatenados        : std_logic_vector(11 downto 0);
 
 begin
 
@@ -69,18 +69,18 @@ begin
             clock        => clock,
             reset        => zera,
             pulso        => pulso,
-			digito0      => s_digitos_concatenados(3 downto 0),
-			digito1      => s_digitos_concatenados(7 downto 4),
-			digito2      => s_digitos_concatenados(11 downto 8),
-			fim          => s_fim,
-			pronto       => s_pronto,
-			db_estado_cm => open
+            digito0      => s_digitos_concatenados(3 downto 0),
+            digito1      => s_digitos_concatenados(7 downto 4),
+            digito2      => s_digitos_concatenados(11 downto 8),
+            fim          => s_fim,
+            pronto       => s_pronto,
+            db_estado_cm => open
         );
-		
+        
     reg: registrador_n
-		    generic map (
-			      N => 12
-		    )
+            generic map (
+                  N => 12
+            )
         port map (
             clock  => clock,
             enable => registra,
@@ -95,14 +95,14 @@ begin
         )
         port map (
             clock  => clock,
-			      reset  => zera,
+            reset  => zera,
             gera   => gera,
             para   => '0',
-			      pronto => open,
-			      pulso  => trigger
+            pronto => open,
+            pulso  => trigger
         );
-		
-	 -- saida combinatoria
+        
+     -- saida combinatoria
     fim_medida <= s_fim or s_pronto;
     s_clear <= zera or reset;
 

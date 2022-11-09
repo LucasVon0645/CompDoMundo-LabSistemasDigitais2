@@ -10,9 +10,9 @@ entity contador_cm_uc is
         arredonda   : in  std_logic;
         zera_bcd    : out std_logic;
         conta_bcd   : out std_logic;
-		zera_tick   : out std_logic;
-		conta_tick  : out std_logic;
-		pronto      : out std_logic;
+        zera_tick   : out std_logic;
+        conta_tick  : out std_logic;
+        pronto      : out std_logic;
         db_estado   : out std_logic_vector (2 downto 0)
     );
 end entity;
@@ -46,19 +46,19 @@ begin
             when inicial =>       if pulso='1' then Eprox <= conta;
                                   else              Eprox <= inicial;
                                   end if;
-									 
-	        when conta =>         if    pulso='1' and tick='1'      then Eprox <= atualizaDist;
-			                      elsif pulso='0' and arredonda='1' then Eprox <= arredondaDist;
-		                          elsif pulso='0' and arredonda='0' then Eprox <= final;
+                                     
+            when conta =>         if    pulso='1' and tick='1'      then Eprox <= atualizaDist;
+                                  elsif pulso='0' and arredonda='1' then Eprox <= arredondaDist;
+                                  elsif pulso='0' and arredonda='0' then Eprox <= final;
                                   else                                   Eprox <= conta;
                                   end if;
-							 
-	        when atualizaDist =>  if    pulso='1'                   then Eprox <= conta;
-			                      elsif pulso='0' and arredonda='1' then Eprox <= arredondaDist;
-		                          else                                   Eprox <= final;
+                             
+            when atualizaDist =>  if    pulso='1'                   then Eprox <= conta;
+                                  elsif pulso='0' and arredonda='1' then Eprox <= arredondaDist;
+                                  else                                   Eprox <= final;
                                   end if;				
-									
-	        when arredondaDist => Eprox <= final;
+                                    
+            when arredondaDist => Eprox <= final;
 
             when final =>         Eprox <= inicial;
 
@@ -70,10 +70,10 @@ begin
     -- logica de saida (Moore)
     with Eatual select
         zera_tick <= '1' when inicial, '0' when others;
-		
+        
     with Eatual select
         zera_bcd <= '1' when inicial, '0' when others;
-		
+        
     with Eatual select
         conta_tick <= '1' when conta | atualizaDist, '0' when others;
 

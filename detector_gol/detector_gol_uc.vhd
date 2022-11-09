@@ -61,8 +61,8 @@ begin
                                     end if;
 
         when mede  =>               if fim_timeout = '1' then Eprox <= final_sem_gol;
-		                              else Eprox <= aguarda_medicao;
-												end if;
+                                      else Eprox <= aguarda_medicao;
+                                                end if;
 
         when aguarda_medicao =>  if fim_timeout = '1' then Eprox <= final_sem_gol;
                                     elsif pronto_med = '1' then Eprox <= compara;
@@ -75,8 +75,8 @@ begin
                             end if;
 
         when nova_medicao =>      if fim_timeout = '1' then Eprox <= final_sem_gol;
-											 else Eprox <= aguarda_para_medir;
-											 end if;
+                                             else Eprox <= aguarda_para_medir;
+                                             end if;
         
         when final_sem_gol =>     Eprox <= inicial;
 
@@ -126,7 +126,7 @@ begin
                      "0101" when compara,
                      "0110" when nova_medicao,
                      "0111" when final_sem_gol,
-					 "1000" when final_com_gol,
+                     "1000" when final_com_gol,
                      "1111" when others;
 
 end architecture fsm_arch;

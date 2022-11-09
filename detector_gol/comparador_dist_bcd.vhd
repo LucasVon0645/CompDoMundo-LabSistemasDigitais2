@@ -5,9 +5,9 @@ use ieee.numeric_std.all;
 entity comparador_dist_bcd is
     port (
         dist_1 : in  std_logic_vector(11 downto 0);
-		dist_2 : in  std_logic_vector(11 downto 0);
-		menor  : out std_logic;
-		igual  : out std_logic
+        dist_2 : in  std_logic_vector(11 downto 0);
+        menor  : out std_logic;
+        igual  : out std_logic
     );
 end entity comparador_dist_bcd;
 

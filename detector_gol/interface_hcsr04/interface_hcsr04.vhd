@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 entity interface_hcsr04 is
     port (
         clock     : in  std_logic;
-		reset     : in  std_logic;
+        reset     : in  std_logic;
         echo      : in  std_logic;
         medir     : in  std_logic;
         medida    : out std_logic_vector(11 downto 0);
@@ -33,17 +33,17 @@ architecture interface_hcsr04_arch of interface_hcsr04 is
             db_estado  : out std_logic_vector(3 downto 0) 
         );
     end component;
-	 
+     
     component interface_hcsr04_fd is
         port (
             clock      : in  std_logic;
-			reset      : in  std_logic;
+            reset      : in  std_logic;
             pulso      : in  std_logic;
             zera       : in  std_logic;
-		    registra   : in  std_logic;
-		    gera       : in  std_logic;
+            registra   : in  std_logic;
+            gera       : in  std_logic;
             distancia  : out std_logic_vector(11 downto 0);
-		    fim_medida : out std_logic;
+            fim_medida : out std_logic;
             trigger    : out std_logic
         );
     end component;
@@ -65,18 +65,18 @@ begin
             pronto     => pronto,
             db_estado  => db_estado
         );
-		
+        
     FD: interface_hcsr04_fd
         port map (
             clock     => clock,
-			reset     => reset,
+            reset     => reset,
             pulso     => echo,
             zera      => s_zera,
             gera      => s_gera,
             registra  => s_registra,
-			distancia => medida,
-			fim_medida => s_fim_medida,
-			trigger   => trigger
+            distancia => medida,
+            fim_medida => s_fim_medida,
+            trigger   => trigger
         );
 
     db_medir <= medir;

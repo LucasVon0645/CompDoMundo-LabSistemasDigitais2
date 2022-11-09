@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 entity detector_gol_fd is
     port (
         clock               : in  std_logic;
-		reset               : in  std_logic;
+        reset               : in  std_logic;
         mensurar            : in  std_logic;
         zera_interface      : in  std_logic;
         zera_timeout        : in  std_logic;
@@ -60,9 +60,9 @@ architecture arch of detector_gol_fd is
             igual  : out std_logic
         );
     end component;
-	 
-	 signal s_zera_interface : std_logic;
-	 signal s_medida : std_logic_vector(11 downto 0);
+     
+     signal s_zera_interface : std_logic;
+     signal s_medida : std_logic_vector(11 downto 0);
 
 begin
 

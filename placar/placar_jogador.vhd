@@ -7,39 +7,39 @@ entity placar_jogador is
         -- entradas
         clock               : in  std_logic;
         reset               : in  std_logic;
-		atualiza_jogada     : in  std_logic;
-		novo_gol            : in  std_logic;
+        atualiza_jogada     : in  std_logic;
+        novo_gol            : in  std_logic;
         -- saidas
-		jogada_atual        : out std_logic_vector (3 downto 0);
+        jogada_atual        : out std_logic_vector (3 downto 0);
         gols                : out std_logic_vector (3 downto 0)
     );
 end entity;
 
 architecture jogador_arch of placar_jogador is
 
-	component contador_m is
-		generic (
-			constant M : integer := 50;  
-			constant N : integer := 6 
-		);
-		port (
-			clock : in  std_logic;
-			zera  : in  std_logic;
-			conta : in  std_logic;
-			Q     : out std_logic_vector (N-1 downto 0);
-			fim   : out std_logic;
-			meio  : out std_logic
-		);
-	end component;
+    component contador_m is
+        generic (
+            constant M : integer := 50;  
+            constant N : integer := 6 
+        );
+        port (
+            clock : in  std_logic;
+            zera  : in  std_logic;
+            conta : in  std_logic;
+            Q     : out std_logic_vector (N-1 downto 0);
+            fim   : out std_logic;
+            meio  : out std_logic
+        );
+    end component;
 
 begin
 
 
     contador_jogadas: contador_m
-		  generic map (
-				M => 16,
-				N => 4
-		  )
+        generic map (
+                M => 16,
+                N => 4
+        )
         port map (
             clock   => clock,
             zera    => reset,
@@ -48,12 +48,12 @@ begin
             fim     => open,
             meio    => open
         );
-		  
-	 contador_gols: contador_m
-		  generic map (
-				M => 16,
-				N => 4
-		  )
+          
+    contador_gols: contador_m
+        generic map (
+            M => 16,
+            N => 4
+        )
         port map (
             clock   => clock,
             zera    => reset,

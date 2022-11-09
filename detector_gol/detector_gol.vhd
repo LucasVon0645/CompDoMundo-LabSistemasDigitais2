@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 entity detector_gol is
     port (
         clock     : in  std_logic;
-		reset     : in  std_logic;
+        reset     : in  std_logic;
         echo      : in  std_logic;
         verificar : in  std_logic;
         gol       : out std_logic;
@@ -91,7 +91,5 @@ architecture arch of detector_gol is
             gol                 => gol,
             db_estado           => db_estado
         );
-
-
     
 end architecture arch;
