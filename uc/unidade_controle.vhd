@@ -129,7 +129,7 @@ begin
         reposiciona_goleiro <= '1' when preparacao, '0' when others;
     
     with Eatual select 
-        transmite <= '1' when inicial | transmite_preparacao | transmite_batedor | transmissao,
+        transmite <= '1' when transmite_inicio | transmite_preparacao | transmite_batedor | transmissao,
                      '0' when others;
 
     with Eatual select 
