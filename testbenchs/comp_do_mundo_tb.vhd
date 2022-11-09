@@ -27,7 +27,12 @@ architecture tb of comp_do_mundo_tb is
             db_fim_preparacao  : out std_logic;
             db_fim_transmissao : out std_logic;
             db_ganhador        : out std_logic;
-            db_estado          : out std_logic_vector (3 downto 0)
+            db_gols_A          : out std_logic_vector (6 downto 0);
+            db_gols_B          : out std_logic_vector (6 downto 0);
+            db_rodada          : out std_logic_vector (6 downto 0);
+            db_trigger         : out std_logic;
+            db_echo            : out std_logic;
+            db_estado          : out std_logic_vector (6 downto 0)
         );
     end component;
     
@@ -151,7 +156,12 @@ begin
             db_fim_preparacao  => fim_preparacao_out,
             db_fim_transmissao => fim_transmissao_out,
             db_ganhador        => open,
-            db_estado          => open
+            db_estado          => open,
+            db_gols_A          => open,
+            db_gols_B          => open,
+            db_rodada          => open,
+            db_trigger         => open,
+            db_echo            => open
         );
 
     -- geracao dos sinais de entrada (estimulos)

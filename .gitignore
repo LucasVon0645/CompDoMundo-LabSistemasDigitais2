@@ -2,10 +2,12 @@
 db
 incremental_db
 output_files
+simulation
 work
 *.bak
 *.qws
 *.qdf
 *.cf
 *.mti
-*.wlf
+*.rpt
+c5_pin_model_dump.txt
