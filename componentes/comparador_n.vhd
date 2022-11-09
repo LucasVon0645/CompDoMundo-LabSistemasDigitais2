@@ -22,7 +22,7 @@ begin
             A_gt_B <= '1';
             A_lt_B <= '0';
             A_eq_B <= '0';
-        elsif A = B then
+        elsif A < B then
             A_gt_B <= '0';
             A_lt_B <= '1';
             A_eq_B <= '0';
