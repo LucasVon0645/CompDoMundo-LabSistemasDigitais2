@@ -21,12 +21,13 @@ entity comp_do_mundo is
         -- depuracao
         db_fim_preparacao  : out std_logic;
         db_fim_transmissao : out std_logic;
-        db_ganhador        : out std_logic;
+        db_trigger         : out std_logic;
+        db_echo            : out std_logic;
+        db_traco           : out std_logic;
         db_gols_A          : out std_logic_vector (6 downto 0);
         db_gols_B          : out std_logic_vector (6 downto 0);
         db_rodada          : out std_logic_vector (6 downto 0);
-        db_trigger         : out std_logic;
-        db_echo            : out std_logic;
+        db_ganhador        : out std_logic_vector (6 downto 0);
         db_estado          : out std_logic_vector (6 downto 0)
     );
 end entity;
@@ -139,11 +140,23 @@ architecture arch_comp_do_mundo of comp_do_mundo is
             db_estado           : out std_logic_vector (3 downto 0)
         );
     end component;
-     
-    component hex7seg is
+
+    component construtor_displays is
         port (
-            hexa : in  std_logic_vector(3 downto 0);
-            sseg : out std_logic_vector(6 downto 0)
+            -- entradas
+            gols_A             : in  std_logic_vector(3 downto 0);
+            gols_B             : in  std_logic_vector(3 downto 0);
+            rodada             : in  std_logic_vector(3 downto 0);
+            estado_uc          : in  std_logic_vector(3 downto 0);
+            fim_jogo           : in  std_logic;
+            ganhador           : in  std_logic;
+            -- saidas
+            gols_A_display     : out std_logic_vector(6 downto 0);
+            gols_B_display     : out std_logic_vector(6 downto 0);
+            rodada_display     : out std_logic_vector(6 downto 0);
+            estado_uc_display  : out std_logic_vector(6 downto 0);
+            ganhador_display   : out std_logic_vector(6 downto 0);
+            traco              : out std_logic
         );
     end component;
     
@@ -163,11 +176,10 @@ architecture arch_comp_do_mundo of comp_do_mundo is
     signal s_reset_gol, s_gol, s_fim_jogo                              : std_logic;
     signal s_fim_penalti, s_verifica_gol                               : std_logic;
     signal s_reset_goleiro, s_posiciona_goleiro, s_reposiciona_goleiro : std_logic;
-    signal s_jogador                                                   : std_logic;
+    signal s_jogador, s_ganhador                                       : std_logic;
     signal s_transmite, s_reset_transmissor, s_fim_transmissao         : std_logic;
-
     signal s_transcode                               : std_logic_vector (2 downto 0);
-    signal s_gols_A, s_gols_B, s_rodada, s_db_estado : std_logic_vector (3 downto 0);
+    signal s_gols_A, s_gols_B, s_rodada, s_estado_uc : std_logic_vector (3 downto 0);
   
 begin
 
@@ -237,7 +249,7 @@ begin
             gols_B            => s_gols_B,
             rodada            => s_rodada,
             jogador           => s_jogador,
-            ganhador          => db_ganhador,
+            ganhador          => s_ganhador,
             fim_jogo          => s_fim_jogo
         );
 
@@ -279,40 +291,35 @@ begin
             posiciona_goleiro   => s_posiciona_goleiro,
             verifica_gol        => s_verifica_gol,
             transcode           => s_transcode,
-            db_estado           => s_db_estado
+            db_estado           => s_estado_uc
         );
-     
-    hex_rodadas: hex7seg
+
+    construtor_7seg: construtor_displays
         port map (
-            hexa => s_rodada,
-            sseg => db_rodada
+            -- entradas
+            gols_A             => s_gols_A,
+            gols_B             => s_gols_B,
+            rodada             => s_rodada,
+            estado_uc          => s_estado_uc,
+            fim_jogo           => s_fim_jogo,
+            ganhador           => s_ganhador,
+            -- saidas
+            gols_A_display     => db_gols_A,
+            gols_B_display     => db_gols_B,
+            rodada_display     => db_rodada,
+            estado_uc_display  => db_estado,
+            ganhador_display   => db_ganhador,
+            traco              => db_traco -- puramente estetico
         );
+
         
-    hex_gols_A: hex7seg
-        port map (
-            hexa => s_gols_A,
-            sseg => db_gols_A
-        );
-
-    hex_gols_B: hex7seg
-        port map (
-            hexa => s_gols_B,
-            sseg => db_gols_B
-        );
-
-    hex_estado: hex7seg
-        port map (
-            hexa => s_db_estado,
-            sseg => db_estado
-        );
-
-
+    -- Sinais internos
     trigger <= s_trigger;
     s_echo  <= echo;
         
+    -- Sinais de depuracao
     db_echo    <= s_echo;
-    db_trigger <= s_trigger;
-        
+    db_trigger <= s_trigger;  
     db_fim_preparacao  <= s_fim_preparacao;
     db_fim_transmissao <= s_fim_transmissao;
   
