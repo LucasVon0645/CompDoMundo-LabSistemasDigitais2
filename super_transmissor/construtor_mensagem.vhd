@@ -9,7 +9,7 @@ entity construtor_mensagem is
         reset              : in std_logic;
         fim_caracter       : in std_logic;
         -- dados
-        header             : in  std_logic_vector(1 downto 0);
+        header             : in  std_logic_vector(2 downto 0);
         gols_A             : in  std_logic_vector(3 downto 0);
         gols_B             : in  std_logic_vector(3 downto 0);
         rodada             : in  std_logic_vector(3 downto 0);
@@ -50,16 +50,16 @@ architecture construtor_arch of construtor_mensagem is
     signal corpo_mensagem                     : std_logic_vector(8 downto 0);
     signal caracter_0_ascii, caracter_1_ascii : std_logic_vector(6 downto 0);
     signal caracter_2_ascii, caracter_3_ascii : std_logic_vector(6 downto 0);
-    signal s_hex_header, s_hex_c1             :std_logic_vector (3 downto 0);
+    signal s_hex_header, s_hex_c1             : std_logic_vector(3 downto 0);
 
 begin
 
     with header select
-        corpo_mensagem <= (jogador & rodada & "0000")         when "01",
-                          (direcao_batedor & gols_A & gols_B) when "11",
+        corpo_mensagem <= (jogador & rodada & "0000")         when "001",
+                          (direcao_batedor & gols_A & gols_B) when "011" | "100",
                           (others => '0')                     when others;
 
-    s_hex_header <= "00" & header;
+    s_hex_header <= '0' & header;
 
     conv_header: hex2ascii
         port map(

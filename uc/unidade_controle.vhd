@@ -23,7 +23,7 @@ entity unidade_controle is
         habilita_batedor    : out std_logic;
         posiciona_goleiro   : out std_logic;
         verifica_gol        : out std_logic;
-        transcode           : out std_logic_vector (1 downto 0);
+        transcode           : out std_logic_vector (2 downto 0);
         db_estado           : out std_logic_vector (3 downto 0)
     );
 end entity;
@@ -40,7 +40,8 @@ architecture fsm_arch of unidade_controle is
                          chute,
                          gol,
                          placar,
-                         transmissao);
+                         transmite_rodada,
+                         transmite_resultado);
     signal Eatual, Eprox: tipo_estado;
 begin
 
@@ -92,11 +93,16 @@ begin
                                          else Eprox <= gol;
                                          end if;
 
-            when placar =>               Eprox <= transmissao;
+            when placar =>               if fim_jogo = '1' then Eprox <= transmite_resultado;
+                                         else Eprox <= transmite_rodada;
+                                         end if;
 
-            when transmissao =>          if fim_transmissao = '0' then Eprox <= transmissao;
-                                         elsif fim_jogo = '1' then Eprox <= espera_partida;
-                                         else Eprox <= transmite_preparacao;
+            when transmite_rodada    =>  if fim_transmissao = '1' then Eprox <= transmite_preparacao;
+                                         else Eprox <= transmite_rodada;
+                                         end if;
+
+            when transmite_resultado =>  if fim_transmissao = '1' then Eprox <= espera_partida;
+                                         else Eprox <= transmite_resultado;
                                          end if;
 
             when others =>              Eprox <= inicial;
@@ -129,7 +135,8 @@ begin
         reposiciona_goleiro <= '1' when preparacao, '0' when others;
     
     with Eatual select 
-        transmite <= '1' when transmite_inicio | transmite_preparacao | transmite_batedor | transmissao,
+        transmite <= '1' when transmite_inicio | transmite_preparacao |
+                              transmite_batedor | transmite_rodada | transmite_resultado,
                      '0' when others;
 
     with Eatual select 
@@ -143,25 +150,28 @@ begin
     
 
     with Eatual select
-        transcode <= "00" when inicial, 
-                     "01" when transmite_preparacao,
-                     "10" when transmite_batedor,
-                     "11" when transmissao,
-                     "00" when others;
+        transcode <= "000" when transmite_inicio, 
+                     "001" when transmite_preparacao,
+                     "010" when transmite_batedor,
+                     "011" when transmite_rodada,
+                     "100" when transmite_resultado,
+                     "111" when others;
 
     -- db_estado
     with Eatual select
         db_estado <= "0000" when inicial,
-                     "0001" when espera_partida,
-                     "0010" when reset_componentes,
-                     "0011" when transmite_preparacao,
-                     "0100" when preparacao,
-                     "0101" when transmite_batedor,
-                     "0110" when batedor,
-                     "0111" when chute,
-                     "1000" when gol,
-                     "1001" when placar,
-                     "1010" when transmissao,
+                     "0001" when transmite_inicio,
+                     "0010" when espera_partida,
+                     "0011" when reset_componentes,
+                     "0100" when transmite_preparacao,
+                     "0101" when preparacao,
+                     "0110" when transmite_batedor,
+                     "0111" when batedor,
+                     "1000" when chute,
+                     "1001" when gol,
+                     "1010" when placar,
+                     "1011" when transmite_rodada,
+                     "1100" when transmite_resultado,
                      "1111" when others;
 
 end architecture;

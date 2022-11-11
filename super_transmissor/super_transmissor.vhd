@@ -9,7 +9,7 @@ entity super_transmissor is
         reset              : in std_logic;
         transmite          : in std_logic;
         -- dados
-        transcode          : in  std_logic_vector(1 downto 0);
+        transcode          : in  std_logic_vector(2 downto 0);
         gols_A             : in  std_logic_vector(3 downto 0);
         gols_B             : in  std_logic_vector(3 downto 0);
         rodada             : in  std_logic_vector(3 downto 0);
@@ -42,7 +42,7 @@ architecture super_arch of super_transmissor is
             clock              : in std_logic;
             reset              : in std_logic;
             fim_caracter       : in std_logic;
-            header             : in  std_logic_vector(1 downto 0);
+            header             : in  std_logic_vector(2 downto 0);
             gols_A             : in  std_logic_vector(3 downto 0);
             gols_B             : in  std_logic_vector(3 downto 0);
             rodada             : in  std_logic_vector(3 downto 0);

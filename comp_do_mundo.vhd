@@ -102,7 +102,7 @@ architecture arch_comp_do_mundo of comp_do_mundo is
             clock              : in std_logic;
             reset              : in std_logic;
             transmite          : in std_logic;
-            transcode          : in  std_logic_vector(1 downto 0);
+            transcode          : in  std_logic_vector(2 downto 0);
             gols_A             : in  std_logic_vector(3 downto 0);
             gols_B             : in  std_logic_vector(3 downto 0);
             rodada             : in  std_logic_vector(3 downto 0);
@@ -135,7 +135,7 @@ architecture arch_comp_do_mundo of comp_do_mundo is
             habilita_batedor    : out std_logic;
             posiciona_goleiro   : out std_logic;
             verifica_gol        : out std_logic;
-            transcode           : out std_logic_vector (1 downto 0);
+            transcode           : out std_logic_vector (2 downto 0);
             db_estado           : out std_logic_vector (3 downto 0)
         );
     end component;
@@ -165,7 +165,8 @@ architecture arch_comp_do_mundo of comp_do_mundo is
     signal s_reset_goleiro, s_posiciona_goleiro, s_reposiciona_goleiro : std_logic;
     signal s_jogador                                                   : std_logic;
     signal s_transmite, s_reset_transmissor, s_fim_transmissao         : std_logic;
-    signal s_transcode                               : std_logic_vector (1 downto 0);
+
+    signal s_transcode                               : std_logic_vector (2 downto 0);
     signal s_gols_A, s_gols_B, s_rodada, s_db_estado : std_logic_vector (3 downto 0);
   
 begin
