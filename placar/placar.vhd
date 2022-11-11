@@ -66,19 +66,19 @@ architecture placar_arch of placar is
         );
     end component;
     
-    signal jogada_atual_A, jogada_atual_B       : std_logic_vector(3 downto 0);
-    signal gols_atuais_A, gols_atuais_B         : std_logic_vector(3 downto 0);
-    signal diferenca_entre_gols                 : std_logic_vector(3 downto 0);
-    signal subtraendo_rodadas                   : std_logic_vector(3 downto 0);
-    signal jogadas_restantes                    : std_logic_vector(3 downto 0);
-    signal rodada_atual                         : std_logic_vector(3 downto 0);
-    signal novos_gols                           : std_logic_vector(1 downto 0);
-    signal atualiza_jogadas                     : std_logic_vector(1 downto 0);
-    signal jogador_atual                        : std_logic;
-    signal perdedor_atual                       : std_logic;
-    signal empatado                             : std_logic;
-    signal mata_a_mata                          : std_logic;
-    signal fim_jogo_padrao, fim_jogo_mata_mata  : std_logic;
+    signal s_jogada_atual_A, s_jogada_atual_B       : std_logic_vector(3 downto 0);
+    signal s_gols_atuais_A, s_gols_atuais_B         : std_logic_vector(3 downto 0);
+    signal s_diferenca_entre_gols                   : std_logic_vector(3 downto 0);
+    signal s_subtraendo_rodadas                     : std_logic_vector(3 downto 0);
+    signal s_jogadas_restantes                      : std_logic_vector(3 downto 0);
+    signal s_rodada_atual                           : std_logic_vector(3 downto 0);
+    signal s_novos_gols                             : std_logic_vector(1 downto 0);
+    signal s_atualiza_jogadas                       : std_logic_vector(1 downto 0);
+    signal s_jogador_atual                          : std_logic;
+    signal s_perdedor_atual                         : std_logic;
+    signal s_empatado                               : std_logic;
+    signal s_mata_a_mata                            : std_logic;
+    signal s_fim_jogo_padrao, s_fim_jogo_mata_mata  : std_logic;
 
 begin
 
@@ -86,10 +86,10 @@ begin
         port map (
             clock           => clock,
             reset           => reset,
-            atualiza_jogada => atualiza_jogadas(0),
-            novo_gol        => novos_gols(0),
-            jogada_atual    => jogada_atual_A,
-            gols            => gols_atuais_A
+            atualiza_jogada => s_atualiza_jogadas(0),
+            novo_gol        => s_novos_gols(0),
+            jogada_atual    => s_jogada_atual_A,
+            gols            => s_gols_atuais_A
         );
             
             
@@ -97,10 +97,10 @@ begin
         port map (
             clock           => clock,
             reset           => reset,
-            atualiza_jogada => atualiza_jogadas(1),
-            novo_gol        => novos_gols(1),
-            jogada_atual    => jogada_atual_B,
-            gols            => gols_atuais_B
+            atualiza_jogada => s_atualiza_jogadas(1),
+            novo_gol        => s_novos_gols(1),
+            jogada_atual    => s_jogada_atual_B,
+            gols            => s_gols_atuais_B
         );
      
     subtractor_diff_gols: subtractor_abs_n
@@ -108,9 +108,9 @@ begin
             N => 4
         )
         port map (
-            A => gols_atuais_A,
-            B => gols_atuais_B,
-            res => diferenca_entre_gols
+            A   => s_gols_atuais_A,
+            B   => s_gols_atuais_B,
+            res => s_diferenca_entre_gols
         );
      
      
@@ -119,14 +119,14 @@ begin
             N => 4
         )
         port map (
-            A => "0101",
-            B => subtraendo_rodadas,
-            res => jogadas_restantes
+            A   => "0101",
+            B   => s_subtraendo_rodadas,
+            res => s_jogadas_restantes
         );
         
-    with perdedor_atual select
-        subtraendo_rodadas <= jogada_atual_B when '1',
-                              jogada_atual_A when others;
+    with s_perdedor_atual select
+        s_subtraendo_rodadas <= s_jogada_atual_B when '1',
+                                s_jogada_atual_A when others;
             
             
     comparador_perdedor_atual: comparador_n
@@ -134,11 +134,11 @@ begin
             N => 4
         )
         port map (
-            A   => gols_atuais_A,
-            B   => gols_atuais_B,
-            A_gt_B   => perdedor_atual,
+            A        => s_gols_atuais_A,
+            B        => s_gols_atuais_B,
+            A_gt_B   => s_perdedor_atual,
             A_lt_B   => ganhador,
-            A_eq_B   => empatado
+            A_eq_B   => s_empatado
         );
           
           
@@ -147,9 +147,9 @@ begin
             N => 4
         )
         port map (
-            A        => jogada_atual_A,
+            A        => s_jogada_atual_A,
             B        => "0101",
-            A_gt_B   => mata_a_mata,
+            A_gt_B   => s_mata_a_mata,
             A_lt_B   => open,
             A_eq_B   => open
         );
@@ -160,9 +160,9 @@ begin
             N => 4
         )
         port map (
-            A        => diferenca_entre_gols,
-            B        => jogadas_restantes,
-            A_gt_B   => fim_jogo_padrao,
+            A        => s_diferenca_entre_gols,
+            B        => s_jogadas_restantes,
+            A_gt_B   => s_fim_jogo_padrao,
             A_lt_B   => open,
             A_eq_B   => open
         );
@@ -170,31 +170,30 @@ begin
     demux_gol: demux_1x2
         port map (
             I   => gol,
-            S   => jogador_atual,
-            O   => novos_gols
+            S   => s_jogador_atual,
+            O   => s_novos_gols
         );
           
     demux_rodada: demux_1x2
         port map (
             I   => atualiza_placar,
-            S   => jogador_atual,
-            O   => atualiza_jogadas
+            S   => s_jogador_atual,
+            O   => s_atualiza_jogadas
         );
           
-          
      -- sinais intermediarios
-    jogador_atual <= jogada_atual_A(0) xor jogada_atual_B(0);
-    fim_jogo_mata_mata <= not (empatado or jogador_atual);
-    rodada_atual <= jogada_atual_A;
+    s_jogador_atual      <= s_jogada_atual_A(0) xor s_jogada_atual_B(0);
+    s_fim_jogo_mata_mata <= not (s_empatado or s_jogador_atual);
+    s_rodada_atual       <= s_jogada_atual_A;
      
     -- saidas
-    gols_A  <= gols_atuais_A;
-    gols_B  <= gols_atuais_B;
-    rodada  <= rodada_atual;
-    jogador <= jogador_atual;
+    gols_A   <= s_gols_atuais_A;
+    gols_B   <= s_gols_atuais_B;
+    rodada   <= s_rodada_atual;
+    jogador  <= s_jogador_atual;
 
-    with mata_a_mata select
-        fim_jogo <= fim_jogo_mata_mata when '1',
-                    fim_jogo_padrao when others;
+    with s_mata_a_mata select
+        fim_jogo   <= s_fim_jogo_mata_mata when '1',
+                      s_fim_jogo_padrao when others;
 
 end architecture;
