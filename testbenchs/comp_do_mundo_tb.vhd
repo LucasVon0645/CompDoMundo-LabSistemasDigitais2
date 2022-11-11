@@ -130,7 +130,7 @@ architecture tb of comp_do_mundo_tb is
         ( 5, 6, '1', "01100101", 647, '1', "01101010", 118), -- A: 3, B: 4 - B faz gol = B vence
 
 
-        -- Testes adicionais: mata a mata
+        -- Testes adicionais: mata-mata
         ( 6, 1, '0', "01100101", 118, '1', "01100101", 647), -- A: 1, B: 0 - A faz gol
         ( 6, 2, '0', "01101010", 647, '0', "01100011", 118), -- A: 1, B: 1 - B faz gol
         ( 6, 3, '1', "01100110", 118, '1', "01100101", 647), -- A: 2, B: 1 - A faz gol
