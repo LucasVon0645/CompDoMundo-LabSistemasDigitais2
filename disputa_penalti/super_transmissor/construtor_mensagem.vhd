@@ -44,34 +44,35 @@ architecture construtor_arch of construtor_mensagem is
             ascii  : out std_logic_vector (6 downto 0)
         );
     end component;
+    
+    constant caracter_terminador_ascii        : std_logic_vector(6 downto 0) := "0001010"; -- LF
 
     signal s_fim_mensagem, s_conta            : std_logic;
-    signal sel_caracter                       : std_logic_vector(2 downto 0);
-    signal corpo_mensagem                     : std_logic_vector(8 downto 0);
-    signal caracter_0_ascii, caracter_1_ascii : std_logic_vector(6 downto 0);
-    signal caracter_2_ascii, caracter_3_ascii : std_logic_vector(6 downto 0);
-    signal s_hex_header, s_hex_c1             : std_logic_vector(3 downto 0);
+    signal sel_caracter                       : std_logic_vector( 2 downto 0);
+    signal corpo_mensagem, corpo_1, corpo_2   : std_logic_vector(11 downto 0);
+    signal caracter_0_ascii, caracter_1_ascii : std_logic_vector( 6 downto 0);
+    signal caracter_2_ascii, caracter_3_ascii : std_logic_vector( 6 downto 0);
+    signal s_hex_header                       : std_logic_vector( 3 downto 0);
 
 begin
 
     with header select
-        corpo_mensagem <= (jogador & rodada & "0000")         when "001",
-                          (direcao_batedor & gols_A & gols_B) when "011" | "100",
-                          (others => '0')                     when others;
-
-    s_hex_header <= '0' & header;
+        corpo_mensagem <= corpo_1          when "001",
+                          corpo_2          when "011" | "100",
+                          (others => '0')  when others;
+    corpo_1 <= ("101" & jogador & rodada & "0000");
+    corpo_2 <= ("11" & direcao_batedor & not (direcao_batedor) & gols_A & gols_B);
 
     conv_header: hex2ascii
         port map(
             hex    => s_hex_header,
             ascii  => caracter_0_ascii
         );
-
-    s_hex_c1 <= "000" & corpo_mensagem(8);
+    s_hex_header <= '0' & header;
 
     conv_caracter_1: hex2ascii
         port map(
-            hex    => s_hex_c1,
+            hex    => corpo_mensagem(11 downto 8),
             ascii  => caracter_1_ascii
         );
 
@@ -88,17 +89,18 @@ begin
         );
 
     with sel_caracter select
-        caracter_trans <= caracter_0_ascii when "000",
-                          caracter_1_ascii when "001",
-                          caracter_2_ascii when "010",
-                          caracter_3_ascii when "011",
-                          caracter_0_ascii when others;
+        caracter_trans <= caracter_0_ascii          when "000",
+                          caracter_1_ascii          when "001",
+                          caracter_2_ascii          when "010",
+                          caracter_3_ascii          when "011",
+                          caracter_terminador_ascii when "100",
+                          caracter_0_ascii          when others;
 
     s_conta <= fim_caracter or s_fim_mensagem;
 
     conta_mensagem: contador_m
         generic map (
-            M => 5,
+            M => 6,
             N => 3 
         )
         port map (

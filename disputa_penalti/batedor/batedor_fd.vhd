@@ -13,7 +13,7 @@ entity batedor_fd is
         zera_timer       : in  std_logic;
         conta_timer      : in  std_logic;
         pwm_direita      : out std_logic;
-		pwm_esquerda     : out std_logic;
+        pwm_esquerda     : out std_logic;
         fim_timer        : out std_logic
     );
 end batedor_fd;
@@ -53,40 +53,40 @@ architecture arch_batedor_fd of batedor_fd is
 begin
 
     servomotor_direita: controle_servo
-    port map (
-        clock      => clock,
-        reset      => reset,
-        posicao    => posicao_direita,
-        pwm        => pwm_direita,
-        db_reset   => open,
-        db_pwm     => open,
-        db_posicao => open
-    );
+        port map (
+            clock      => clock,
+            reset      => reset,
+            posicao    => posicao_direita,
+            pwm        => pwm_direita,
+            db_reset   => open,
+            db_pwm     => open,
+            db_posicao => open
+        );
 
     servomotor_esquerda: controle_servo
-    port map (
-        clock      => clock,
-        reset      => reset,
-        posicao    => posicao_esquerda,
-        pwm        => pwm_esquerda,
-        db_reset   => open,
-        db_pwm     => open,
-        db_posicao => open
-    );
+        port map (
+            clock      => clock,
+            reset      => reset,
+            posicao    => posicao_esquerda,
+            pwm        => pwm_esquerda,
+            db_reset   => open,
+            db_pwm     => open,
+            db_posicao => open
+        );
 
     timer: contador_m
-    generic map (
-        M => 100000000, -- 2 seg (experimento pratico)
-        -- M => 1000, -- 20 usegs (simulacao testbench)
-        N => 27
-    )
-    port map (
-        clock => clock,
-        zera  => zera_timer,
-        conta => conta_timer,
-        Q     => open,
-        fim   => fim_timer,
-        meio  => open
-    );
+        generic map (
+            M => 100000000, -- 2 seg (experimento pratico)
+            -- M => 1000, -- 20 usegs (simulacao testbench)
+            N => 27
+        )
+        port map (
+            clock => clock,
+            zera  => zera_timer,
+            conta => conta_timer,
+            Q     => open,
+            fim   => fim_timer,
+            meio  => open
+        );
   
 end architecture;
