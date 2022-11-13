@@ -1,7 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-entity contador_cm_uc is
+entity contador_mm_uc is
     port (
         clock       : in  std_logic;
         reset       : in  std_logic;
@@ -17,7 +17,7 @@ entity contador_cm_uc is
     );
 end entity;
 
-architecture contador_cm_uc_arch of contador_cm_uc is
+architecture contador_mm_uc_arch of contador_mm_uc is
 
     type tipo_estado is (
         inicial, conta, atualizaDist, arredondaDist, final
@@ -92,4 +92,4 @@ begin
                      "100" when final,         -- 4
                      "111" when others;        -- F
 
-end architecture contador_cm_uc_arch;
+end architecture contador_mm_uc_arch;

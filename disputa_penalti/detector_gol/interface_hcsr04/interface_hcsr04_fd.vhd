@@ -45,7 +45,7 @@ architecture interface_hcsr04_fd_arch of interface_hcsr04_fd is
         );
     end component;
 
-    component contador_cm is
+    component contador_mm is
         port (
             clock        : in  std_logic;
             reset        : in  std_logic;
@@ -55,16 +55,16 @@ architecture interface_hcsr04_fd_arch of interface_hcsr04_fd is
             digito2      : out std_logic_vector(3 downto 0);
             fim          : out std_logic;
             pronto       : out std_logic;
-            db_estado_cm : out std_logic_vector (2 downto 0)
+            db_estado_mm : out std_logic_vector (2 downto 0)
         );
     end component;
 
-    signal s_fim, s_pronto, s_clear        : std_logic;
-    signal s_digitos_concatenados        : std_logic_vector(11 downto 0);
+    signal s_fim, s_pronto, s_clear   : std_logic;
+    signal s_digitos_concatenados     : std_logic_vector(11 downto 0);
 
 begin
 
-    contador_distancia: contador_cm
+    contador_distancia: contador_mm
         port map (
             clock        => clock,
             reset        => zera,
@@ -74,9 +74,9 @@ begin
             digito2      => s_digitos_concatenados(11 downto 8),
             fim          => s_fim,
             pronto       => s_pronto,
-            db_estado_cm => open
+            db_estado_mm => open
         );
-        
+
     reg: registrador_n
             generic map (
                   N => 12

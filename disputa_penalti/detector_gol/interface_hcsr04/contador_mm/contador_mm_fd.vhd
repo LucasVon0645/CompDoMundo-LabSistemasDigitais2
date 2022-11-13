@@ -2,7 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity contador_cm_fd is
+entity contador_mm_fd is
     port (
         clock             : in  std_logic;
         zera_bcd          : in  std_logic;
@@ -18,7 +18,7 @@ entity contador_cm_fd is
     );
 end entity;
 
-architecture contador_cm_FD_arch of contador_cm_fd is
+architecture contador_mm_fd_arch of contador_mm_fd is
 
     component contador_m is
         generic (
@@ -62,14 +62,14 @@ architecture contador_cm_FD_arch of contador_cm_fd is
         );
     end component;
 
-    signal s_tick_restante: std_logic_vector(11 downto 0);
+    signal s_tick_restante: std_logic_vector(8 downto 0);
 
 begin
 
-    gerador_tick_cm: contador_m
+    gerador_tick_mm: contador_m
         generic map (
-            M => 2941,
-            N => 12
+            M => 294,
+            N => 9
         )
         port map (
             clock => clock,
@@ -82,8 +82,8 @@ begin
     
     arredondador: analisa_m
          generic map (
-            M => 2941,
-            N => 12
+            M => 294,
+            N => 9
         )
         port map (
             valor            => s_tick_restante,

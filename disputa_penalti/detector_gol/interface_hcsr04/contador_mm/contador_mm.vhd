@@ -2,7 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity contador_cm is
+entity contador_mm is
     port (
         clock        : in  std_logic;
         reset        : in  std_logic;
@@ -12,13 +12,13 @@ entity contador_cm is
         digito2      : out std_logic_vector(3 downto 0);
         fim          : out std_logic;
         pronto       : out std_logic;
-        db_estado_cm : out std_logic_vector (2 downto 0)
+        db_estado_mm : out std_logic_vector (2 downto 0)
     );
 end entity;
 
-architecture contador_cm_arch of contador_cm is
+architecture contador_mm_arch of contador_mm is
 
-    component contador_cm_uc is
+    component contador_mm_uc is
         port (
             clock       : in  std_logic;
             reset       : in  std_logic;
@@ -27,14 +27,14 @@ architecture contador_cm_arch of contador_cm is
             arredonda   : in  std_logic;
             zera_bcd    : out std_logic;
             conta_bcd   : out std_logic;
-                zera_tick   : out std_logic;
-                conta_tick  : out std_logic;
-                pronto      : out std_logic;
+            zera_tick   : out std_logic;
+            conta_tick  : out std_logic;
+            pronto      : out std_logic;
             db_estado   : out std_logic_vector (2 downto 0)
         );
     end component;
 
-    component contador_cm_fd is
+    component contador_mm_fd is
         port (
             clock             : in  std_logic;
             zera_bcd          : in  std_logic;
@@ -56,7 +56,7 @@ architecture contador_cm_arch of contador_cm is
 
 begin
 
-    UC: contador_cm_uc
+    UC: contador_mm_uc
         port map (
             clock      => clock,
             reset      => reset,
@@ -68,10 +68,10 @@ begin
             zera_tick  => s_zera_tick,
             conta_tick => s_conta_tick,
             pronto     => pronto,
-            db_estado  => db_estado_cm
+            db_estado  => db_estado_mm
         );
 
-    FD: contador_cm_fd
+    FD: contador_mm_fd
         port map (
             clock      => clock,
             zera_bcd   => s_zera_bcd,

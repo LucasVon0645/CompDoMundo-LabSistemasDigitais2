@@ -113,17 +113,18 @@ set_global_assignment -name EDA_TEST_BENCH_NAME comp_do_mundo_tb -section_id eda
 set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id comp_do_mundo_tb
 set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME comp_do_mundo_tb -section_id comp_do_mundo_tb
 set_global_assignment -name EDA_TEST_BENCH_FILE testbenchs/comp_do_mundo_tb.vhd -section_id comp_do_mundo_tb
+set_global_assignment -name VHDL_FILE disputa_penalti/detector_gol/interface_hcsr04/contador_mm/contador_mm_uc.vhd
+set_global_assignment -name VHDL_FILE disputa_penalti/detector_gol/interface_hcsr04/contador_mm/contador_mm_fd.vhd
+set_global_assignment -name VHDL_FILE disputa_penalti/detector_gol/interface_hcsr04/contador_mm/contador_mm.vhd
+set_global_assignment -name VHDL_FILE componentes/analisa_m.vhd
+set_global_assignment -name VHDL_FILE componentes/contador_bcd_3digitos.vhd
+set_global_assignment -name VHDL_FILE componentes/comparador_bcd_3digitos.vhd
 set_global_assignment -name VHDL_FILE disputa_penalti/placar/placar_jogador.vhd
 set_global_assignment -name VHDL_FILE disputa_penalti/placar/placar.vhd
 set_global_assignment -name VHDL_FILE componentes/subtractor_abs.vhd
 set_global_assignment -name VHDL_FILE disputa_penalti/batedor/batedor_uc.vhd
 set_global_assignment -name VHDL_FILE disputa_penalti/batedor/batedor_fd.vhd
 set_global_assignment -name VHDL_FILE disputa_penalti/batedor/batedor.vhd
-set_global_assignment -name VHDL_FILE disputa_penalti/detector_gol/interface_hcsr04/contador_cm/contador_cm_uc.vhd
-set_global_assignment -name VHDL_FILE disputa_penalti/detector_gol/interface_hcsr04/contador_cm/contador_cm_fd.vhd
-set_global_assignment -name VHDL_FILE disputa_penalti/detector_gol/interface_hcsr04/contador_cm/contador_cm.vhd
-set_global_assignment -name VHDL_FILE disputa_penalti/detector_gol/interface_hcsr04/contador_cm/contador_bcd_3digitos.vhd
-set_global_assignment -name VHDL_FILE disputa_penalti/detector_gol/interface_hcsr04/contador_cm/analisa_m.vhd
 set_global_assignment -name VHDL_FILE disputa_penalti/detector_gol/interface_hcsr04/interface_hcsr04_uc.vhd
 set_global_assignment -name VHDL_FILE disputa_penalti/detector_gol/interface_hcsr04/interface_hcsr04_fd.vhd
 set_global_assignment -name VHDL_FILE disputa_penalti/detector_gol/interface_hcsr04/interface_hcsr04.vhd
@@ -131,7 +132,6 @@ set_global_assignment -name VHDL_FILE disputa_penalti/detector_gol/interface_hcs
 set_global_assignment -name VHDL_FILE disputa_penalti/detector_gol/detector_gol_uc.vhd
 set_global_assignment -name VHDL_FILE disputa_penalti/detector_gol/detector_gol_fd.vhd
 set_global_assignment -name VHDL_FILE disputa_penalti/detector_gol/detector_gol.vhd
-set_global_assignment -name VHDL_FILE disputa_penalti/detector_gol/comparador_dist_bcd.vhd
 set_global_assignment -name VHDL_FILE disputa_penalti/goleiro/goleiro.vhd
 set_global_assignment -name VHDL_FILE disputa_penalti/super_transmissor/super_transmissor.vhd
 set_global_assignment -name VHDL_FILE disputa_penalti/super_transmissor/construtor_mensagem.vhd

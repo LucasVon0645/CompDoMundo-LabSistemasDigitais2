@@ -52,12 +52,13 @@ architecture arch of detector_gol_fd is
         );
     end component;
 
-    component comparador_dist_bcd is
+    component comparador_bcd_3digitos is
         port (
-            dist_1 : in  std_logic_vector(11 downto 0);
-            dist_2 : in  std_logic_vector(11 downto 0);
+            bcd_1  : in  std_logic_vector(11 downto 0);
+            bcd_2  : in  std_logic_vector(11 downto 0);
             menor  : out std_logic;
-            igual  : out std_logic
+            igual  : out std_logic;
+            maior  : out std_logic
         );
     end component;
      
@@ -67,18 +68,18 @@ architecture arch of detector_gol_fd is
 begin
 
     interface: interface_hcsr04
-    port map (
-        clock     => clock,
-        reset     => s_zera_interface,
-        echo      => echo,
-        medir     => mensurar,
-        medida    => s_medida,
-        pronto    => pronto_med,
-        trigger   => trigger,
-        db_reset  => open,
-        db_medir  => open,
-        db_estado => open
-    );
+        port map (
+            clock     => clock,
+            reset     => s_zera_interface,
+            echo      => echo,
+            medir     => mensurar,
+            medida    => s_medida,
+            pronto    => pronto_med,
+            trigger   => trigger,
+            db_reset  => open,
+            db_medir  => open,
+            db_estado => open
+        );
     
     timer_medicao: contador_m
         generic map (
@@ -96,27 +97,28 @@ begin
         );
 
     timeout: contador_m
-    generic map (
-        M => 100000000, -- 2 seg (experimento pratico)
-        -- M => 600000, -- 1.2 mseg (simulacao testbench)
-        N => 27
-    )
-    port map (
-        clock => clock,
-        zera  => zera_timeout,
-        conta => '1',
-        Q     => open,
-        fim   => fim_timeout,
-        meio  => open
-    );
+        generic map (
+            M => 100000000, -- 2 seg (experimento pratico)
+            -- M => 600000, -- 1.2 mseg (simulacao testbench)
+            N => 27
+        )
+        port map (
+            clock => clock,
+            zera  => zera_timeout,
+            conta => '1',
+            Q     => open,
+            fim   => fim_timeout,
+            meio  => open
+        );
 
-    comparador_gol: comparador_dist_bcd
-    port map (
-        dist_1 => s_medida,
-        dist_2 => "000000001010", -- 10 cm 
-        menor  => distancia_menor,
-        igual  => open
-    );
+    comparador_gol: comparador_bcd_3digitos
+        port map (
+            bcd_1 => s_medida,
+            bcd_2 => "000010010101", -- 95 mm -> 9.5 cm 
+            menor  => distancia_menor,
+            igual  => open,
+            maior  => open
+        );
 
     s_zera_interface <= reset or zera_interface;
     
