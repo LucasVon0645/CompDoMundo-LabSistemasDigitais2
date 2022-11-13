@@ -8,8 +8,8 @@ entity comp_do_mundo is
         clock              : in  std_logic;
         reset              : in  std_logic;
         iniciar            : in  std_logic;
-        posicao_batedor    : in  std_logic;
-        bater              : in  std_logic;
+        bater_direita      : in  std_logic;
+        bater_esquerda     : in  std_logic;
         echo               : in  std_logic;
         entrada_serial     : in  std_logic;
         -- saidas
@@ -41,8 +41,8 @@ architecture arch_comp_do_mundo of comp_do_mundo is
             clock              : in  std_logic;
             reset              : in  std_logic;
             iniciar            : in  std_logic;
-            posicao_batedor    : in  std_logic;
-            bater              : in  std_logic;
+            bater_direita      : in  std_logic;
+            bater_esquerda     : in  std_logic;
             echo               : in  std_logic;
             entrada_serial     : in  std_logic;
             -- saidas
@@ -90,7 +90,7 @@ architecture arch_comp_do_mundo of comp_do_mundo is
         );
     end component;
 
-    signal s_iniciar, s_bater                                          : std_logic;
+    signal s_iniciar, s_bater_direita, s_bater_esquerda                : std_logic;
     signal s_trigger, s_echo                                           : std_logic;
     signal s_fim_jogo, s_jogador, s_ganhador                           : std_logic;
     signal s_gols_A, s_gols_B, s_rodada, s_estado_uc : std_logic_vector (3 downto 0);
@@ -103,8 +103,8 @@ begin
             clock              => clock,
             reset              => reset,
             iniciar            => s_iniciar,
-            posicao_batedor    => posicao_batedor,
-            bater              => s_bater,
+            bater_direita      => s_bater_direita,
+            bater_esquerda     => s_bater_esquerda,
             echo               => s_echo,
             entrada_serial     => entrada_serial,
             -- saidas
@@ -131,11 +131,18 @@ begin
             output    => s_iniciar
         );
     
-    bater_detector: edge_detector
+    direita_detector: edge_detector
         port map (  
             clock     => clock,
-            signal_in => bater,
-            output    => s_bater
+            signal_in => bater_direita,
+            output    => s_bater_direita
+        );
+
+    esquerda_detector: edge_detector
+        port map (  
+            clock     => clock,
+            signal_in => bater_esquerda,
+            output    => s_bater_esquerda
         );
 
     construtor_7seg: construtor_displays

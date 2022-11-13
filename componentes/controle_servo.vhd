@@ -29,41 +29,41 @@ begin
     begin
         -- inicia contagem e largura
         if(reset = '1') then
-        contagem    <= 0;
-        s_controle  <= '0';
-        largura_pwm <= s_largura;
-        elsif(rising_edge(clock)) then
-        -- saida
-        if(contagem < largura_pwm) then
-            s_controle <= '1';
-        else
-            s_controle <= '0';
-        end if;
-        -- atualiza contagem e largura
-        if(contagem = CONTAGEM_MAXIMA-1) then
-            contagem   <= 0;
+            contagem    <= 0;
+            s_controle  <= '0';
             largura_pwm <= s_largura;
-        else
-            contagem <= contagem + 1;
-        end if;
+        elsif(rising_edge(clock)) then
+            -- saida
+            if(contagem < largura_pwm) then
+                s_controle <= '1';
+            else
+                s_controle <= '0';
+            end if;
+            -- atualiza contagem e largura
+            if(contagem = CONTAGEM_MAXIMA-1) then
+                contagem   <= 0;
+                largura_pwm <= s_largura;
+            else
+                contagem <= contagem + 1;
+            end if;
         end if;
     end process;
 
     process(posicao)
     begin
         case posicao is
-        when "000"  => s_largura <= 35000;
+            when "000"  => s_largura <= 35000;
             when "001"  => s_largura <= 53750;
             when "010"  => s_largura <= 72500;
             when "011"  => s_largura <= 91250;
             when "100"  => s_largura <= 110000;
-        when others => s_largura <= 72500;
+            when others => s_largura <= 72500;
         end case;
     end process;
   
-    pwm <= s_controle;
-    db_pwm <= s_controle;
-    db_reset <= reset;
+    pwm        <= s_controle;
+    db_pwm     <= s_controle;
+    db_reset   <= reset;
     db_posicao <= posicao;
   
 end architecture;

@@ -8,8 +8,8 @@ entity disputa_penalti is
         clock              : in  std_logic;
         reset              : in  std_logic;
         iniciar            : in  std_logic;
-        posicao_batedor    : in  std_logic;
-        bater              : in  std_logic;
+        bater_direita      : in  std_logic;
+        bater_esquerda     : in  std_logic;
         echo               : in  std_logic;
         entrada_serial     : in  std_logic;
         -- saidas
@@ -44,13 +44,16 @@ architecture arch_disputa_penalti of disputa_penalti is
 
     component batedor is
         port (
-            clock        : in  std_logic;
-            reset        : in  std_logic;
-            habilitar    : in  std_logic;
-            direcao      : in  std_logic; -- 0: direita; 1: esquerda
-            pwm_direita  : out std_logic;
-            pwm_esquerda : out std_logic;
-            db_estado    : out std_logic_vector (1 downto 0)
+            clock           : in  std_logic;
+            reset           : in  std_logic;
+            habilitar       : in  std_logic;
+            bater_direita   : in  std_logic;
+            bater_esquerda  : in  std_logic;
+            bateu           : out std_logic;
+            direcao         : out std_logic;
+            pwm_direita     : out std_logic;
+            pwm_esquerda    : out std_logic;
+            db_estado       : out std_logic_vector (1 downto 0)
         );
     end component;
 
@@ -140,7 +143,7 @@ architecture arch_disputa_penalti of disputa_penalti is
     end component;
 
     signal s_reset_preparacao, s_conta_preparacao, s_fim_preparacao    : std_logic;
-    signal s_reset_batedor, s_habilita_batedor                         : std_logic;
+    signal s_reset_batedor, s_habilita_batedor, s_bateu, s_direcao     : std_logic;
     signal s_reset_placar, s_atualiza_jogada, s_atualiza_placar        : std_logic;
     signal s_reset_gol, s_gol, s_fim_jogo                              : std_logic;
     signal s_fim_penalti, s_verifica_gol                               : std_logic;
@@ -162,13 +165,16 @@ begin
 
     cobrador: batedor
         port map (
-            clock        => clock,
-            reset        => s_reset_batedor,
-            habilitar    => s_habilita_batedor,
-            direcao      => posicao_batedor, -- 0: direita; 1: esquerda
-            pwm_direita  => pwm_batedor_dir,
-            pwm_esquerda => pwm_batedor_esq,
-            db_estado    => open
+            clock           => clock,
+            reset           => s_reset_batedor,
+            habilitar       => s_habilita_batedor,
+            bater_direita   => bater_direita,
+            bater_esquerda  => bater_esquerda,
+            bateu           => s_bateu,
+            direcao         => s_direcao,
+            pwm_direita     => pwm_batedor_dir,
+            pwm_esquerda    => pwm_batedor_esq,
+            db_estado       => open
         );
 
     defensor: goleiro
@@ -218,7 +224,7 @@ begin
             gols_B           => s_gols_B,
             rodada           => s_rodada,
             jogador          => s_jogador,
-            direcao_batedor  => posicao_batedor,
+            direcao_batedor  => s_direcao,
             saida_serial     => saida_serial,
             fim_transmissao  => s_fim_transmissao
         );
@@ -229,7 +235,7 @@ begin
             reset               => reset,
             iniciar             => iniciar,
             fim_preparacao      => s_fim_preparacao,
-            bater               => bater,
+            bater               => s_bateu,
             fim_penalti         => s_fim_penalti,
             fim_jogo            => s_fim_jogo,
             fim_transmissao     => s_fim_transmissao,
