@@ -217,10 +217,12 @@ void drawScoreboard() {
     textSize(28);
     
     for (int i = 0; i < 2; i += 1) {
+        char currentScoreboard = boolean(i) ? 'B' : 'A';
+        float scoreStart = i * teamScoreHeight;
         
         pushMatrix();
         pushStyle();
-        float scoreStart = i * teamScoreHeight;
+
         translate(0, scoreStart, 0);
     
         // Draws divider between both teams' scores
@@ -242,11 +244,11 @@ void drawScoreboard() {
         endShape();
     
         // Draws the name of each team
-        textInsideBox("Time " + (boolean(i) ? "B" : "A"), teamNameBoxWidth, teamScoreHeight, #CBB75D, #443514);
+        textInsideBox("Time " + currentScoreboard, teamNameBoxWidth, teamScoreHeight, #CBB75D, #443514);
         translate(teamNameBoxWidth, 0, 0);
         
         // Draws the current score for each team
-        textInsideBox((boolean(i) ? str(goalsB) : str(goalsA)), teamScoreBoxWidth, teamScoreHeight, #333333, #FFFFFF);
+        textInsideBox((currentScoreboard == 'A' ? str(goalsA) : str(goalsB)), teamScoreBoxWidth, teamScoreHeight, #333333, #FFFFFF);
         translate(teamScoreBoxWidth, 0, 0);
 
         // Draws the box in which circles for each of the first 10 shots will be
@@ -261,10 +263,10 @@ void drawScoreboard() {
     
         // Draws the circles for each of the first 5 shots, and color it based on its 'status'
         // 0 means the shot has not happened, 1 means it is happening right now;
-        // 2 means the shot was a goal, and -1 means it was a miss.
+        // 2 means the shot was a goal, and -1 means it was a miss
         translate(0, teamScoreHeight/2, 0);
         for (int j = 0; j < 5; j += 1) {
-            int[] currentShots = (boolean(i) ? shotsB : shotsA);
+            int[] currentShots = (currentScoreboard == 'A' ? shotsA : shotsB);
             color goalIndicatorColor = (currentShots[j] == 0 ? #FFFFFF : 
                                         currentShots[j] == 1 ? #FFFF00 :
                                         currentShots[j] == 2 ? #00FF00 :
@@ -275,7 +277,12 @@ void drawScoreboard() {
         }
     
 
-        // Draw the final circle for each team, indicating who won.
+        // Draw the final circle for each team, indicating who won
+        color winnerIndicatorColor = (winner == 'O' ? #FFFFFF : 
+                                     (winner == currentScoreboard) ? #00FF00 :
+                                      #FF0000);
+                                      
+        fill(winnerIndicatorColor);
         translate(3*circleMargin, 0, 0);
         circle(0, 0, circleDiameter);
         
@@ -283,6 +290,7 @@ void drawScoreboard() {
         popMatrix();
     }
 
+    // Draws a line between the final circles and the other ones
     translate(lineOffset, teamScoreHeight/2, 0);
     strokeWeight(1);
     stroke(#FFFFFF);
