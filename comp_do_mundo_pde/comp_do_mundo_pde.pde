@@ -1,7 +1,77 @@
 // libs
 import processing.serial.*;      // serial comm lib
 import java.awt.event.KeyEvent;  // keyboard reading lib
+import java.sql.*;               // lib for interfacing with postgreSQL
 import java.io.IOException;
+
+public class PostgreClient {
+
+    private final static String url =
+            "jdbc:postgresql://comp-do-mundo.c0v17euafbbn.sa-east-1.rds.amazonaws.com:5432/processing";
+    private final static String user = "processing";
+    private final static String password = "hexa2022";
+
+    public Connection conn = null;
+    public PreparedStatement pstmt = null;
+
+    public void saveMatch() {
+        try {
+            long now = System.currentTimeMillis();
+            Timestamp timestamp = new Timestamp(now);
+            
+            String query = "INSERT INTO matches ";
+            query += "(timestamp, winner, rounds, goals_by_a, goals_by_b, left_kicks_by_A, ";
+            query += "left_kicks_by_B, right_kicks_by_A, right_kicks_by_B) ";
+            query += "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            
+            pstmt = conn.prepareStatement(query);
+            pstmt.setTimestamp(1, timestamp);
+            pstmt.setString(2, String.valueOf(winner));
+            pstmt.setInt(3, round);
+            pstmt.setInt(4, goalsA);
+            pstmt.setInt(5, goalsB);
+            pstmt.setInt(6, leftKicksA);
+            pstmt.setInt(7, leftKicksB);
+            pstmt.setInt(8, rightKicksA);
+            pstmt.setInt(9, rightKicksB);
+
+            pstmt.executeUpdate();
+            pstmt.close();
+            conn.commit();
+            
+        } catch (Exception e) {
+            println(e.getClass().getName() + ": " + e.getMessage());
+        }
+
+    }
+
+    public boolean connect() {
+        try {
+
+            Class.forName("org.postgresql.Driver");
+            conn = DriverManager.getConnection(url, user, password);
+            conn.setAutoCommit(false);
+            return true;
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+            println(e.getClass().getName() + ": " + e.getMessage());
+            return false;
+        }
+    }
+    
+    public void disconnect() {
+        try {
+            conn.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            println(e.getClass().getName() + ": " + e.getMessage());
+        }
+    }
+
+    public PostgreClient() {};
+}
 
 
 // Global constants
@@ -26,10 +96,11 @@ int whichKey = -1;      // keyboard key
 // Global match variables
 int[] shotsA = new int[16], shotsB = new int[16];
 int round, goalsA, goalsB;
+int leftKicksA, leftKicksB, rightKicksA, rightKicksB;
 char currentPlayer, kickDirection, winner;
 
-// Global state variables
-boolean globalReset = false;
+// Global PostgreSQL database variables
+PostgreClient client;
 
 
 void setup() {
@@ -37,6 +108,8 @@ void setup() {
     
     serialConnetion = new Serial(this, port, baudrate, parity, databits, stopbits);
     serialConnetion.bufferUntil(lf);
+   
+    client = new PostgreClient();
     
     globalResetFunc();
 }
@@ -49,12 +122,6 @@ void draw() {
     endFieldLineHeight = 0.125*fieldHeight;
     advertHeight = 0.1*height;
     crowdHeight = (height - fieldHeight - advertHeight);
-    
-    // Reset everything
-    if (globalReset) {
-        globalResetFunc();
-        globalReset = false;
-    }
     
     // lights();
     drawField();
@@ -326,7 +393,7 @@ void serialEvent (Serial serialConnetion) {
             if (header == '0') {
                 println("JOGO COMEÇANDO");
                 
-                globalReset = true; // Reset all data structure and global variables
+                globalResetFunc(); // Reset all data structure and global variables
             }
             
             // If header is 1, a match has just begun
@@ -389,6 +456,10 @@ void globalResetFunc() {
     round = 0;
     goalsA = 0;
     goalsB = 0;
+    leftKicksA = 0;
+    leftKicksB = 0;
+    rightKicksA = 0;
+    rightKicksB = 0;
     
     currentPlayer = 'A';
     winner = 'O'; // value shows winner has not been decided yet
@@ -434,10 +505,14 @@ void updateScoreboard(char direction_tx, int goalsA_tx, int goalsB_tx) {
         kickDirection = direction_tx;
         
         if (currentPlayer == 'A') {
+            if (kickDirection == 'E') {leftKicksA += 1;} else {rightKicksA += 1;}
+            
             shotsA[round] = (goalsA_tx != goalsA) ? 2 : -1;
             goalsA = goalsA_tx;
         }
         else if (currentPlayer == 'B') {
+            if (kickDirection == 'E') {leftKicksB += 1;} else {rightKicksB += 1;}
+            
             shotsB[round] = (goalsB_tx != goalsB) ? 2 : -1;
             goalsB = goalsB_tx;
         }
@@ -448,6 +523,19 @@ void updateScoreboard(char direction_tx, int goalsA_tx, int goalsB_tx) {
 void endGame(char direction_tx, int goalsA_tx, int goalsB_tx) {
     updateScoreboard(direction_tx, goalsA_tx, goalsB_tx);
     winner = goalsA > goalsB ? 'A' : 'B';
+    round += 1; // corrects num of rounds because it started at 0
+    saveMatchToDatabase();
+}
+
+void saveMatchToDatabase() {
+    if (client.connect()) {
+        println("Escrevendo dados ao banco de dados!");
+        client.saveMatch();
+        client.disconnect();
+    }
+    else {
+        println("ERRO: Incapaz de se conectar ao servidor.");
+    }
 }
 
 
