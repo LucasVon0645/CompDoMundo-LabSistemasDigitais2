@@ -1,11 +1,13 @@
-// libs
 import processing.serial.*;      // serial comm lib
 import java.awt.event.KeyEvent;  // keyboard reading lib
 import java.sql.*;               // lib for interfacing with postgreSQL
 import java.io.IOException;
 
+
+// Class to connect to PostgreSQL remote database
 public class PostgresClient {
 
+    // Database info in AWS RDS
     private final static String url =
             "jdbc:postgresql://comp-do-mundo.c0v17euafbbn.sa-east-1.rds.amazonaws.com:5432/processing";
     private final static String user = "processing";
@@ -14,6 +16,7 @@ public class PostgresClient {
     public Connection conn = null;
     public PreparedStatement pstmt = null;
 
+    // Save a match to the db using the latest match info
     public void saveMatch() {
         try {
             long now = System.currentTimeMillis();
@@ -45,6 +48,7 @@ public class PostgresClient {
 
     }
 
+    // Connect itself to the remote db
     public boolean connect() {
         try {
 
@@ -61,6 +65,7 @@ public class PostgresClient {
         }
     }
     
+    // Disconnect itself to the remote db
     public void disconnect() {
         try {
             conn.close();
@@ -70,6 +75,7 @@ public class PostgresClient {
         }
     }
 
+    // Constructor
     public PostgresClient() {};
 }
 
@@ -519,6 +525,7 @@ void updateScoreboard(char direction_tx, int goalsA_tx, int goalsB_tx) {
     }
 }
 
+
 // Updates match variables (inclusing winner) after a match has ended
 void endGame(char direction_tx, int goalsA_tx, int goalsB_tx) {
     updateScoreboard(direction_tx, goalsA_tx, goalsB_tx);
@@ -527,6 +534,8 @@ void endGame(char direction_tx, int goalsA_tx, int goalsB_tx) {
     saveMatchToDatabase();
 }
 
+
+// After a match has finished, open the database to save its info
 void saveMatchToDatabase() {
     if (client.connect()) {
         println("Escrevendo dados ao banco de dados!");
