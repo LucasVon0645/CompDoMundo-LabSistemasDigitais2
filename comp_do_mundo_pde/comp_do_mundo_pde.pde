@@ -4,7 +4,7 @@ import java.awt.event.KeyEvent;  // keyboard reading lib
 import java.sql.*;               // lib for interfacing with postgreSQL
 import java.io.IOException;
 
-public class PostgreClient {
+public class PostgresClient {
 
     private final static String url =
             "jdbc:postgresql://comp-do-mundo.c0v17euafbbn.sa-east-1.rds.amazonaws.com:5432/processing";
@@ -70,7 +70,7 @@ public class PostgreClient {
         }
     }
 
-    public PostgreClient() {};
+    public PostgresClient() {};
 }
 
 
@@ -100,7 +100,7 @@ int leftKicksA, leftKicksB, rightKicksA, rightKicksB;
 char currentPlayer, kickDirection, winner;
 
 // Global PostgreSQL database variables
-PostgreClient client;
+PostgresClient client;
 
 
 void setup() {
@@ -109,7 +109,7 @@ void setup() {
     serialConnetion = new Serial(this, port, baudrate, parity, databits, stopbits);
     serialConnetion.bufferUntil(lf);
    
-    client = new PostgreClient();
+    client = new PostgresClient();
     
     globalResetFunc();
 }
