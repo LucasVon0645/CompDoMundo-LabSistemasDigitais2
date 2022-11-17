@@ -110,7 +110,7 @@ PostgresClient client;
 
 
 void setup() {
-    size (1400, 1050, P3D);
+    size (2000, 1500, P3D);
     
     serialConnetion = new Serial(this, port, baudrate, parity, databits, stopbits);
     serialConnetion.bufferUntil(lf);
