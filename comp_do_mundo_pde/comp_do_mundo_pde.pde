@@ -81,7 +81,7 @@ public class PostgresClient {
 
 
 // Global constants
-int lf = 46;  // ASCII linefeed -> CHANGE THIS TO 10 TO TEST WITH CIRCUIT
+int lf = 10;  // ASCII linefeed -> CHANGE THIS TO 10 TO TEST WITH CIRCUIT
 
 // Global drawing variables
 float fieldHeight;
@@ -92,7 +92,7 @@ int fieldDepth;
 
 // Global variables for Serial comm
 Serial serialConnetion;
-String port = "COM3";   // <== change value depending on machine
+String port = "COM6";   // <== change value depending on machine
 int baudrate = 115200;  // 115200 bauds
 char parity = 'E';      // even
 int databits = 7;       // 7 data bits
@@ -382,7 +382,7 @@ void serialEvent (Serial serialConnetion) {
   
     try {
         message = serialConnetion.readString();
-        println(message);  // debug
+        println("Mensagem recebida é: " + message.substring(0, message.length() - 1));  // debug
         
         // Error in case the transmission cannot be interpreted
         if (message.length() != 5) {
@@ -448,7 +448,7 @@ void serialEvent (Serial serialConnetion) {
 void keyPressed() {
     whichKey = key;
     serialConnetion.write(key);
-    println("Enviando tecla '" + key + "' para a porta serial. ");
+    println("Enviando tecla '" + key + "' para a porta serial.");
 }
 
 
@@ -483,13 +483,13 @@ void updateRound(char player_tx, int round_tx) {
 
     } else {
         if (player_tx == 'A') {
-            shotsA[round_tx] = 1;
+            round = round_tx;
+            shotsA[round] = 1;
         }
         else if (player_tx == 'B') {
-            shotsB[round_tx] = 1;
+            shotsB[round] = 1;
         }
         
-        round = round_tx;
         currentPlayer = player_tx;
     }
 }
