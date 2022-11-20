@@ -1,7 +1,9 @@
 import processing.serial.*;      // serial comm lib
+import processing.sound.*;       // sound lib
 import java.awt.event.KeyEvent;  // keyboard reading lib
 import java.sql.*;               // lib for interfacing with postgreSQL
 import java.io.IOException;
+import java.util.Map;
 
 
 // Class to connect to PostgreSQL remote database
@@ -108,6 +110,9 @@ char currentPlayer, kickDirection, winner;
 // Global PostgreSQL database variables
 PostgresClient client;
 
+// Global sounds hashmap
+HashMap<String,SoundFile> sounds = new HashMap<String,SoundFile>();
+
 
 void setup() {
     size (2000, 1500, P3D);
@@ -116,6 +121,7 @@ void setup() {
     serialConnetion.bufferUntil(lf);
    
     client = new PostgresClient();
+    createSounds();
     
     globalResetFunc();
 }
@@ -412,6 +418,7 @@ void serialEvent (Serial serialConnetion) {
             // If header is 2, the game is preparing itself for a new shot
             else if (header == '2') {
                 println("JOGADOR JÁ PODE BATER");
+                sounds.get("whistle").play();
             }
             
             // If header is 3, a shot has just happened, and we update the scoreboard
@@ -545,6 +552,11 @@ void saveMatchToDatabase() {
     else {
         println("ERRO: Incapaz de se conectar ao servidor.");
     }
+}
+
+
+void createSounds() {
+  sounds.put("whistle", new SoundFile(this, "whistle.wav"));
 }
 
 
