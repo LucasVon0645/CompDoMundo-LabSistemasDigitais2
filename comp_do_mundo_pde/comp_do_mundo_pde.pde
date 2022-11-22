@@ -123,9 +123,11 @@ void setup() {
     serialConnetion.bufferUntil(lf);
    
     client = new PostgresClient();
+
     createSounds();
-    
     globalResetFunc();
+
+    sounds.get("background").play();
 }
 
 
@@ -644,8 +646,10 @@ void saveMatchToDatabase() {
 }
 
 
+// Fills global hashmap variable with all the sound effects used in sketch
 void createSounds() {
-  sounds.put("whistle", new SoundFile(this, "sounds/whistle.wav"));
+    sounds.put("background", new SoundFile(this, "sounds/Crowd_background_noise.wav"));
+    sounds.put("whistle", new SoundFile(this, "sounds/Whistle.wav"));
 }
 
 
