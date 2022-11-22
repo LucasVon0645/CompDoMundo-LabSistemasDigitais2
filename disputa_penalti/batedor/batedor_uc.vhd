@@ -62,8 +62,8 @@ begin
                        '0' when others;
 
     with Eatual select
-        posicao_direita <= "100" when movimento_direita,
-                           "000" when others;
+        posicao_direita <= "000" when movimento_direita,
+                           "100" when others;
 
     with Eatual select
         posicao_esquerda <= "100" when movimento_esquerda,
