@@ -82,11 +82,7 @@ public class PostgresClient {
 }
 
 
-// Global constants
-int lf = 10;  // ASCII for linefeed -> actual value to use
-// int lf = 46;  // ASCII for . -> use this for debugging
-
-// Global drawing variables
+// Global drawing parameters variables
 float fieldHeight;
 float goalHeight;
 float crowdHeight;
@@ -94,42 +90,100 @@ float endFieldLineHeight;
 float advertHeight;
 int fieldDepth;
 
-// Global variables for Serial comm
-Serial serialConnetion;
-String port = "COM6";   // <-- change value depending on machine
-int baudrate = 115200;  // 115200 bauds
-char parity = 'E';      // even
-int databits = 7;       // 7 data bits
-float stopbits = 2.0;   // 2 stop bits
-int whichKey = -1;      // keyboard key
-
 // Global match variables
 int[] shotsA = new int[16], shotsB = new int[16];
 int round, goalsA, goalsB;
 int leftKicksA, leftKicksB, rightKicksA, rightKicksB;
 char currentPlayer, kickDirection, winner;
 
-// Global PostgreSQL database variables
+// Global object variables
+Serial serialConnetion;
 PostgresClient client;
 
-// Global sounds hashmap
+// Global hashmaps
 HashMap<String,SoundFile> sounds = new HashMap<String,SoundFile>();
+HashMap<String,PImage> playerImagesBrazil = new HashMap<String,PImage>();
+HashMap<String,PImage> otherImages = new HashMap<String,PImage>();
 
 
 void setup() {
     size (2000, 1500, P3D); // actual size to use
     // size (1400, 1050, P3D); // size when adjusting window position
     
-    serialConnetion = new Serial(this, port, baudrate, parity, databits, stopbits);
-    serialConnetion.bufferUntil(lf);
-   
+    configureSerialComm();
     client = new PostgresClient();
 
-    createSounds();
+    loadPlayerImages();
+    loadOtherImages();
+    loadSounds();
+    
     globalResetFunc();
 
-    sounds.get("background").play();
+    sounds.get("background").loop();
 }
+
+
+// Configures serial port for communication
+void configureSerialComm() {
+    String port = "COM6";   // <-- change value depending on machine
+    int baudrate = 115200;  // 115200 bauds
+    char parity = 'E';      // even
+    int databits = 7;       // 7 data bits
+    float stopbits = 2.0;   // 2 stop bits
+    
+    int lf = 10;  // ASCII for linefeed -> actual value to use
+    // int lf = 46;  // ASCII for . -> use this for debugging
+    
+    serialConnetion = new Serial(this, port, baudrate, parity, databits, stopbits);
+    serialConnetion.bufferUntil(lf);
+}
+
+
+// Fills global hashmap variable with all the sound effects used in sketch
+void loadSounds() {
+    sounds.put("background", new SoundFile(this, "sounds/Crowd_background_noise.wav"));
+    sounds.put("whistle", new SoundFile(this, "sounds/Whistle.wav"));
+}
+
+
+// Loads all players images into respective global hashmaps
+void loadPlayerImages() {
+
+    // Player images for Brazil
+    playerImagesBrazil.put("goalkeeper_center", loadImage("characters/brazil/Goalkeeper_center.png"));
+    playerImagesBrazil.put("goalkeeper_right", loadImage("characters/brazil/Goalkeeper_right.png"));
+    playerImagesBrazil.put("kicker_still", loadImage("characters/brazil/Kicker_still.png"));
+    playerImagesBrazil.put("kicker_moving", loadImage("characters/brazil/Kicker_moving.png"));
+}
+
+
+// Loads adverts images into global hashmap
+void loadOtherImages() {
+    otherImages.put("pcs_logo", loadImage("adverts/PCS_logo.png"));
+    otherImages.put("qatar_logo", loadImage("adverts/Qatar_logo.jpg"));
+    otherImages.put("crowd", loadImage("Crowd.jpg"));
+}
+
+
+// Resets all match variables to begin a match anew.
+void globalResetFunc() {
+    for (int i = 0; i < shotsA.length; i += 1) {
+        shotsA[i] = 0;
+        shotsB[i] = 0;
+    }
+  
+    round = 0;
+    goalsA = 0;
+    goalsB = 0;
+    leftKicksA = 0;
+    leftKicksB = 0;
+    rightKicksA = 0;
+    rightKicksB = 0;
+    
+    currentPlayer = 'A';
+    winner = 'O'; // value shows winner has not been decided yet
+}
+
 
 
 void draw() {
@@ -236,7 +290,7 @@ void drawGoalkeeper() {
    
 
     // Goalkeeper standing image
-    goalkeeperCenter = loadImage("characters/brazil/Goalkeeper_center.png");
+    goalkeeperCenter = playerImagesBrazil.get("goalkeeper_center");
     goalkeeperCenterRatio = goalkeeperCenter.width / float(goalkeeperCenter.height);
     goalkeeperCenterWidth = goalkeeperCenterRatio * goalkeeperCenterHeight;
     goalkeeperCenter.resize(int(goalkeeperCenterWidth), int(goalkeeperCenterHeight));
@@ -270,7 +324,7 @@ void drawKicker() {
    
 
     // Kicker still image
-    kickerStill = loadImage("characters/brazil/Kicker_still.png");
+    kickerStill = playerImagesBrazil.get("kicker_still");
     kickerStillRatio = kickerStill.width / float(kickerStill.height);
     kickerStillWidth = kickerStillRatio * kickerStillHeight;
     kickerStill.resize(int(kickerStillWidth), int(kickerStillHeight));
@@ -299,12 +353,7 @@ void drawKicker() {
 // Draws the football field on the screen: completely static
 void drawAdverts() {
     int NUM_OF_ADS = 5; // Change this to have more/less adverts
-    PImage[] images = new PImage[2];
     float advertWidth = (1.5*width)/float(NUM_OF_ADS);
-    
-    // Images from data folder
-    images[0] = loadImage("adverts/PCS_logo.png");
-    images[1] = loadImage("adverts/Qatar_logo.jpg");
     
     pushMatrix();
     pushStyle();
@@ -314,7 +363,7 @@ void drawAdverts() {
     for (int i = 0; i < NUM_OF_ADS; i += 1) {
         float adStart = -0.25*width + i*advertWidth;
         float adEnd = adStart + advertWidth;
-        PImage currentImage = images[i % 2];
+        PImage currentImage = otherImages.get(boolean(i % 2) ? "pcs_logo" : "qatar_logo");
         currentImage.resize(int(advertWidth), 0);
         
         textureMode(NORMAL);
@@ -338,7 +387,7 @@ void drawCrowd() {
     PImage crowdImage;
 
     // Crowd image from data folder
-    crowdImage = loadImage("Crowd.jpg");
+    crowdImage = otherImages.get("crowd");
     
     pushMatrix();
     pushStyle();
@@ -545,29 +594,8 @@ void serialEvent (Serial serialConnetion) {
 
 // Detects key pres and sends it to the serial port
 void keyPressed() {
-    whichKey = key;
     serialConnetion.write(key);
     println("Enviando tecla '" + key + "' para a porta serial.");
-}
-
-
-// Resets all match variables to begin a match anew.
-void globalResetFunc() {
-    for (int i = 0; i < shotsA.length; i += 1) {
-        shotsA[i] = 0;
-        shotsB[i] = 0;
-    }
-  
-    round = 0;
-    goalsA = 0;
-    goalsB = 0;
-    leftKicksA = 0;
-    leftKicksB = 0;
-    rightKicksA = 0;
-    rightKicksB = 0;
-    
-    currentPlayer = 'A';
-    winner = 'O'; // value shows winner has not been decided yet
 }
 
 
@@ -644,13 +672,6 @@ void saveMatchToDatabase() {
     else {
         println("ERRO: Incapaz de se conectar ao servidor.");
     }
-}
-
-
-// Fills global hashmap variable with all the sound effects used in sketch
-void createSounds() {
-    sounds.put("background", new SoundFile(this, "sounds/Crowd_background_noise.wav"));
-    sounds.put("whistle", new SoundFile(this, "sounds/Whistle.wav"));
 }
 
 
