@@ -83,10 +83,11 @@ public class PostgresClient {
 
 
 // Global constants
-int lf = 10;  // ASCII linefeed -> CHANGE THIS TO 10 TO TEST WITH CIRCUIT
+int lf = 10;  // ASCII linefeed -> CHANGE THIS TO 10 TO TEST WITH CIRCUIT, or 64 to debug
 
 // Global drawing variables
 float fieldHeight;
+float goalHeight;
 float crowdHeight;
 float endFieldLineHeight;
 float advertHeight;
@@ -115,7 +116,8 @@ HashMap<String,SoundFile> sounds = new HashMap<String,SoundFile>();
 
 
 void setup() {
-    size (2000, 1500, P3D);
+    // size (1400, 1050, P3D); // size when adjusting window position
+    size (2000, 1500, P3D); // actual size to use
     
     serialConnetion = new Serial(this, port, baudrate, parity, databits, stopbits);
     serialConnetion.bufferUntil(lf);
@@ -131,6 +133,7 @@ void draw() {
     // Setting drawing variables
     fieldHeight = 0.6*height;
     fieldDepth = -400;
+    goalHeight = height - fieldHeight;
     endFieldLineHeight = 0.125*fieldHeight;
     advertHeight = 0.1*height;
     crowdHeight = (height - fieldHeight - advertHeight);
@@ -141,6 +144,11 @@ void draw() {
     drawAdverts();
     drawScoreboard();
     drawCrowd();
+    
+    // For some reason, the order of drawing matters here:
+    // to keep the background of characters transparent, render them last.
+    drawGoalkeeper();
+    drawKicker();
 }
 
 
@@ -149,6 +157,7 @@ void drawField() {
     int NUM_OF_SUBFIELDS = 4; // Change this to have more/less subfields
     float subfieldWidth = (2*width)/float(NUM_OF_SUBFIELDS);
     float smallAreaLineHeight = 0.60*fieldHeight;
+    int lineStroke = 8;
 
     pushMatrix();
     pushStyle();
@@ -170,11 +179,24 @@ void drawField() {
         endShape();
     }
   
-    // Lines on the field: small area and end of field
-    strokeWeight(4);
-    stroke(#FFFFFF);
-    line(-0.5*width, smallAreaLineHeight, 0.1*fieldDepth, 1.5*width, smallAreaLineHeight, 0.1*fieldDepth);
-    line(-0.5*width, endFieldLineHeight, 0.75*fieldDepth, 1.5*width, endFieldLineHeight, 0.75*fieldDepth);
+    noStroke();
+    fill(#FFFFFF);
+    
+    // Line on the field: small area
+    beginShape();
+        vertex(-0.5*width, smallAreaLineHeight, 0.1*fieldDepth);
+        vertex(1.5*width, smallAreaLineHeight, 0.1*fieldDepth);
+        vertex(1.5*width, smallAreaLineHeight + lineStroke, 0.1*fieldDepth);
+        vertex(-0.5*width, smallAreaLineHeight + lineStroke, 0.1*fieldDepth);
+    endShape();
+    
+    // Line on the field: end of field
+    beginShape();
+        vertex(-0.5*width, endFieldLineHeight, 0.75*fieldDepth);
+        vertex(1.5*width, endFieldLineHeight, 0.75*fieldDepth);
+        vertex(1.5*width, endFieldLineHeight + lineStroke, 0.75*fieldDepth);
+        vertex(-0.5*width, endFieldLineHeight + lineStroke, 0.75*fieldDepth);
+    endShape();
     
     popStyle();
     popMatrix();
@@ -184,7 +206,6 @@ void drawField() {
 // Draws the goal on the screen: completely static
 void drawGoal() {
     float goalWidth = 0.666*width;
-    float goalHeight = height - fieldHeight;
     float goalThickness = 0.01*width;
 
     pushMatrix();
@@ -204,6 +225,74 @@ void drawGoal() {
 }
 
 
+// Draws goalkeeper on screen
+void drawGoalkeeper() {
+    PImage goalkeeperCenter;
+    float goalkeeperCenterHeight = 0.85*goalHeight;
+    float goalkeeperCenterRatio, goalkeeperCenterWidth;
+   
+
+    // Goalkeeper standing image
+    goalkeeperCenter = loadImage("characters/brazil/Goalkeeper_center.png");
+    goalkeeperCenterRatio = goalkeeperCenter.width / float(goalkeeperCenter.height);
+    goalkeeperCenterWidth = goalkeeperCenterRatio * goalkeeperCenterHeight;
+    goalkeeperCenter.resize(int(goalkeeperCenterWidth), int(goalkeeperCenterHeight));
+    
+    pushMatrix();
+    pushStyle();
+    
+    translate(width/2, (height-fieldHeight) + endFieldLineHeight + 32, 0.7*fieldDepth); // endline coordinates
+    translate(-goalkeeperCenterWidth / 2, -goalkeeperCenterHeight, 0);
+
+    textureMode(NORMAL);
+    beginShape();
+        noStroke();
+        texture(goalkeeperCenter);
+        vertex(0, 0, 0, 0, 0);
+        vertex(goalkeeperCenterWidth, 0, 0, 1, 0);
+        vertex(goalkeeperCenterWidth, goalkeeperCenterHeight, 0, 1, 1);
+        vertex(0, goalkeeperCenterHeight, 0, 0, 1);
+    endShape();
+
+    popStyle();
+    popMatrix();
+}
+
+
+// Draws kicker on screen
+void drawKicker() {
+    PImage kickerStill;
+    float kickerStillHeight = 0.85*goalHeight;
+    float kickerStillRatio, kickerStillWidth;
+   
+
+    // Kicker still image
+    kickerStill = loadImage("characters/brazil/Kicker_still.png");
+    kickerStillRatio = kickerStill.width / float(kickerStill.height);
+    kickerStillWidth = kickerStillRatio * kickerStillHeight;
+    kickerStill.resize(int(kickerStillWidth), int(kickerStillHeight));
+    
+    pushMatrix();
+    pushStyle();
+    
+    translate(0.3*width, 1.01*height, 0);
+    translate(-kickerStillWidth / 2, -kickerStillHeight, 0);
+
+    textureMode(NORMAL);
+    beginShape();
+        noStroke();
+        texture(kickerStill);
+        vertex(0, 0, 0, 0, 0);
+        vertex(kickerStillWidth, 0, 0, 1, 0);
+        vertex(kickerStillWidth, kickerStillHeight, 0, 1, 1);
+        vertex(0, kickerStillHeight, 0, 0, 1);
+    endShape();
+
+    popStyle();
+    popMatrix();
+}
+
+
 // Draws the football field on the screen: completely static
 void drawAdverts() {
     int NUM_OF_ADS = 5; // Change this to have more/less adverts
@@ -211,8 +300,8 @@ void drawAdverts() {
     float advertWidth = (1.5*width)/float(NUM_OF_ADS);
     
     // Images from data folder
-    images[0] = loadImage("PCS_logo.png");
-    images[1] = loadImage("Qatar_logo.jpg");
+    images[0] = loadImage("adverts/PCS_logo.png");
+    images[1] = loadImage("adverts/Qatar_logo.jpg");
     
     pushMatrix();
     pushStyle();
@@ -556,7 +645,7 @@ void saveMatchToDatabase() {
 
 
 void createSounds() {
-  sounds.put("whistle", new SoundFile(this, "whistle.wav"));
+  sounds.put("whistle", new SoundFile(this, "sounds/whistle.wav"));
 }
 
 
