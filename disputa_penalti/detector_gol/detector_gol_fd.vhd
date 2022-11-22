@@ -98,7 +98,7 @@ begin
 
     timeout: contador_m
         generic map (
-            M => 100000000, -- 2 seg (experimento pratico)
+            M => 250000000, -- 5 seg (experimento pratico)
             -- M => 600000, -- 1.2 mseg (simulacao testbench)
             N => 27
         )
@@ -114,7 +114,7 @@ begin
     comparador_gol: comparador_bcd_3digitos
         port map (
             bcd_1 => s_medida,
-            bcd_2 => "000010010101", -- 95 mm -> 9.5 cm 
+            bcd_2 => "000010000111", -- 87 mm -> 8.7 cm 
             menor  => distancia_menor,
             igual  => open,
             maior  => open
