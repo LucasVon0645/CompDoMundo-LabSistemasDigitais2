@@ -83,7 +83,8 @@ public class PostgresClient {
 
 
 // Global constants
-int lf = 10;  // ASCII linefeed -> CHANGE THIS TO 10 TO TEST WITH CIRCUIT, or 64 to debug
+int lf = 10;  // ASCII for linefeed -> actual value to use
+// int lf = 46;  // ASCII for . -> use this for debugging
 
 // Global drawing variables
 float fieldHeight;
@@ -95,7 +96,7 @@ int fieldDepth;
 
 // Global variables for Serial comm
 Serial serialConnetion;
-String port = "COM6";   // <== change value depending on machine
+String port = "COM6";   // <-- change value depending on machine
 int baudrate = 115200;  // 115200 bauds
 char parity = 'E';      // even
 int databits = 7;       // 7 data bits
@@ -116,8 +117,8 @@ HashMap<String,SoundFile> sounds = new HashMap<String,SoundFile>();
 
 
 void setup() {
-    // size (1400, 1050, P3D); // size when adjusting window position
     size (2000, 1500, P3D); // actual size to use
+    // size (1400, 1050, P3D); // size when adjusting window position
     
     serialConnetion = new Serial(this, port, baudrate, parity, databits, stopbits);
     serialConnetion.bufferUntil(lf);
