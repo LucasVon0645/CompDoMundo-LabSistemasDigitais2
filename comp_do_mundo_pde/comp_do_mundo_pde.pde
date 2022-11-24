@@ -15,43 +15,11 @@ class PostgresClient {
     private final static String user = "processing";
     private final static String password = "hexa2022";
 
-    public Connection conn = null;
-    public PreparedStatement pstmt = null;
-
-    // Save a match to the db using the latest match info
-    public void saveMatch() {
-        try {
-            long now = System.currentTimeMillis();
-            Timestamp timestamp = new Timestamp(now);
-            
-            String query = "INSERT INTO matches ";
-            query += "(timestamp, winner, rounds, goals_by_a, goals_by_b, left_kicks_by_A, ";
-            query += "left_kicks_by_B, right_kicks_by_A, right_kicks_by_B) ";
-            query += "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            
-            pstmt = conn.prepareStatement(query);
-            pstmt.setTimestamp(1, timestamp);
-            pstmt.setString(2, String.valueOf(winner));
-            pstmt.setInt(3, round);
-            pstmt.setInt(4, goalsA);
-            pstmt.setInt(5, goalsB);
-            pstmt.setInt(6, leftKicksA);
-            pstmt.setInt(7, leftKicksB);
-            pstmt.setInt(8, rightKicksA);
-            pstmt.setInt(9, rightKicksB);
-
-            pstmt.executeUpdate();
-            pstmt.close();
-            conn.commit();
-            
-        } catch (Exception e) {
-            println(e.getClass().getName() + ": " + e.getMessage());
-        }
-
-    }
+    private Connection conn = null;
+    private PreparedStatement pstmt = null;
 
     // Connect itself to the remote db
-    public boolean connect() {
+    private boolean connect() {
         try {
 
             Class.forName("org.postgresql.Driver");
@@ -68,12 +36,52 @@ class PostgresClient {
     }
     
     // Disconnect itself to the remote db
-    public void disconnect() {
+    private void disconnect() {
         try {
             conn.close();
         } catch (Exception e) {
             e.printStackTrace();
             println(e.getClass().getName() + ": " + e.getMessage());
+        }
+    }
+    
+    // Save a match to the db using the latest match info
+    public void saveMatchToDatabase(Match match) {
+        if (this.connect()) {
+            println("Escrevendo dados ao banco de dados!");
+            
+            try {
+                long now = System.currentTimeMillis();
+                Timestamp timestamp = new Timestamp(now);
+                
+                String query = "INSERT INTO matches ";
+                query += "(timestamp, winner, rounds, goals_by_a, goals_by_b, left_kicks_by_A, ";
+                query += "left_kicks_by_B, right_kicks_by_A, right_kicks_by_B) ";
+                query += "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                
+                pstmt = conn.prepareStatement(query);
+                pstmt.setTimestamp(1, timestamp);
+                pstmt.setString(2, String.valueOf(match.winner));
+                pstmt.setInt(3, match.round);
+                pstmt.setInt(4, match.goalsA);
+                pstmt.setInt(5, match.goalsB);
+                pstmt.setInt(6, match.getKicks('E', 'A'));
+                pstmt.setInt(7, match.getKicks('E', 'B'));
+                pstmt.setInt(8, match.getKicks('D', 'A'));
+                pstmt.setInt(9, match.getKicks('D', 'B'));
+    
+                pstmt.executeUpdate();
+                pstmt.close();
+                conn.commit();
+                
+            } catch (Exception e) {
+                println(e.getClass().getName() + ": " + e.getMessage());
+            }
+            
+            this.disconnect();
+        }
+        else {
+            println("ERRO: Incapaz de se conectar ao servidor.");
         }
     }
 
@@ -110,19 +118,29 @@ class Goalkeeper extends Player {
     private char direction;
     
     private void loadTeamImages() {
+
+        // Goalkeeper standing image
+        this.goalkeeperCenterImage = loadImage(this.team == "Brazil" ? "characters/brazil/Goalkeeper_center.png" : "characters/brazil/Goalkeeper_center.png");
+        this.goalkeeperRightImage = loadImage(this.team == "Brazil" ? "characters/brazil/Goalkeeper_right.png" : "characters/brazil/Goalkeeper_right.png");
+    }
+    
+    private void resizeCenterImage() {
         float goalkeeperCenterHeight = 0.85*goalHeight;
         float goalkeeperCenterRatio, goalkeeperCenterWidth;
         
-        // Goalkeeper standing image
-        this.goalkeeperCenterImage = loadImage(this.team == "Brazil" ? "characters/brazil/Goalkeeper_center.png" : "characters/argentina/Goalkeeper_center.png");
         goalkeeperCenterRatio = this.goalkeeperCenterImage.width / float(this.goalkeeperCenterImage.height);
         goalkeeperCenterWidth = goalkeeperCenterRatio * goalkeeperCenterHeight;
-        this.goalkeeperCenterImage.resize(int(goalkeeperCenterWidth), int(goalkeeperCenterHeight));
-
-        this.goalkeeperRightImage = loadImage(this.team == "Brazil" ? "characters/brazil/Goalkeeper_right.png" : "characters/argentina/Goalkeeper_right.png");
+        
+        this.currentImage.resize(int(goalkeeperCenterWidth), int(goalkeeperCenterHeight));
     }
     
-    private void updateCurrentImage() {
+    private void positionGoalkeeper() {
+        //if (this.direction == '3') {
+            translate(width/2, (height-fieldHeight) + endFieldLineHeight + 32, 0.7*fieldDepth); // endline coordinates
+        // }
+    }
+    
+    public void updateCurrentImage() {
         if (this.direction == '1' || this.direction == '2') {
             this.currentImage = this.goalkeeperRightImage;
         }
@@ -134,20 +152,16 @@ class Goalkeeper extends Player {
         }
     }
     
-    private void positionGoalkeeper() {
-        if (this.direction == '3') {
-            translate(width/2, (height-fieldHeight) + endFieldLineHeight + 32, 0.7*fieldDepth); // endline coordinates
-        }
-    }
-    
-    public void drawGoalkeeper() {
+    public void drawGoalkeeper() {        
+ 
+        this.resizeCenterImage();
+        this.positionGoalkeeper();
+        
         float currentHeight = this.currentImage.height;
-        float currentWidth = this.currentImage.width;
+        float currentWidth = this.currentImage.width;   
         
         pushMatrix();
         pushStyle();
-        
-        this.positionGoalkeeper();
         
         translate(-currentWidth / 2, -currentHeight, 0);
         textureMode(NORMAL);
@@ -165,22 +179,142 @@ class Goalkeeper extends Player {
     }
     
     public void setDirection(char newDirection) {
-        if (this.direction != newDirection) {
-            this.direction = newDirection;
-            this.updateCurrentImage();
-        }
-        
-        this.direction = newDirection; 
+        this.direction = newDirection;
     }
     
     public char getDirection() {
         return this.direction;
     }
+    
 
     // Constructor
     public Goalkeeper(String team) {
         super(team);
         this.loadTeamImages();
+        this.updateCurrentImage();
+    };
+}
+
+
+class Match {
+    private int[] shotsA, shotsB;
+    private IntDict kicksA, kicksB;
+    
+    public Goalkeeper currentGoalkeeper;
+    public char currentKicker;
+    public int round, goalsA, goalsB;
+    public char winner;
+    
+    
+    // Updates match variables when a new shot is about to happen
+    public void playPenalty(char kickerDirection_tx) {
+        // Error conditions
+        if (!((kickerDirection_tx == 'E') || (kickerDirection_tx == 'D'))) {
+            println("ERRO: playPenalty");
+            println("kickerDirection_tx: " + kickerDirection_tx);
+        }
+        
+        else {
+            updateKickCount(kickerDirection_tx);
+            this.currentGoalkeeper.direction = '1';
+            this.currentGoalkeeper.updateCurrentImage();
+        }
+    }
+    
+    // Updates match variables when a new shot is about to happen
+    public void updateRound(char kicker_tx, int round_tx) {
+        // Error conditions
+        if ((round_tx < 0) || (round_tx > 16) || !((kicker_tx == 'A') || (kicker_tx == 'B'))) {
+            println("ERRO: updateRound");
+            println("round_tx: " + round_tx);
+            println("kicker_tx: " + kicker_tx);
+        }
+        
+        else {
+            if (kicker_tx == 'A') {
+                this.round = round_tx;  
+            }
+            
+            this.currentKicker = kicker_tx;
+            this.currentGoalkeeper = (kicker_tx == 'A') ? goalkeeperArgentina : goalkeeperBrazil;
+            this.setCurrentShot(1);
+            
+        }
+    }
+    
+    // Updates match variables after a shot has happened
+    void updateScore(int goalsA_tx, int goalsB_tx) {
+        
+        // Error conditions
+        if ((goalsA_tx < 0 || goalsA_tx > 16 ) || (goalsB_tx < 0 || goalsB_tx > 16 )) {
+            println("ERRO: updateScoreboard");
+            println("goalsA_tx: " + goalsA_tx);
+            println("goalsB_tx: " + goalsB_tx);
+    
+        } else {
+            
+            if (this.currentKicker == 'A') {
+                this.setCurrentShot((goalsA_tx != this.goalsA) ? 2 : -1);
+                this.goalsA = goalsA_tx;
+            }
+            else if (this.currentKicker == 'B') {
+                this.setCurrentShot((goalsB_tx != this.goalsB) ? 2 : -1);
+                this.goalsB = goalsB_tx;
+            }
+        }
+    }
+    
+    public void endMatch() {
+        this.winner = (this.goalsA > this.goalsB) ? 'A' : 'B';
+        this.round += 1; // corrects num of rounds because it started at 0
+    }
+    
+    
+    public void setCurrentShot(int status) {
+        int[] teamShots = currentKicker == 'A' ? this.shotsA : this.shotsB;
+        teamShots[this.round] = status;
+    }
+    
+    public int[] getShots(char team) {
+        return team == 'A' ? this.shotsA : this.shotsB;
+    }
+    
+    public void updateKickCount(char direction) {
+        IntDict teamKicks = this.currentKicker == 'A' ? this.kicksA : this.kicksB;
+        int currentKickCount = teamKicks.get(Character.toString(direction));
+        teamKicks.set(Character.toString(direction), currentKickCount+1);
+    }
+    
+    public int getKicks(char direction, char team) {
+        IntDict teamKicks = team == 'A' ? this.kicksA : this.kicksB;
+        return teamKicks.get(Character.toString(direction));
+    }
+    
+    
+    public Match() {
+        this.currentKicker = 'A';
+        this.currentGoalkeeper = goalkeeperArgentina;
+        
+        this.round = 0;
+        this.goalsA = 0;
+        this.goalsB = 0;
+        
+        this.shotsA = new int[16];
+        this.shotsB = new int[16];
+        
+        for (int i = 0; i < shotsA.length; i += 1) {
+            this.shotsA[i] = 0;
+            this.shotsB[i] = 0;
+        }
+        
+        this.kicksA = new IntDict();
+        this.kicksA.set("D", 0);
+        this.kicksA.set("E", 0);
+        this.kicksB = new IntDict();
+        this.kicksB.set("D", 0);
+        this.kicksB.set("E", 0);
+        
+        this.winner = 'O';
     };
 }
 
@@ -193,20 +327,13 @@ float endFieldLineHeight;
 float advertHeight;
 int fieldDepth;
 
-// Global match variables
-int[] shotsA = new int[16], shotsB = new int[16];
-int round, goalsA, goalsB;
-int leftKicksA, leftKicksB, rightKicksA, rightKicksB;
-char currentPlayer, kickDirection, winner;
-char goalkeeperDirection;
-
 // Global object variables
 Serial serialConnetion;
 PostgresClient client;
 
 // Global player objects
-Goalkeeper goalkeeperBrazil;
-Goalkeeper goalkeeperArgentina;
+Match currentMatch;
+Goalkeeper goalkeeperBrazil, goalkeeperArgentina;
 
 // Global hashmaps
 HashMap<String,SoundFile> sounds = new HashMap<String,SoundFile>();
@@ -214,18 +341,18 @@ HashMap<String,PImage> otherImages = new HashMap<String,PImage>();
 
 
 void setup() {
-    size (2000, 1500, P3D); // actual size to use
-    // size (1400, 1050, P3D); // size when adjusting window position
+    //size (2000, 1500, P3D); // actual size to use
+    size (1400, 1050, P3D); // size when adjusting window position
     
     configureSerialComm();
     client = new PostgresClient();
+
     goalkeeperBrazil = new Goalkeeper("Brazil");
     goalkeeperArgentina = new Goalkeeper("Argentina");
+    currentMatch = new Match();
 
     loadOtherImages();
     loadSounds();
-    
-    globalResetFunc();
 
     sounds.get("background").loop();
 }
@@ -262,27 +389,6 @@ void loadOtherImages() {
 }
 
 
-// Resets all match variables to begin a match anew.
-void globalResetFunc() {
-    for (int i = 0; i < shotsA.length; i += 1) {
-        shotsA[i] = 0;
-        shotsB[i] = 0;
-    }
-  
-    round = 0;
-    goalsA = 0;
-    goalsB = 0;
-    leftKicksA = 0;
-    leftKicksB = 0;
-    rightKicksA = 0;
-    rightKicksB = 0;
-    
-    currentPlayer = 'A';
-    winner = 'O'; // value shows winner has not been decided yet
-}
-
-
-
 void draw() {
     // Setting drawing variables
     fieldHeight = 0.6*height;
@@ -301,8 +407,8 @@ void draw() {
     
     // For some reason, the order of drawing matters here:
     // to keep the background of characters transparent, render them last.
-    drawGoalkeeper();
-    drawKicker();
+    currentMatch.currentGoalkeeper.drawGoalkeeper();
+    // drawKicker();
 }
 
 
@@ -376,49 +482,6 @@ void drawGoal() {
 
     popStyle();
     popMatrix();
-}
-
-
-// Draws goalkeeper on screen
-void drawGoalkeeper() {
-    Goalkeeper currentGoalkeeper;
-
-    currentGoalkeeper = currentPlayer == 'B' ? goalkeeperBrazil : goalkeeperArgentina;
-    currentGoalkeeper.drawGoalkeeper();
-}
-
-
-// Draws kicker on screen
-void drawKicker() {
-    // PImage kickerStill;
-    // float kickerStillHeight = 0.85*goalHeight;
-    // float kickerStillRatio, kickerStillWidth;
-   
-
-    // // Kicker still image
-    // kickerStill = playerImagesBrazil.get("kicker_still");
-    // kickerStillRatio = kickerStill.width / float(kickerStill.height);
-    // kickerStillWidth = kickerStillRatio * kickerStillHeight;
-    // kickerStill.resize(int(kickerStillWidth), int(kickerStillHeight));
-    
-    // pushMatrix();
-    // pushStyle();
-    
-    // translate(0.3*width, 1.01*height, 0);
-    // translate(-kickerStillWidth / 2, -kickerStillHeight, 0);
-
-    // textureMode(NORMAL);
-    // beginShape();
-    //     noStroke();
-    //     texture(kickerStill);
-    //     vertex(0, 0, 0, 0, 0);
-    //     vertex(kickerStillWidth, 0, 0, 1, 0);
-    //     vertex(kickerStillWidth, kickerStillHeight, 0, 1, 1);
-    //     vertex(0, kickerStillHeight, 0, 0, 1);
-    // endShape();
-
-    // popStyle();
-    // popMatrix();
 }
 
 
@@ -540,7 +603,8 @@ void drawScoreboard() {
         translate(teamNameBoxWidth, 0, 0);
         
         // Draws the current score for each team
-        textInsideBox((currentScoreboard == 'A' ? str(goalsA) : str(goalsB)), teamScoreBoxWidth, teamScoreHeight, #333333, #FFFFFF);
+        textInsideBox((currentScoreboard == 'A' ? str(currentMatch.goalsA) : str(currentMatch.goalsB)),
+                       teamScoreBoxWidth, teamScoreHeight, #333333, #FFFFFF);
         translate(teamScoreBoxWidth, 0, 0);
 
         // Draws the box in which circles for each of the first 10 shots will be
@@ -558,7 +622,7 @@ void drawScoreboard() {
         // 2 means the shot was a goal, and -1 means it was a miss
         translate(0, teamScoreHeight/2, 0);
         for (int j = 0; j < 5; j += 1) {
-            int[] currentShots = (currentScoreboard == 'A' ? shotsA : shotsB);
+            int[] currentShots = currentMatch.getShots(currentScoreboard);
             color goalIndicatorColor = (currentShots[j] == 0 ? #FFFFFF : 
                                         currentShots[j] == 1 ? #FFFF00 :
                                         currentShots[j] == 2 ? #00FF00 :
@@ -570,8 +634,8 @@ void drawScoreboard() {
     
 
         // Draw the final circle for each team, indicating who won
-        color winnerIndicatorColor = (winner == 'O' ? #FFFFFF : 
-                                     (winner == currentScoreboard) ? #00FF00 :
+        color winnerIndicatorColor = (currentMatch.winner == 'O' ? #FFFFFF : 
+                                     (currentMatch.winner == currentScoreboard) ? #00FF00 :
                                       #FF0000);
                                       
         fill(winnerIndicatorColor);
@@ -595,37 +659,35 @@ void drawScoreboard() {
 
 // Decodes message received with serial transmission
 void serialEvent (Serial serialConnetion) {
-    String message;
-    char header, segment1;
-    int segment2, segment3;
+    String message, segment1;
+    int segment2;
+    char header;
   
     try {
         message = serialConnetion.readString();
         println("Mensagem recebida é: " + message.substring(0, message.length() - 1));  // debug
         
         // Error in case the transmission cannot be interpreted
-        if (message.length() != 5) {
-            println("ERRO: mensagem tem tamanho diferente de 4");
+        if (message.length() != 4) {
+            println("ERRO: mensagem tem tamanho diferente de 3");
         } else {
             
             // Conversions
             header = message.charAt(0);
-            segment1 = message.charAt(1);
+            segment1 = message.substring(1, 2);
             segment2 = unhex(message.substring(2, 3));
-            segment3 = unhex(message.substring(3, 4));
             
             // If header is 0, the game has just been turned on
             if (header == '0') {
                 println("JOGO COMEÇANDO");
-                
-                globalResetFunc(); // Reset all data structure and global variables
+                currentMatch = new Match();
             }
             
             // If header is 1, a match has just begun
             else if (header == '1') {
                 println("RODADA " + segment2 + ": JOGADOR " + segment1 + " BATENDO");
                 
-                updateRound(segment1, segment2); // Updates global variables
+                currentMatch.updateRound(segment1.charAt(0), segment2);
             }
             
             // If header is 2, the game is preparing itself for a new shot
@@ -634,23 +696,27 @@ void serialEvent (Serial serialConnetion) {
                 sounds.get("whistle").play();
             }
             
-            // If header is 3, a shot has just happened, and we update the scoreboard
             else if (header == '3') {
-                println("NOVO PLACAR:  A  |  B");
-                println("              " + segment2 + "  |  " + segment3);
-                println("DIRECAO: " + segment1);
-                
-                updateScoreboard(segment1, segment2, segment3);
+                currentMatch.playPenalty(segment1.charAt(0));
             }
             
-            // If header is 4, the match has ended, and we check who is the winner
+            // If header is 4, a shot has just happened, and we update the scoreboard
             else if (header == '4') {
+                println("NOVO PLACAR:  A  |  B");
+                println("              " + unhex(segment1) + "  |  " + segment2);
+                
+                currentMatch.updateScore(unhex(segment1), segment2);
+            }
+            
+            // If header is 5, the match has ended, and we check who is the winner
+            else if (header == '5') {
                 println("FIM DO JOGO!!!!");
                 println("PLACAR FINAL:  A  |  B");
-                println("               " + segment2 + "  |  " + segment3);
-                println("DIRECAO: " + segment1);
+                println("               " + unhex(segment1) + "  |  " + segment2);
                 
-                endGame(segment1, segment2, segment3);
+                currentMatch.updateScore(unhex(segment1), segment2);
+                currentMatch.endMatch();
+                client.saveMatchToDatabase(currentMatch);
             }
             
             // If header is any other value, there is a transmission error
@@ -664,89 +730,13 @@ void serialEvent (Serial serialConnetion) {
 }
 
 
-// Detects key pres and sends it to the serial port
+// Detects key press and sends it to the serial port
 void keyPressed() {
     serialConnetion.write(key);
     println("Enviando tecla '" + key + "' para a porta serial.");
     
     if (key == '1' || key == '2' || key == '3' || key == '4' || key == '5') {
-        goalkeeperDirection = key;
-    }
-}
-
-
-// Updates match variables when a new shot is about to happen
-void updateRound(char player_tx, int round_tx) {
-    
-    // Error conditions
-    if ((round_tx < 0) || (round_tx > 16) || !((player_tx == 'A') || (player_tx == 'B'))) {
-        println("ERRO: updateRound");
-        println("round_tx: " + round_tx);
-        println("player_tx: " + player_tx);
-
-    } else {
-        if (player_tx == 'A') {
-            round = round_tx;
-            shotsA[round] = 1;
-        }
-        else if (player_tx == 'B') {
-            shotsB[round] = 1;
-        }
-        
-        currentPlayer = player_tx;
-    }
-}
-
-
-// Updates match variables after a shot has happened
-void updateScoreboard(char direction_tx, int goalsA_tx, int goalsB_tx) {
-    
-    // Error conditions
-    if (!(direction_tx == 'D' || direction_tx == 'E')
-        || (goalsA_tx < 0 || goalsA_tx > 16 )
-        || (goalsB_tx < 0 || goalsB_tx > 16 )) {
-        println("ERRO: updateScoreboard");
-        println("direction_tx: " + direction_tx);
-        println("goalsA_tx: " + goalsA_tx);
-        println("goalsB_tx: " + goalsB_tx);
-
-    } else {
-        kickDirection = direction_tx;
-        
-        if (currentPlayer == 'A') {
-            if (kickDirection == 'E') {leftKicksA += 1;} else {rightKicksA += 1;}
-            
-            shotsA[round] = (goalsA_tx != goalsA) ? 2 : -1;
-            goalsA = goalsA_tx;
-        }
-        else if (currentPlayer == 'B') {
-            if (kickDirection == 'E') {leftKicksB += 1;} else {rightKicksB += 1;}
-            
-            shotsB[round] = (goalsB_tx != goalsB) ? 2 : -1;
-            goalsB = goalsB_tx;
-        }
-    }
-}
-
-
-// Updates match variables (inclusing winner) after a match has ended
-void endGame(char direction_tx, int goalsA_tx, int goalsB_tx) {
-    updateScoreboard(direction_tx, goalsA_tx, goalsB_tx);
-    winner = goalsA > goalsB ? 'A' : 'B';
-    round += 1; // corrects num of rounds because it started at 0
-    saveMatchToDatabase();
-}
-
-
-// After a match has finished, open the database to save its info
-void saveMatchToDatabase() {
-    if (client.connect()) {
-        println("Escrevendo dados ao banco de dados!");
-        client.saveMatch();
-        client.disconnect();
-    }
-    else {
-        println("ERRO: Incapaz de se conectar ao servidor.");
+        // currentMatch.currentGoalkeeper.direction = key;
     }
 }
 
