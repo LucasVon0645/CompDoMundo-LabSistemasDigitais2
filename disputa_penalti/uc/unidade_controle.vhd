@@ -37,6 +37,7 @@ architecture fsm_arch of unidade_controle is
                          preparacao,
                          transmite_batedor,
                          batedor,
+                         transmite_chute,
                          chute,
                          gol,
                          placar,
@@ -83,10 +84,14 @@ begin
                                          else Eprox <= transmite_batedor;
                                          end if;
 
-            when batedor =>              if bater = '1' then Eprox <= chute;
+            when batedor =>              if bater = '1' then Eprox <= transmite_chute;
                                          else Eprox <= batedor;
                                          end if;
-        
+                                         
+            when transmite_chute =>      if fim_transmissao = '1' then Eprox <= chute;
+                                         else Eprox <= transmite_chute;
+                                         end if;
+
             when chute =>                Eprox <= gol;
 
             when gol =>                  if fim_penalti = '1' then Eprox <= placar;
@@ -135,8 +140,8 @@ begin
         reposiciona_goleiro <= '1' when preparacao, '0' when others;
     
     with Eatual select 
-        transmite <= '1' when transmite_inicio | transmite_preparacao |
-                              transmite_batedor | transmite_rodada | transmite_resultado,
+        transmite <= '1' when transmite_inicio | transmite_preparacao | transmite_batedor |
+                              transmite_chute | transmite_rodada | transmite_resultado,
                      '0' when others;
 
     with Eatual select 
@@ -153,8 +158,9 @@ begin
         transcode <= "000" when transmite_inicio, 
                      "001" when transmite_preparacao,
                      "010" when transmite_batedor,
-                     "011" when transmite_rodada,
-                     "100" when transmite_resultado,
+                     "011" when transmite_chute,
+                     "100" when transmite_rodada,
+                     "101" when transmite_resultado,
                      "111" when others;
 
     -- db_estado
@@ -167,11 +173,12 @@ begin
                      "0101" when preparacao,
                      "0110" when transmite_batedor,
                      "0111" when batedor,
-                     "1000" when chute,
-                     "1001" when gol,
-                     "1010" when placar,
-                     "1011" when transmite_rodada,
-                     "1100" when transmite_resultado,
+                     "1000" when transmite_chute,
+                     "1001" when chute,
+                     "1010" when gol,
+                     "1011" when placar,
+                     "1100" when transmite_rodada,
+                     "1101" when transmite_resultado,
                      "1111" when others;
 
 end architecture;
