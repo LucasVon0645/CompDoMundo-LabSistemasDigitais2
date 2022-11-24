@@ -7,7 +7,7 @@ import java.util.Map;
 
 
 // Class to connect to PostgreSQL remote database
-public class PostgresClient {
+class PostgresClient {
 
     // Database info in AWS RDS
     private final static String url =
@@ -82,6 +82,109 @@ public class PostgresClient {
 }
 
 
+// Abtract class for creating players
+abstract class Player {
+    protected String team;
+    protected PImage currentImage;
+    
+    public String getTeam() {
+        return this.team;
+    }
+    
+    public PImage getCurrentImage() {
+        return this.currentImage;
+    }
+    
+    public Player(String team) {
+        this.team = team;
+    }
+}
+
+
+// Class to draw and keep info about Goalkeeper
+class Goalkeeper extends Player {
+    
+    private PImage goalkeeperCenterImage;
+    private PImage goalkeeperRightImage;
+    private PImage goalkeeperLeftImage;
+    private char direction;
+    
+    private void loadTeamImages() {
+        float goalkeeperCenterHeight = 0.85*goalHeight;
+        float goalkeeperCenterRatio, goalkeeperCenterWidth;
+        
+        // Goalkeeper standing image
+        this.goalkeeperCenterImage = loadImage(this.team == "Brazil" ? "characters/brazil/Goalkeeper_center.png" : "characters/argentina/Goalkeeper_center.png");
+        goalkeeperCenterRatio = this.goalkeeperCenterImage.width / float(this.goalkeeperCenterImage.height);
+        goalkeeperCenterWidth = goalkeeperCenterRatio * goalkeeperCenterHeight;
+        this.goalkeeperCenterImage.resize(int(goalkeeperCenterWidth), int(goalkeeperCenterHeight));
+
+        this.goalkeeperRightImage = loadImage(this.team == "Brazil" ? "characters/brazil/Goalkeeper_right.png" : "characters/argentina/Goalkeeper_right.png");
+    }
+    
+    private void updateCurrentImage() {
+        if (this.direction == '1' || this.direction == '2') {
+            this.currentImage = this.goalkeeperRightImage;
+        }
+        else if (this.direction == '4' || this.direction == '5') {
+            this.currentImage = this.goalkeeperLeftImage;
+        }
+        else {
+            this.currentImage = this.goalkeeperCenterImage;
+        }
+    }
+    
+    private void positionGoalkeeper() {
+        if (this.direction == '3') {
+            translate(width/2, (height-fieldHeight) + endFieldLineHeight + 32, 0.7*fieldDepth); // endline coordinates
+        }
+    }
+    
+    public void drawGoalkeeper() {
+        float currentHeight = this.currentImage.height;
+        float currentWidth = this.currentImage.width;
+        
+        pushMatrix();
+        pushStyle();
+        
+        this.positionGoalkeeper();
+        
+        translate(-currentWidth / 2, -currentHeight, 0);
+        textureMode(NORMAL);
+        beginShape();
+            noStroke();
+            texture(this.currentImage);
+            vertex(0, 0, 0, 0, 0);
+            vertex(currentWidth, 0, 0, 1, 0);
+            vertex(currentWidth, currentHeight, 0, 1, 1);
+            vertex(0, currentHeight, 0, 0, 1);
+        endShape();
+    
+        popStyle();
+        popMatrix();
+    }
+    
+    public void setDirection(char newDirection) {
+        if (this.direction != newDirection) {
+            this.direction = newDirection;
+            this.updateCurrentImage();
+        }
+        
+        this.direction = newDirection; 
+    }
+    
+    public char getDirection() {
+        return this.direction;
+    }
+
+    // Constructor
+    public Goalkeeper(String team) {
+        super(team);
+        this.loadTeamImages();
+    };
+}
+
+
 // Global drawing parameters variables
 float fieldHeight;
 float goalHeight;
@@ -95,14 +198,18 @@ int[] shotsA = new int[16], shotsB = new int[16];
 int round, goalsA, goalsB;
 int leftKicksA, leftKicksB, rightKicksA, rightKicksB;
 char currentPlayer, kickDirection, winner;
+char goalkeeperDirection;
 
 // Global object variables
 Serial serialConnetion;
 PostgresClient client;
 
+// Global player objects
+Goalkeeper goalkeeperBrazil;
+Goalkeeper goalkeeperArgentina;
+
 // Global hashmaps
 HashMap<String,SoundFile> sounds = new HashMap<String,SoundFile>();
-HashMap<String,PImage> playerImagesBrazil = new HashMap<String,PImage>();
 HashMap<String,PImage> otherImages = new HashMap<String,PImage>();
 
 
@@ -112,8 +219,9 @@ void setup() {
     
     configureSerialComm();
     client = new PostgresClient();
+    goalkeeperBrazil = new Goalkeeper("Brazil");
+    goalkeeperArgentina = new Goalkeeper("Argentina");
 
-    loadPlayerImages();
     loadOtherImages();
     loadSounds();
     
@@ -143,17 +251,6 @@ void configureSerialComm() {
 void loadSounds() {
     sounds.put("background", new SoundFile(this, "sounds/Crowd_background_noise.wav"));
     sounds.put("whistle", new SoundFile(this, "sounds/Whistle.wav"));
-}
-
-
-// Loads all players images into respective global hashmaps
-void loadPlayerImages() {
-
-    // Player images for Brazil
-    playerImagesBrazil.put("goalkeeper_center", loadImage("characters/brazil/Goalkeeper_center.png"));
-    playerImagesBrazil.put("goalkeeper_right", loadImage("characters/brazil/Goalkeeper_right.png"));
-    playerImagesBrazil.put("kicker_still", loadImage("characters/brazil/Kicker_still.png"));
-    playerImagesBrazil.put("kicker_moving", loadImage("characters/brazil/Kicker_moving.png"));
 }
 
 
@@ -284,69 +381,44 @@ void drawGoal() {
 
 // Draws goalkeeper on screen
 void drawGoalkeeper() {
-    PImage goalkeeperCenter;
-    float goalkeeperCenterHeight = 0.85*goalHeight;
-    float goalkeeperCenterRatio, goalkeeperCenterWidth;
-   
+    Goalkeeper currentGoalkeeper;
 
-    // Goalkeeper standing image
-    goalkeeperCenter = playerImagesBrazil.get("goalkeeper_center");
-    goalkeeperCenterRatio = goalkeeperCenter.width / float(goalkeeperCenter.height);
-    goalkeeperCenterWidth = goalkeeperCenterRatio * goalkeeperCenterHeight;
-    goalkeeperCenter.resize(int(goalkeeperCenterWidth), int(goalkeeperCenterHeight));
-    
-    pushMatrix();
-    pushStyle();
-    
-    translate(width/2, (height-fieldHeight) + endFieldLineHeight + 32, 0.7*fieldDepth); // endline coordinates
-    translate(-goalkeeperCenterWidth / 2, -goalkeeperCenterHeight, 0);
-
-    textureMode(NORMAL);
-    beginShape();
-        noStroke();
-        texture(goalkeeperCenter);
-        vertex(0, 0, 0, 0, 0);
-        vertex(goalkeeperCenterWidth, 0, 0, 1, 0);
-        vertex(goalkeeperCenterWidth, goalkeeperCenterHeight, 0, 1, 1);
-        vertex(0, goalkeeperCenterHeight, 0, 0, 1);
-    endShape();
-
-    popStyle();
-    popMatrix();
+    currentGoalkeeper = currentPlayer == 'B' ? goalkeeperBrazil : goalkeeperArgentina;
+    currentGoalkeeper.drawGoalkeeper();
 }
 
 
 // Draws kicker on screen
 void drawKicker() {
-    PImage kickerStill;
-    float kickerStillHeight = 0.85*goalHeight;
-    float kickerStillRatio, kickerStillWidth;
+    // PImage kickerStill;
+    // float kickerStillHeight = 0.85*goalHeight;
+    // float kickerStillRatio, kickerStillWidth;
    
 
-    // Kicker still image
-    kickerStill = playerImagesBrazil.get("kicker_still");
-    kickerStillRatio = kickerStill.width / float(kickerStill.height);
-    kickerStillWidth = kickerStillRatio * kickerStillHeight;
-    kickerStill.resize(int(kickerStillWidth), int(kickerStillHeight));
+    // // Kicker still image
+    // kickerStill = playerImagesBrazil.get("kicker_still");
+    // kickerStillRatio = kickerStill.width / float(kickerStill.height);
+    // kickerStillWidth = kickerStillRatio * kickerStillHeight;
+    // kickerStill.resize(int(kickerStillWidth), int(kickerStillHeight));
     
-    pushMatrix();
-    pushStyle();
+    // pushMatrix();
+    // pushStyle();
     
-    translate(0.3*width, 1.01*height, 0);
-    translate(-kickerStillWidth / 2, -kickerStillHeight, 0);
+    // translate(0.3*width, 1.01*height, 0);
+    // translate(-kickerStillWidth / 2, -kickerStillHeight, 0);
 
-    textureMode(NORMAL);
-    beginShape();
-        noStroke();
-        texture(kickerStill);
-        vertex(0, 0, 0, 0, 0);
-        vertex(kickerStillWidth, 0, 0, 1, 0);
-        vertex(kickerStillWidth, kickerStillHeight, 0, 1, 1);
-        vertex(0, kickerStillHeight, 0, 0, 1);
-    endShape();
+    // textureMode(NORMAL);
+    // beginShape();
+    //     noStroke();
+    //     texture(kickerStill);
+    //     vertex(0, 0, 0, 0, 0);
+    //     vertex(kickerStillWidth, 0, 0, 1, 0);
+    //     vertex(kickerStillWidth, kickerStillHeight, 0, 1, 1);
+    //     vertex(0, kickerStillHeight, 0, 0, 1);
+    // endShape();
 
-    popStyle();
-    popMatrix();
+    // popStyle();
+    // popMatrix();
 }
 
 
@@ -596,6 +668,10 @@ void serialEvent (Serial serialConnetion) {
 void keyPressed() {
     serialConnetion.write(key);
     println("Enviando tecla '" + key + "' para a porta serial.");
+    
+    if (key == '1' || key == '2' || key == '3' || key == '4' || key == '5') {
+        goalkeeperDirection = key;
+    }
 }
 
 
