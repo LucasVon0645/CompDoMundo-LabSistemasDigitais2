@@ -83,7 +83,7 @@ begin
     
     timer_medicao: contador_m
         generic map (
-            M => 10000000, -- 200 mseg (experimento pratico)
+            M => 5000000, -- 100 mseg (experimento pratico)
             -- M => 200000, -- 400 useg (simulacao testbench)
             N => 27
         )
