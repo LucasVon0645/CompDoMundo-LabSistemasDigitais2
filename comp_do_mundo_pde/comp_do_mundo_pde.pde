@@ -100,6 +100,7 @@ abstract class Player {
     protected abstract void resizeImages(); // Resize images proportionally
     protected abstract void positionPlayer(); // Tranlate player to wherever it needs to be, based on its image
     protected abstract void updateCurrentImage(); // Updates current image of player
+    protected abstract void resetPlayerDrawing(); // Resets frawing to default position
     
     // Draws player centered in the given coordinates
     public void drawPlayer() {        
@@ -161,6 +162,8 @@ class Kicker extends Player {
         translate(0.3*width, 1.01*height, 0);
     }
     
+    protected void resetPlayerDrawing() {};
+    
     public void updateCurrentImage() {
         this.currentImage = this.images.get("kicker_still");
     }
@@ -191,7 +194,7 @@ class Kicker extends Player {
 // Class to draw and keep info about Goalkeeper
 class Goalkeeper extends Player {
     
-    private char direction;
+    private char currentDirection, finalDirection;
     
     protected void loadImages() {
         this.images.put("goalkeeper_center", loadImage(this.team == "Brazil" ? "characters/brazil/Goalkeeper_center.png" : "characters/brazil/Goalkeeper_center.png"));
@@ -217,20 +220,27 @@ class Goalkeeper extends Player {
     protected void positionPlayer() {
         translate(width/2, (height-fieldHeight) + endFieldLineHeight + 32, 0.7*fieldDepth); // endline coordinates
         
-        if (this.direction == '1' || this.direction == '2') {
-            translate(0.15*goalWidth, -48, 0);
-        }
-        else if (this.direction == '4' || this.direction == '5') {
+        if (this.finalDirection == '1' || this.finalDirection == '2') {
             translate(-0.15*goalWidth, -48, 0);
+        }
+        else if (this.finalDirection == '4' || this.finalDirection == '5') {
+            translate(0.15*goalWidth, -48, 0);
         }
     }
     
+    protected void resetPlayerDrawing() {
+        this.currentDirection = '3';
+        updateCurrentImage();
+    };
+    
     public void updateCurrentImage() {
-        if (this.direction == '1' || this.direction == '2') {
-            this.currentImage = this.images.get("goalkeeper_right");
-        }
-        else if (this.direction == '4' || this.direction == '5') {
+        this.finalDirection = this.currentDirection;
+        
+        if (this.finalDirection == '1' || this.finalDirection == '2') {
             this.currentImage = this.images.get("goalkeeper_left");
+        }
+        else if (this.finalDirection == '4' || this.finalDirection == '5') {
+            this.currentImage = this.images.get("goalkeeper_right");
         }
         else {
             this.currentImage = this.images.get("goalkeeper_center");
@@ -238,13 +248,8 @@ class Goalkeeper extends Player {
     }
     
     // Setter of the direction attribute
-    public void setDirection(char newDirection) {
-        this.direction = newDirection;
-    }
-    
-    // Getter of the direction attribute
-    public char getDirection() {
-        return this.direction;
+    public void setCurrentDirection(char newDirection) {
+        this.currentDirection = newDirection;
     }
     
 
@@ -297,7 +302,7 @@ class Match {
         
         else {
             currentKicker.updateKickCount(kickerDirection_tx);
-            this.currentGoalkeeper.setDirection('1'); // DELETE THIS LATER
+            // this.currentGoalkeeper.setDirection('1'); // DELETE THIS LATER
             this.currentGoalkeeper.updateCurrentImage();
             this.currentKicker.updateCurrentImage();
         }
@@ -322,6 +327,8 @@ class Match {
                 this.setCurrentShot((goalsB_tx != this.goalsB) ? 2 : -1);
                 this.goalsB = goalsB_tx;
             }
+            
+            this.currentGoalkeeper.resetPlayerDrawing();
         }
     }
     
@@ -728,6 +735,7 @@ void serialEvent (Serial serialConnetion) {
             else if (header == '1') {
                 println("RODADA " + segment2 + ": JOGADOR " + segment1 + " BATENDO");
                 
+                serialConnetion.write('3'); // reset goalkeeper in digital circuit to middle position
                 currentMatch.updateRound(segment1.charAt(0), segment2);
             }
             
@@ -773,11 +781,10 @@ void serialEvent (Serial serialConnetion) {
 
 // Detects key press and sends it to the serial port
 void keyPressed() {
-    serialConnetion.write(key);
-    println("Enviando tecla '" + key + "' para a porta serial.");
-    
     if (key == '1' || key == '2' || key == '3' || key == '4' || key == '5') {
-        // currentMatch.currentGoalkeeper.setDirection(key);
+        println("Enviando tecla '" + key + "' para a porta serial.");
+        serialConnetion.write(key);
+        currentMatch.currentGoalkeeper.setCurrentDirection(key);
     }
 }
 
