@@ -121,23 +121,35 @@ class Goalkeeper extends Player {
 
         // Goalkeeper standing image
         this.goalkeeperCenterImage = loadImage(this.team == "Brazil" ? "characters/brazil/Goalkeeper_center.png" : "characters/brazil/Goalkeeper_center.png");
+        this.goalkeeperLeftImage = loadImage(this.team == "Brazil" ? "characters/brazil/Goalkeeper_left.png" : "characters/brazil/Goalkeeper_left.png");
         this.goalkeeperRightImage = loadImage(this.team == "Brazil" ? "characters/brazil/Goalkeeper_right.png" : "characters/brazil/Goalkeeper_right.png");
     }
     
-    private void resizeCenterImage() {
+    private void resizeImages() {
         float goalkeeperCenterHeight = 0.85*goalHeight;
+        float goalkeeperSidewaysHeight = 0.75*goalHeight;
         float goalkeeperCenterRatio, goalkeeperCenterWidth;
+        float goalkeeperSidewaysRatio, goalkeeperSidewaysWidth;
         
         goalkeeperCenterRatio = this.goalkeeperCenterImage.width / float(this.goalkeeperCenterImage.height);
         goalkeeperCenterWidth = goalkeeperCenterRatio * goalkeeperCenterHeight;
+        this.goalkeeperCenterImage.resize(int(goalkeeperCenterWidth), int(goalkeeperCenterHeight));
         
-        this.currentImage.resize(int(goalkeeperCenterWidth), int(goalkeeperCenterHeight));
+        goalkeeperSidewaysRatio = this.goalkeeperLeftImage.width / float(this.goalkeeperLeftImage.height);
+        goalkeeperSidewaysWidth = goalkeeperSidewaysRatio * goalkeeperSidewaysHeight;
+        this.goalkeeperLeftImage.resize(int(goalkeeperSidewaysWidth), int(goalkeeperSidewaysHeight));
+        this.goalkeeperRightImage.resize(int(goalkeeperSidewaysWidth), int(goalkeeperSidewaysHeight));
     }
     
     private void positionGoalkeeper() {
-        //if (this.direction == '3') {
-            translate(width/2, (height-fieldHeight) + endFieldLineHeight + 32, 0.7*fieldDepth); // endline coordinates
-        // }
+        translate(width/2, (height-fieldHeight) + endFieldLineHeight + 32, 0.7*fieldDepth); // endline coordinates
+        
+        if (this.direction == '1' || this.direction == '2') {
+            translate(0.15*goalWidth, -48, 0);
+        }
+        else if (this.direction == '4' || this.direction == '5') {
+            translate(-0.15*goalWidth, -48, 0);
+        }
     }
     
     public void updateCurrentImage() {
@@ -154,7 +166,7 @@ class Goalkeeper extends Player {
     
     public void drawGoalkeeper() {        
  
-        this.resizeCenterImage();
+        this.resizeImages();
         this.positionGoalkeeper();
         
         float currentHeight = this.currentImage.height;
@@ -320,18 +332,16 @@ class Match {
 
 
 // Global drawing parameters variables
-float fieldHeight;
-float goalHeight;
-float crowdHeight;
+float fieldHeight, fieldDepth;
+float goalHeight, goalWidth;
 float endFieldLineHeight;
 float advertHeight;
-int fieldDepth;
+float crowdHeight;
+
 
 // Global object variables
 Serial serialConnetion;
 PostgresClient client;
-
-// Global player objects
 Match currentMatch;
 Goalkeeper goalkeeperBrazil, goalkeeperArgentina;
 
@@ -341,8 +351,8 @@ HashMap<String,PImage> otherImages = new HashMap<String,PImage>();
 
 
 void setup() {
-    //size (2000, 1500, P3D); // actual size to use
-    size (1400, 1050, P3D); // size when adjusting window position
+    size(2400, 1800, P3D); // actual size to use
+    //size(1400, 1050, P3D); // size when adjusting window position
     
     configureSerialComm();
     client = new PostgresClient();
@@ -367,7 +377,7 @@ void configureSerialComm() {
     float stopbits = 2.0;   // 2 stop bits
     
     int lf = 10;  // ASCII for linefeed -> actual value to use
-    // int lf = 46;  // ASCII for . -> use this for debugging
+    //int lf = 46;  // ASCII for . -> use this for debugging
     
     serialConnetion = new Serial(this, port, baudrate, parity, databits, stopbits);
     serialConnetion.bufferUntil(lf);
@@ -392,8 +402,9 @@ void loadOtherImages() {
 void draw() {
     // Setting drawing variables
     fieldHeight = 0.6*height;
-    fieldDepth = -400;
+    fieldDepth = -0.2*width;
     goalHeight = height - fieldHeight;
+    goalWidth = 0.666*width;
     endFieldLineHeight = 0.125*fieldHeight;
     advertHeight = 0.1*height;
     crowdHeight = (height - fieldHeight - advertHeight);
@@ -465,7 +476,6 @@ void drawField() {
 
 // Draws the goal on the screen: completely static
 void drawGoal() {
-    float goalWidth = 0.666*width;
     float goalThickness = 0.01*width;
 
     pushMatrix();
@@ -520,25 +530,28 @@ void drawAdverts() {
 // Draws the crowd behind the goal on the screen: completely static
 void drawCrowd() {
     PImage crowdImage;
+    float crowdWidth = 1.55*width;
+    float crowdRatio, crowdHeight;
 
     // Crowd image from data folder
     crowdImage = otherImages.get("crowd");
+    crowdRatio = crowdImage.height / float(crowdImage.width);
+    crowdHeight = crowdRatio * crowdWidth;
+    crowdImage.resize(int(crowdWidth), int(crowdHeight));
     
     pushMatrix();
     pushStyle();
-    translate(0, 0, 1.2*fieldDepth);
-    circle(0, 0, 16);
     
-    crowdImage.resize(width, 0);
+    translate(-0.27*width, -0.55*height, 1.7*fieldDepth);
 
     textureMode(NORMAL);
     beginShape();
         noStroke();
         texture(crowdImage);
-        vertex(-1.3*width, -0.9*crowdHeight, 0, 0, 0);
-        vertex(1.3*width, -0.9*crowdHeight, 0, 1, 0);
-        vertex(1.3*width, crowdHeight, 0, 1, 1);
-        vertex(-1.3*width, crowdHeight, 0, 0, 1);
+        vertex(0, 0, 0, 0, 0);
+        vertex(crowdWidth, 0, 0, 1, 0);
+        vertex(crowdWidth, crowdHeight, 0, 1, 1);
+        vertex(0, crowdHeight, 0, 0, 1);
     endShape();
 
     popStyle();
