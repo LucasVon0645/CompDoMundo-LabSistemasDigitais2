@@ -145,7 +145,7 @@ class Kicker extends Player {
     public char id;
     
     protected void loadImages() {
-        this.images.put("kicker_still", loadImage(this.team == "Brazil" ? "characters/brazil/Kicker_still.png" : "characters/brazil/Kicker_still.png"));
+        this.images.put("kicker_still", loadImage(this.team == "Brazil" ? "characters/brazil/Kicker_still.png" : "characters/argentina/Kicker_still.png"));
         this.images.put("kicker_moving", loadImage(this.team == "Brazil" ? "characters/brazil/Kicker_moving.png" : "characters/brazil/Kicker_moving.png"));
     }
     
@@ -380,8 +380,8 @@ HashMap<String,PImage> otherImages = new HashMap<String,PImage>();
 
 
 void setup() {
-    //size(2400, 1800, P3D); // actual size to use
-    size(1400, 1050, P3D); // size when adjusting window position
+    size(2400, 1800, P3D); // actual size to use
+    //size(1400, 1050, P3D); // size when adjusting window position
     
     configureSerialComm();
     client = new PostgresClient();
@@ -389,7 +389,7 @@ void setup() {
 
     loadOtherImages();
     loadSounds();
-
+    
     sounds.get("background").loop();
 }
 
@@ -412,8 +412,11 @@ void configureSerialComm() {
 
 // Fills global hashmap variable with all the sound effects used in sketch
 void loadSounds() {
+    SoundFile whistle = new SoundFile(this, "sounds/Whistle.wav");
+    whistle.amp(0.1);
+    
     sounds.put("background", new SoundFile(this, "sounds/Crowd_background_noise.wav"));
-    sounds.put("whistle", new SoundFile(this, "sounds/Whistle.wav"));
+    sounds.put("whistle", whistle);
 }
 
 
