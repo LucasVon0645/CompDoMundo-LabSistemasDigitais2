@@ -90,26 +90,29 @@ class PostgresClient {
 }
 
 
-// Abtract class for creating players
+// Abtract class for creating players, such as Kickers or Goalkeepers
 abstract class Player {
     protected String team;
     protected HashMap<String,PImage> images;
     protected PImage currentImage;
     
-    protected abstract void loadImages();
-    protected abstract void resizeImages();
-    protected abstract void positionPlayer();
-    protected abstract void updateCurrentImage();
+    protected abstract void loadImages(); // Loads images based on team
+    protected abstract void resizeImages(); // Resize images proportionally
+    protected abstract void positionPlayer(); // Tranlate player to wherever it needs to be, based on its image
+    protected abstract void updateCurrentImage(); // Updates current image of player
     
+    // Draws player centered in the given coordinates
     public void drawPlayer() {        
-        float currentHeight = this.currentImage.height;
-        float currentWidth = this.currentImage.width;
+        float currentHeight, currentWidth;
         
         pushMatrix();
         pushStyle();
         
         this.resizeImages();
         this.positionPlayer();
+
+        currentHeight = this.currentImage.height;
+        currentWidth = this.currentImage.width;
         
         translate(-currentWidth / 2, -currentHeight, 0);
         textureMode(NORMAL);
@@ -147,21 +150,11 @@ class Kicker extends Player {
     }
     
     protected void resizeImages() {
-        PImage kickerStillImage, kickerMovingImage;
         float kickerStillHeight = 0.85*goalHeight;
         float kickerMovingHeight = 0.75*goalHeight;
-        float kickerStillRatio, kickerStillWidth;
-        float kickerMovingRatio, kickerMovingWidth;
-        
-        kickerStillImage = this.images.get("kicker_still");
-        kickerStillRatio = kickerStillImage.width / float(kickerStillImage.height);
-        kickerStillWidth = kickerStillRatio * kickerStillHeight;
-        kickerStillImage.resize(int(kickerStillWidth), int(kickerStillHeight));
-        
-        kickerMovingImage = this.images.get("kicker_moving");
-        kickerMovingRatio = kickerMovingImage.width / float(kickerMovingImage.height);
-        kickerMovingWidth = kickerMovingRatio * kickerMovingHeight;
-        kickerMovingImage.resize(int(kickerMovingWidth), int(kickerMovingHeight));
+
+        this.images.get("kicker_still").resize(0, int(kickerStillHeight));
+        this.images.get("kicker_moving").resize(0, int(kickerMovingHeight));
     }
     
     protected void positionPlayer() {
@@ -172,14 +165,17 @@ class Kicker extends Player {
         this.currentImage = this.images.get("kicker_still");
     }
     
+    // Adds 1 to the current kick count of a given direction
     public void updateKickCount(char direction) {
         int currentKickCount = this.kicks.get(Character.toString(direction));
         this.kicks.set(Character.toString(direction), currentKickCount+1);
     }
     
+    // Get the current kick count of a given direction
     public int getKicks(char direction) {
         return this.kicks.get(Character.toString(direction));
     }
+
 
     // Constructor
     public Kicker(String team) {
@@ -207,20 +203,15 @@ class Goalkeeper extends Player {
         PImage goalkeeperCenterImage, goalkeeperLeftImage, goalkeeperRightImage;
         float goalkeeperCenterHeight = 0.85*goalHeight;
         float goalkeeperSidewaysHeight = 0.75*goalHeight;
-        float goalkeeperCenterRatio, goalkeeperCenterWidth;
-        float goalkeeperSidewaysRatio, goalkeeperSidewaysWidth;
         
         goalkeeperCenterImage = this.images.get("goalkeeper_center");
-        goalkeeperCenterRatio = goalkeeperCenterImage.width / float(goalkeeperCenterImage.height);
-        goalkeeperCenterWidth = goalkeeperCenterRatio * goalkeeperCenterHeight;
-        goalkeeperCenterImage.resize(int(goalkeeperCenterWidth), int(goalkeeperCenterHeight));
+        goalkeeperCenterImage.resize(0, int(goalkeeperCenterHeight));
         
         goalkeeperLeftImage = this.images.get("goalkeeper_left");
+        goalkeeperLeftImage.resize(0, int(goalkeeperSidewaysHeight));
+        
         goalkeeperRightImage = this.images.get("goalkeeper_right");
-        goalkeeperSidewaysRatio = goalkeeperLeftImage.width / float(goalkeeperLeftImage.height);
-        goalkeeperSidewaysWidth = goalkeeperSidewaysRatio * goalkeeperSidewaysHeight;
-        goalkeeperLeftImage.resize(int(goalkeeperSidewaysWidth), int(goalkeeperSidewaysHeight));
-        goalkeeperRightImage.resize(int(goalkeeperSidewaysWidth), int(goalkeeperSidewaysHeight));
+        goalkeeperRightImage.resize(0, int(goalkeeperSidewaysHeight));
     }
     
     protected void positionPlayer() {
@@ -246,10 +237,12 @@ class Goalkeeper extends Player {
         }
     }
     
+    // Setter of the direction attribute
     public void setDirection(char newDirection) {
         this.direction = newDirection;
     }
     
+    // Getter of the direction attribute
     public char getDirection() {
         return this.direction;
     }
@@ -375,7 +368,6 @@ float fieldHeight, fieldDepth;
 float goalHeight, goalWidth;
 float endFieldLineHeight;
 float advertHeight;
-float crowdHeight;
 
 // Global object variables
 Serial serialConnetion;
@@ -388,8 +380,8 @@ HashMap<String,PImage> otherImages = new HashMap<String,PImage>();
 
 
 void setup() {
-    size(2400, 1800, P3D); // actual size to use
-    //size(1400, 1050, P3D); // size when adjusting window position
+    //size(2400, 1800, P3D); // actual size to use
+    size(1400, 1050, P3D); // size when adjusting window position
     
     configureSerialComm();
     client = new PostgresClient();
@@ -441,7 +433,6 @@ void draw() {
     goalWidth = 0.666*width;
     endFieldLineHeight = 0.125*fieldHeight;
     advertHeight = 0.1*height;
-    crowdHeight = (height - fieldHeight - advertHeight);
     
     // lights();
     drawField();
@@ -565,14 +556,13 @@ void drawAdverts() {
 // Draws the crowd behind the goal on the screen: completely static
 void drawCrowd() {
     PImage crowdImage;
+    int crowdHeight;
     float crowdWidth = 1.55*width;
-    float crowdRatio, crowdHeight;
 
     // Crowd image from data folder
     crowdImage = otherImages.get("crowd");
-    crowdRatio = crowdImage.height / float(crowdImage.width);
-    crowdHeight = crowdRatio * crowdWidth;
-    crowdImage.resize(int(crowdWidth), int(crowdHeight));
+    crowdImage.resize(int(crowdWidth), 0);
+    crowdHeight = crowdImage.height;
     
     pushMatrix();
     pushStyle();
@@ -784,7 +774,7 @@ void keyPressed() {
     println("Enviando tecla '" + key + "' para a porta serial.");
     
     if (key == '1' || key == '2' || key == '3' || key == '4' || key == '5') {
-        // currentMatch.currentGoalkeeper.direction = key;
+        // currentMatch.currentGoalkeeper.setDirection(key);
     }
 }
 
