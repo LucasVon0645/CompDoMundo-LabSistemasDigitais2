@@ -65,10 +65,10 @@ class PostgresClient {
                 pstmt.setInt(3, match.round);
                 pstmt.setInt(4, match.goalsA);
                 pstmt.setInt(5, match.goalsB);
-                pstmt.setInt(6, match.getKicks('E', 'A'));
-                pstmt.setInt(7, match.getKicks('E', 'B'));
-                pstmt.setInt(8, match.getKicks('D', 'A'));
-                pstmt.setInt(9, match.getKicks('D', 'B'));
+                pstmt.setInt(6, match.kickerA.getKicks('E'));
+                pstmt.setInt(7, match.kickerB.getKicks('E'));
+                pstmt.setInt(8, match.kickerA.getKicks('D'));
+                pstmt.setInt(9, match.kickerB.getKicks('D'));
     
                 pstmt.executeUpdate();
                 pstmt.close();
@@ -93,87 +93,23 @@ class PostgresClient {
 // Abtract class for creating players
 abstract class Player {
     protected String team;
+    protected HashMap<String,PImage> images;
     protected PImage currentImage;
     
-    public String getTeam() {
-        return this.team;
-    }
+    protected abstract void loadImages();
+    protected abstract void resizeImages();
+    protected abstract void positionPlayer();
+    protected abstract void updateCurrentImage();
     
-    public PImage getCurrentImage() {
-        return this.currentImage;
-    }
-    
-    public Player(String team) {
-        this.team = team;
-    }
-}
-
-
-// Class to draw and keep info about Goalkeeper
-class Goalkeeper extends Player {
-    
-    private PImage goalkeeperCenterImage;
-    private PImage goalkeeperRightImage;
-    private PImage goalkeeperLeftImage;
-    private char direction;
-    
-    private void loadTeamImages() {
-
-        // Goalkeeper standing image
-        this.goalkeeperCenterImage = loadImage(this.team == "Brazil" ? "characters/brazil/Goalkeeper_center.png" : "characters/brazil/Goalkeeper_center.png");
-        this.goalkeeperLeftImage = loadImage(this.team == "Brazil" ? "characters/brazil/Goalkeeper_left.png" : "characters/brazil/Goalkeeper_left.png");
-        this.goalkeeperRightImage = loadImage(this.team == "Brazil" ? "characters/brazil/Goalkeeper_right.png" : "characters/brazil/Goalkeeper_right.png");
-    }
-    
-    private void resizeImages() {
-        float goalkeeperCenterHeight = 0.85*goalHeight;
-        float goalkeeperSidewaysHeight = 0.75*goalHeight;
-        float goalkeeperCenterRatio, goalkeeperCenterWidth;
-        float goalkeeperSidewaysRatio, goalkeeperSidewaysWidth;
-        
-        goalkeeperCenterRatio = this.goalkeeperCenterImage.width / float(this.goalkeeperCenterImage.height);
-        goalkeeperCenterWidth = goalkeeperCenterRatio * goalkeeperCenterHeight;
-        this.goalkeeperCenterImage.resize(int(goalkeeperCenterWidth), int(goalkeeperCenterHeight));
-        
-        goalkeeperSidewaysRatio = this.goalkeeperLeftImage.width / float(this.goalkeeperLeftImage.height);
-        goalkeeperSidewaysWidth = goalkeeperSidewaysRatio * goalkeeperSidewaysHeight;
-        this.goalkeeperLeftImage.resize(int(goalkeeperSidewaysWidth), int(goalkeeperSidewaysHeight));
-        this.goalkeeperRightImage.resize(int(goalkeeperSidewaysWidth), int(goalkeeperSidewaysHeight));
-    }
-    
-    private void positionGoalkeeper() {
-        translate(width/2, (height-fieldHeight) + endFieldLineHeight + 32, 0.7*fieldDepth); // endline coordinates
-        
-        if (this.direction == '1' || this.direction == '2') {
-            translate(0.15*goalWidth, -48, 0);
-        }
-        else if (this.direction == '4' || this.direction == '5') {
-            translate(-0.15*goalWidth, -48, 0);
-        }
-    }
-    
-    public void updateCurrentImage() {
-        if (this.direction == '1' || this.direction == '2') {
-            this.currentImage = this.goalkeeperRightImage;
-        }
-        else if (this.direction == '4' || this.direction == '5') {
-            this.currentImage = this.goalkeeperLeftImage;
-        }
-        else {
-            this.currentImage = this.goalkeeperCenterImage;
-        }
-    }
-    
-    public void drawGoalkeeper() {        
- 
-        this.resizeImages();
-        this.positionGoalkeeper();
-        
+    public void drawPlayer() {        
         float currentHeight = this.currentImage.height;
-        float currentWidth = this.currentImage.width;   
+        float currentWidth = this.currentImage.width;
         
         pushMatrix();
         pushStyle();
+        
+        this.resizeImages();
+        this.positionPlayer();
         
         translate(-currentWidth / 2, -currentHeight, 0);
         textureMode(NORMAL);
@@ -190,6 +126,126 @@ class Goalkeeper extends Player {
         popMatrix();
     }
     
+    public Player(String team) {
+        this.team = team;
+        this.images = new HashMap<String,PImage>();
+        this.loadImages();
+        this.updateCurrentImage();
+    }
+}
+
+
+// Class to draw and keep info about Goalkeeper
+class Kicker extends Player {
+    
+    private IntDict kicks;
+    public char id;
+    
+    protected void loadImages() {
+        this.images.put("kicker_still", loadImage(this.team == "Brazil" ? "characters/brazil/Kicker_still.png" : "characters/brazil/Kicker_still.png"));
+        this.images.put("kicker_moving", loadImage(this.team == "Brazil" ? "characters/brazil/Kicker_moving.png" : "characters/brazil/Kicker_moving.png"));
+    }
+    
+    protected void resizeImages() {
+        PImage kickerStillImage, kickerMovingImage;
+        float kickerStillHeight = 0.85*goalHeight;
+        float kickerMovingHeight = 0.75*goalHeight;
+        float kickerStillRatio, kickerStillWidth;
+        float kickerMovingRatio, kickerMovingWidth;
+        
+        kickerStillImage = this.images.get("kicker_still");
+        kickerStillRatio = kickerStillImage.width / float(kickerStillImage.height);
+        kickerStillWidth = kickerStillRatio * kickerStillHeight;
+        kickerStillImage.resize(int(kickerStillWidth), int(kickerStillHeight));
+        
+        kickerMovingImage = this.images.get("kicker_moving");
+        kickerMovingRatio = kickerMovingImage.width / float(kickerMovingImage.height);
+        kickerMovingWidth = kickerMovingRatio * kickerMovingHeight;
+        kickerMovingImage.resize(int(kickerMovingWidth), int(kickerMovingHeight));
+    }
+    
+    protected void positionPlayer() {
+        translate(0.3*width, 1.01*height, 0);
+    }
+    
+    public void updateCurrentImage() {
+        this.currentImage = this.images.get("kicker_still");
+    }
+    
+    public void updateKickCount(char direction) {
+        int currentKickCount = this.kicks.get(Character.toString(direction));
+        this.kicks.set(Character.toString(direction), currentKickCount+1);
+    }
+    
+    public int getKicks(char direction) {
+        return this.kicks.get(Character.toString(direction));
+    }
+
+    // Constructor
+    public Kicker(String team) {
+        super(team);
+        this.id = (team == "Brazil") ? 'A' : 'B';
+        this.kicks = new IntDict();
+        this.kicks.set("D", 0);
+        this.kicks.set("E", 0);
+    };
+}
+
+
+// Class to draw and keep info about Goalkeeper
+class Goalkeeper extends Player {
+    
+    private char direction;
+    
+    protected void loadImages() {
+        this.images.put("goalkeeper_center", loadImage(this.team == "Brazil" ? "characters/brazil/Goalkeeper_center.png" : "characters/brazil/Goalkeeper_center.png"));
+        this.images.put("goalkeeper_left", loadImage(this.team == "Brazil" ? "characters/brazil/Goalkeeper_left.png" : "characters/brazil/Goalkeeper_left.png"));
+        this.images.put("goalkeeper_right", loadImage(this.team == "Brazil" ? "characters/brazil/Goalkeeper_right.png" : "characters/brazil/Goalkeeper_right.png"));
+    }
+    
+    protected void resizeImages() {
+        PImage goalkeeperCenterImage, goalkeeperLeftImage, goalkeeperRightImage;
+        float goalkeeperCenterHeight = 0.85*goalHeight;
+        float goalkeeperSidewaysHeight = 0.75*goalHeight;
+        float goalkeeperCenterRatio, goalkeeperCenterWidth;
+        float goalkeeperSidewaysRatio, goalkeeperSidewaysWidth;
+        
+        goalkeeperCenterImage = this.images.get("goalkeeper_center");
+        goalkeeperCenterRatio = goalkeeperCenterImage.width / float(goalkeeperCenterImage.height);
+        goalkeeperCenterWidth = goalkeeperCenterRatio * goalkeeperCenterHeight;
+        goalkeeperCenterImage.resize(int(goalkeeperCenterWidth), int(goalkeeperCenterHeight));
+        
+        goalkeeperLeftImage = this.images.get("goalkeeper_left");
+        goalkeeperRightImage = this.images.get("goalkeeper_right");
+        goalkeeperSidewaysRatio = goalkeeperLeftImage.width / float(goalkeeperLeftImage.height);
+        goalkeeperSidewaysWidth = goalkeeperSidewaysRatio * goalkeeperSidewaysHeight;
+        goalkeeperLeftImage.resize(int(goalkeeperSidewaysWidth), int(goalkeeperSidewaysHeight));
+        goalkeeperRightImage.resize(int(goalkeeperSidewaysWidth), int(goalkeeperSidewaysHeight));
+    }
+    
+    protected void positionPlayer() {
+        translate(width/2, (height-fieldHeight) + endFieldLineHeight + 32, 0.7*fieldDepth); // endline coordinates
+        
+        if (this.direction == '1' || this.direction == '2') {
+            translate(0.15*goalWidth, -48, 0);
+        }
+        else if (this.direction == '4' || this.direction == '5') {
+            translate(-0.15*goalWidth, -48, 0);
+        }
+    }
+    
+    public void updateCurrentImage() {
+        if (this.direction == '1' || this.direction == '2') {
+            this.currentImage = this.images.get("goalkeeper_right");
+        }
+        else if (this.direction == '4' || this.direction == '5') {
+            this.currentImage = this.images.get("goalkeeper_left");
+        }
+        else {
+            this.currentImage = this.images.get("goalkeeper_center");
+        }
+    }
+    
     public void setDirection(char newDirection) {
         this.direction = newDirection;
     }
@@ -202,36 +258,20 @@ class Goalkeeper extends Player {
     // Constructor
     public Goalkeeper(String team) {
         super(team);
-        this.loadTeamImages();
-        this.updateCurrentImage();
     };
 }
 
 
 class Match {
     private int[] shotsA, shotsB;
-    private IntDict kicksA, kicksB;
+    private Kicker kickerA, kickerB;
+    private Goalkeeper goalkeeperA, goalkeeperB;
     
+    public Kicker currentKicker;
     public Goalkeeper currentGoalkeeper;
-    public char currentKicker;
     public int round, goalsA, goalsB;
     public char winner;
-    
-    
-    // Updates match variables when a new shot is about to happen
-    public void playPenalty(char kickerDirection_tx) {
-        // Error conditions
-        if (!((kickerDirection_tx == 'E') || (kickerDirection_tx == 'D'))) {
-            println("ERRO: playPenalty");
-            println("kickerDirection_tx: " + kickerDirection_tx);
-        }
-        
-        else {
-            updateKickCount(kickerDirection_tx);
-            this.currentGoalkeeper.direction = '1';
-            this.currentGoalkeeper.updateCurrentImage();
-        }
-    }
+
     
     // Updates match variables when a new shot is about to happen
     public void updateRound(char kicker_tx, int round_tx) {
@@ -247,10 +287,26 @@ class Match {
                 this.round = round_tx;  
             }
             
-            this.currentKicker = kicker_tx;
-            this.currentGoalkeeper = (kicker_tx == 'A') ? goalkeeperArgentina : goalkeeperBrazil;
+            this.currentKicker = (kicker_tx == 'A') ? kickerA : kickerB;
+            this.currentGoalkeeper = (kicker_tx == 'A') ? goalkeeperB : goalkeeperA;
             this.setCurrentShot(1);
             
+        }
+    }
+    
+    // Updates match variables when a new shot is about to happen
+    public void playPenalty(char kickerDirection_tx) {
+        // Error conditions
+        if (!((kickerDirection_tx == 'E') || (kickerDirection_tx == 'D'))) {
+            println("ERRO: playPenalty");
+            println("kickerDirection_tx: " + kickerDirection_tx);
+        }
+        
+        else {
+            currentKicker.updateKickCount(kickerDirection_tx);
+            this.currentGoalkeeper.setDirection('1'); // DELETE THIS LATER
+            this.currentGoalkeeper.updateCurrentImage();
+            this.currentKicker.updateCurrentImage();
         }
     }
     
@@ -265,11 +321,11 @@ class Match {
     
         } else {
             
-            if (this.currentKicker == 'A') {
+            if (this.currentKicker.id == 'A') {
                 this.setCurrentShot((goalsA_tx != this.goalsA) ? 2 : -1);
                 this.goalsA = goalsA_tx;
             }
-            else if (this.currentKicker == 'B') {
+            else if (this.currentKicker.id == 'B') {
                 this.setCurrentShot((goalsB_tx != this.goalsB) ? 2 : -1);
                 this.goalsB = goalsB_tx;
             }
@@ -281,9 +337,8 @@ class Match {
         this.round += 1; // corrects num of rounds because it started at 0
     }
     
-    
     public void setCurrentShot(int status) {
-        int[] teamShots = currentKicker == 'A' ? this.shotsA : this.shotsB;
+        int[] teamShots = currentKicker.id == 'A' ? this.shotsA : this.shotsB;
         teamShots[this.round] = status;
     }
     
@@ -291,21 +346,13 @@ class Match {
         return team == 'A' ? this.shotsA : this.shotsB;
     }
     
-    public void updateKickCount(char direction) {
-        IntDict teamKicks = this.currentKicker == 'A' ? this.kicksA : this.kicksB;
-        int currentKickCount = teamKicks.get(Character.toString(direction));
-        teamKicks.set(Character.toString(direction), currentKickCount+1);
-    }
-    
-    public int getKicks(char direction, char team) {
-        IntDict teamKicks = team == 'A' ? this.kicksA : this.kicksB;
-        return teamKicks.get(Character.toString(direction));
-    }
-    
-    
     public Match() {
-        this.currentKicker = 'A';
-        this.currentGoalkeeper = goalkeeperArgentina;
+        this.kickerA = new Kicker("Brazil");
+        this.kickerB = new Kicker("Argentina");
+        this.goalkeeperA = new Goalkeeper("Brazil");
+        this.goalkeeperB = new Goalkeeper("Argentina");
+        this.currentKicker = this.kickerA;
+        this.currentGoalkeeper = this.goalkeeperB;
         
         this.round = 0;
         this.goalsA = 0;
@@ -313,18 +360,10 @@ class Match {
         
         this.shotsA = new int[16];
         this.shotsB = new int[16];
-        
         for (int i = 0; i < shotsA.length; i += 1) {
             this.shotsA[i] = 0;
             this.shotsB[i] = 0;
         }
-        
-        this.kicksA = new IntDict();
-        this.kicksA.set("D", 0);
-        this.kicksA.set("E", 0);
-        this.kicksB = new IntDict();
-        this.kicksB.set("D", 0);
-        this.kicksB.set("E", 0);
         
         this.winner = 'O';
     };
@@ -338,12 +377,10 @@ float endFieldLineHeight;
 float advertHeight;
 float crowdHeight;
 
-
 // Global object variables
 Serial serialConnetion;
 PostgresClient client;
 Match currentMatch;
-Goalkeeper goalkeeperBrazil, goalkeeperArgentina;
 
 // Global hashmaps
 HashMap<String,SoundFile> sounds = new HashMap<String,SoundFile>();
@@ -356,9 +393,6 @@ void setup() {
     
     configureSerialComm();
     client = new PostgresClient();
-
-    goalkeeperBrazil = new Goalkeeper("Brazil");
-    goalkeeperArgentina = new Goalkeeper("Argentina");
     currentMatch = new Match();
 
     loadOtherImages();
@@ -418,8 +452,9 @@ void draw() {
     
     // For some reason, the order of drawing matters here:
     // to keep the background of characters transparent, render them last.
-    currentMatch.currentGoalkeeper.drawGoalkeeper();
-    // drawKicker();
+    currentMatch.currentKicker.drawPlayer();
+    currentMatch.currentGoalkeeper.drawPlayer();
+    
 }
 
 
