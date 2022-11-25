@@ -145,8 +145,22 @@ class Kicker extends Player {
     public char id;
     
     protected void loadImages() {
-        this.images.put("kicker_still", loadImage(this.team == "Brazil" ? "characters/brazil/Kicker_still.png" : "characters/argentina/Kicker_still.png"));
-        this.images.put("kicker_moving", loadImage(this.team == "Brazil" ? "characters/brazil/Kicker_moving.png" : "characters/brazil/Kicker_moving.png"));
+        this.images.put(
+            "kicker_still", 
+            loadImage(
+                this.team == "Brazil" 
+                ? "characters/brazil/Kicker_still.png" 
+                : "characters/argentina/Kicker_still.png"
+            )
+        );
+        this.images.put(
+            "kicker_moving", 
+            loadImage(
+                this.team == "Brazil" 
+                ? "characters/brazil/Kicker_moving.png" 
+                : "characters/brazil/Kicker_moving.png"
+            )
+        );
     }
     
     protected void resizeImages() {
@@ -194,9 +208,30 @@ class Goalkeeper extends Player {
     private char direction;
     
     protected void loadImages() {
-        this.images.put("goalkeeper_center", loadImage(this.team == "Brazil" ? "characters/brazil/Goalkeeper_center.png" : "characters/brazil/Goalkeeper_center.png"));
-        this.images.put("goalkeeper_left", loadImage(this.team == "Brazil" ? "characters/brazil/Goalkeeper_left.png" : "characters/brazil/Goalkeeper_left.png"));
-        this.images.put("goalkeeper_right", loadImage(this.team == "Brazil" ? "characters/brazil/Goalkeeper_right.png" : "characters/brazil/Goalkeeper_right.png"));
+        this.images.put(
+            "goalkeeper_center", 
+            loadImage(
+                this.team == "Brazil" 
+                ? "characters/brazil/Goalkeeper_center.png" 
+                : "characters/brazil/Goalkeeper_center.png"
+            )
+        );
+        this.images.put(
+            "goalkeeper_left", 
+            loadImage(
+                this.team == "Brazil" 
+                ? "characters/brazil/Goalkeeper_left.png" 
+                : "characters/brazil/Goalkeeper_left.png"
+            )
+        );
+        this.images.put(
+            "goalkeeper_right", 
+            loadImage(
+                this.team == "Brazil" 
+                ? "characters/brazil/Goalkeeper_right.png" 
+                : "characters/brazil/Goalkeeper_right.png"
+            )
+        );
     }
     
     protected void resizeImages() {
@@ -215,7 +250,11 @@ class Goalkeeper extends Player {
     }
     
     protected void positionPlayer() {
-        translate(width/2, (height-fieldHeight) + endFieldLineHeight + 32, 0.7*fieldDepth); // endline coordinates
+        translate(
+            width/2, 
+            (height-fieldHeight) + endFieldLineHeight + 32, 
+            0.7*fieldDepth
+        ); // endline coordinates
         
         if (this.direction == '1' || this.direction == '2') {
             translate(0.15*goalWidth, -48, 0);
@@ -517,7 +556,10 @@ void drawGoal() {
     strokeWeight(goalThickness);
     line((-goalWidth/2), 0, 0, (-goalWidth/2), -goalHeight, 0);
     line((goalWidth/2), 0, 0, (goalWidth/2), -goalHeight, 0);
-    line((-(goalWidth + goalThickness)/2), -goalHeight, 0, ((goalWidth+goalThickness)/2), -goalHeight, 0);
+    line(
+        (-(goalWidth + goalThickness)/2), -goalHeight, 0, 
+        ((goalWidth+goalThickness)/2), -goalHeight, 0
+    );
 
     popStyle();
     popMatrix();
@@ -537,7 +579,11 @@ void drawAdverts() {
     for (int i = 0; i < NUM_OF_ADS; i += 1) {
         float adStart = -0.25*width + i*advertWidth;
         float adEnd = adStart + advertWidth;
-        PImage currentImage = otherImages.get(boolean(i % 2) ? "pcs_logo" : "qatar_logo");
+        PImage currentImage = otherImages.get(
+            boolean(i % 2) 
+            ? "pcs_logo" 
+            : "qatar_logo"
+        );
         currentImage.resize(int(advertWidth), 0);
         
         textureMode(NORMAL);
@@ -604,7 +650,10 @@ void drawScoreboard() {
     int dividerHeight = 1;
   
     float dividerWidth = teamNameBoxWidth + teamScoreBoxWidth + penaltyPointsBoxWidth;
-    float lineOffset = teamNameBoxWidth + teamScoreBoxWidth + 5*(circleDiameter + circleMargin) + 1.5*circleMargin;
+    float lineOffset = teamNameBoxWidth 
+                     + teamScoreBoxWidth 
+                     + 5*(circleDiameter + circleMargin) 
+                     + 1.5*circleMargin;
 
     pushMatrix();
     pushStyle();
@@ -640,12 +689,26 @@ void drawScoreboard() {
         endShape();
     
         // Draws the name of each team
-        textInsideBox("Time " + currentScoreboard, teamNameBoxWidth, teamScoreHeight, #CBB75D, #443514);
+        textInsideBox(
+            "Time " + currentScoreboard, 
+            teamNameBoxWidth, 
+            teamScoreHeight, 
+            #CBB75D, 
+            #443514
+        );
         translate(teamNameBoxWidth, 0, 0);
         
         // Draws the current score for each team
-        textInsideBox((currentScoreboard == 'A' ? str(currentMatch.goalsA) : str(currentMatch.goalsB)),
-                       teamScoreBoxWidth, teamScoreHeight, #333333, #FFFFFF);
+        textInsideBox(
+            (currentScoreboard == 'A' 
+             ? str(currentMatch.goalsA) 
+             : str(currentMatch.goalsB)
+            ),
+            teamScoreBoxWidth, 
+            teamScoreHeight, 
+            #333333, 
+            #FFFFFF
+        );
         translate(teamScoreBoxWidth, 0, 0);
 
         // Draws the box in which circles for each of the first 10 shots will be
@@ -675,9 +738,14 @@ void drawScoreboard() {
     
 
         // Draw the final circle for each team, indicating who won
-        color winnerIndicatorColor = (currentMatch.winner == 'O' ? #FFFFFF : 
-                                     (currentMatch.winner == currentScoreboard) ? #00FF00 :
-                                      #FF0000);
+        color winnerIndicatorColor = (
+            currentMatch.winner == 'O' 
+            ? #FFFFFF 
+            : ((currentMatch.winner == currentScoreboard) 
+               ? #00FF00 
+               : #FF0000
+            )
+        );
                                       
         fill(winnerIndicatorColor);
         translate(3*circleMargin, 0, 0);
@@ -706,7 +774,10 @@ void serialEvent (Serial serialConnetion) {
   
     try {
         message = serialConnetion.readString();
-        println("Mensagem recebida é: " + message.substring(0, message.length() - 1));  // debug
+        println(
+            "Mensagem recebida é: " 
+            + message.substring(0, message.length() - 1)
+        );  // debug
         
         // Error in case the transmission cannot be interpreted
         if (message.length() != 4) {
@@ -783,7 +854,13 @@ void keyPressed() {
 
 
 // Helper function to draw a certain text inside a box of a different color
-void textInsideBox(String text, float width, float height, color boxColor, color textColor) {
+void textInsideBox(
+    String text, 
+    float width, 
+    float height, 
+    color boxColor, 
+    color textColor
+) {
     pushStyle();
     
     beginShape();
