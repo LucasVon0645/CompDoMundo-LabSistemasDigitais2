@@ -31,7 +31,6 @@ end entity;
 architecture fsm_arch of unidade_controle is
     type tipo_estado is (inicial,
                          transmite_inicio,
-                         espera_partida,
                          reset_componentes,
                          transmite_preparacao,
                          preparacao,
@@ -60,15 +59,13 @@ begin
     process (Eatual, iniciar, fim_preparacao, bater, fim_penalti, fim_jogo, fim_transmissao) 
     begin
         case Eatual is
-            when inicial  =>  Eprox <= transmite_inicio;
+            when inicial  =>  if iniciar = '1' then Eprox <= transmite_inicio;
+                              else Eprox <= inicial;
+                              end if;
 
-            when transmite_inicio =>  if fim_transmissao = '1' then Eprox <= espera_partida;
+            when transmite_inicio =>  if fim_transmissao = '1' then Eprox <= reset_componentes;
                                       else Eprox <= transmite_inicio;
                                       end if;
-
-            when espera_partida  =>  if iniciar = '1' then Eprox <= reset_componentes;
-                                     else Eprox <= espera_partida;
-                                     end if;
 
             when reset_componentes =>    Eprox <= transmite_preparacao;
 
@@ -106,7 +103,7 @@ begin
                                          else Eprox <= transmite_rodada;
                                          end if;
 
-            when transmite_resultado =>  if fim_transmissao = '1' then Eprox <= espera_partida;
+            when transmite_resultado =>  if fim_transmissao = '1' then Eprox <= inicial;
                                          else Eprox <= transmite_resultado;
                                          end if;
 
@@ -167,18 +164,17 @@ begin
     with Eatual select
         db_estado <= "0000" when inicial,
                      "0001" when transmite_inicio,
-                     "0010" when espera_partida,
-                     "0011" when reset_componentes,
-                     "0100" when transmite_preparacao,
-                     "0101" when preparacao,
-                     "0110" when transmite_batedor,
-                     "0111" when batedor,
-                     "1000" when transmite_chute,
-                     "1001" when chute,
-                     "1010" when gol,
-                     "1011" when placar,
-                     "1100" when transmite_rodada,
-                     "1101" when transmite_resultado,
+                     "0010" when reset_componentes,
+                     "0011" when transmite_preparacao,
+                     "0100" when preparacao,
+                     "0101" when transmite_batedor,
+                     "0110" when batedor,
+                     "0111" when transmite_chute,
+                     "1000" when chute,
+                     "1001" when gol,
+                     "1010" when placar,
+                     "1011" when transmite_rodada,
+                     "1100" when transmite_resultado,
                      "1111" when others;
 
 end architecture;
