@@ -459,9 +459,9 @@ class Match {
 
 
 // Global drawing parameters variables
-float fieldDepth;
+float fieldWidth, fieldDepth;
 float goalHeight, goalWidth;
-float smallAreaLineDepth, endFieldLineDepth;
+float endFieldLineDepth;
 float advertHeight;
 float crowdWidth, crowdHeight;
 boolean isFirstRender;
@@ -482,7 +482,7 @@ void setup() {
     //size(1400, 1050, P3D); // size when adjusting window position
     
     cam = new PeasyCam(this, width/2, -0.2*height, 0, 0.25*width);
-    cam.setMaximumDistance(50000);
+    cam.setMaximumDistance(3*width);
     
     configureSerialComm();
     client = new PostgresClient();
@@ -533,10 +533,10 @@ void loadOtherImages() {
 
 void draw() {
     // Setting drawing variables
+    fieldWidth = 2*width;
     fieldDepth = -0.8*width;
     goalHeight = 0.25*height;
     goalWidth = 0.55*width;
-    smallAreaLineDepth = 0.4*fieldDepth;
     endFieldLineDepth = 0.8*fieldDepth;
     advertHeight = 0.08*height;
     crowdWidth = 2.4*width;
@@ -561,15 +561,20 @@ void draw() {
 // Draws the football field on the screen: completely static
 void drawField() {
     int NUM_OF_SUBFIELDS = 4; // Change this to have more/less subfields
-    float subfieldWidth = (2*width)/float(NUM_OF_SUBFIELDS);
-    int lineStroke = 12;
+    float subfieldWidth = fieldWidth/float(NUM_OF_SUBFIELDS);
+    int lineStroke = 6;
+    float smallAreaLineDepth = 0.4*fieldDepth;
+    float largeAreaLineDepth = 0.04*fieldDepth;
+    float ballMarkerDiameter = 0.02*width;
 
     pushMatrix();
     pushStyle();
+    
+    translate(width/2, 0, 0);
 
     // Subfields: parts of field with different shades of green
     for (int i = 0; i < NUM_OF_SUBFIELDS; i += 1) {
-        float subfieldStart = -0.5*width + i*subfieldWidth;
+        float subfieldStart = -fieldWidth/2.0 + i*subfieldWidth;
         float subfieldEnd = subfieldStart + subfieldWidth;
         
         beginShape();
@@ -581,25 +586,42 @@ void drawField() {
             vertex(subfieldStart, 0, -0.5*fieldDepth);
         endShape();
     }
-  
-    noStroke();
-    fill(#FFFFFF);
+    
+    noFill();
+    strokeWeight(lineStroke);
+    stroke(#FFFFFF);
+    
+    // Line on the field: large area
+    beginShape();
+        vertex(-fieldWidth/3.0, 0, largeAreaLineDepth);
+        vertex(fieldWidth/3.0, 0, largeAreaLineDepth);
+        vertex(fieldWidth/3.0, 0, endFieldLineDepth);
+        vertex(-fieldWidth/3.0, 0, endFieldLineDepth);
+    endShape(CLOSE);
     
     // Line on the field: small area
     beginShape();
-        vertex(-0.5*width, -1, smallAreaLineDepth);
-        vertex(1.5*width, -1, smallAreaLineDepth);
-        vertex(1.5*width, -1, smallAreaLineDepth + lineStroke);
-        vertex(-0.5*width, -1, smallAreaLineDepth + lineStroke);
-    endShape();
+        vertex(-(goalWidth/2 + 0.05*width), 0, smallAreaLineDepth);
+        vertex((goalWidth/2 + 0.05*width), 0, smallAreaLineDepth);
+        vertex((goalWidth/2 + 0.05*width), 0, endFieldLineDepth);
+        vertex(-(goalWidth/2 + 0.05*width), 0, endFieldLineDepth);
+    endShape(CLOSE);
     
     // Line on the field: end of field
     beginShape();
-        vertex(-0.5*width, -1, endFieldLineDepth);
-        vertex(1.5*width, -1, endFieldLineDepth);
-        vertex(1.5*width, -1, endFieldLineDepth + lineStroke);
-        vertex(-0.5*width, -1, endFieldLineDepth + lineStroke);
+        vertex(-fieldWidth/2.0, 0, endFieldLineDepth);
+        vertex(fieldWidth/2.0, 0, endFieldLineDepth);
+        vertex(fieldWidth/2.0, 0, endFieldLineDepth);
+        vertex(-fieldWidth/2.0, 0, endFieldLineDepth);
     endShape();
+     
+    // Marking where ball should be
+    pushMatrix();
+        fill(#FFFFFF);
+        translate(0, -1, smallAreaLineDepth/2);
+        rotateX(PI/2);
+        circle(0, 0, ballMarkerDiameter);
+    popMatrix();
     
     popStyle();
     popMatrix();
