@@ -2,6 +2,7 @@ import processing.serial.*;      // serial comm lib
 import processing.sound.*;       // sound lib
 import java.awt.event.KeyEvent;  // keyboard reading lib
 import java.sql.*;               // lib for interfacing with postgreSQL
+import peasy.*;                  // cam lib
 import java.io.IOException;
 import java.util.Map;
 
@@ -96,26 +97,27 @@ abstract class Player {
     protected HashMap<String,PImage> images;
     protected PImage currentImage;
     
+    protected boolean isMoving;
+    protected float initialX, initialY, initialZ;
+    protected float xPos, yPos, zPos;
+    protected float movementPct;
+    
     protected abstract void loadImages(); // Loads images based on team
     protected abstract void resizeImages(); // Resize images proportionally
-    protected abstract void positionPlayer(); // Tranlate player to wherever it needs to be, based on its image
     protected abstract void updateCurrentImage(); // Updates current image of player
-    protected abstract void resetPlayerDrawing(); // Resets frawing to default position
+    protected abstract void movePlayer();
     
     // Draws player centered in the given coordinates
-    public void drawPlayer() {        
-        float currentHeight, currentWidth;
+    protected void drawCurrentImage() {        
+        float currentHeight = this.currentImage.height;
+        float currentWidth = this.currentImage.width;
         
         pushMatrix();
         pushStyle();
         
-        this.resizeImages();
-        this.positionPlayer();
-
-        currentHeight = this.currentImage.height;
-        currentWidth = this.currentImage.width;
+        translate(this.xPos, this.yPos, this.zPos);
+        translate(-currentWidth/2, -currentHeight, 0);
         
-        translate(-currentWidth / 2, -currentHeight, 0);
         textureMode(NORMAL);
         beginShape();
             noStroke();
@@ -130,10 +132,37 @@ abstract class Player {
         popMatrix();
     }
     
-    public Player(String team) {
+    protected void resetPlayerDrawing() {
+        this.xPos = this.initialX;
+        this.yPos = this.initialY;
+        this.zPos = this.initialZ;
+    }
+    
+    public void drawPlayer() {
+        if (this.isMoving) {
+            this.movePlayer();
+        }
+        
+        this.drawCurrentImage();
+    }
+    
+    
+    
+    public Player(String team, float initialX, float initialY, float initialZ) {
         this.team = team;
+        
+        this.initialX = initialX;
+        this.initialY = initialY;
+        this.initialZ = initialZ;
+        this.xPos = initialX;
+        this.yPos = initialY;
+        this.zPos = initialZ;
+        
         this.images = new HashMap<String,PImage>();
+        this.isMoving = false;
+        
         this.loadImages();
+        this.resizeImages();
         this.updateCurrentImage();
     }
 }
@@ -165,18 +194,29 @@ class Kicker extends Player {
     }
     
     protected void resizeImages() {
-        float kickerStillHeight = 0.85*goalHeight;
-        float kickerMovingHeight = 0.75*goalHeight;
+        float kickerHeight = 0.18*height;
 
-        this.images.get("kicker_still").resize(0, int(kickerStillHeight));
-        this.images.get("kicker_moving").resize(0, int(kickerMovingHeight));
+        this.images.get("kicker_still").resize(0, int(kickerHeight));
+        this.images.get("kicker_moving").resize(0, int(kickerHeight));
     }
     
-    protected void positionPlayer() {
-        translate(0.3*width, 1.01*height, 0);
+    protected void movePlayer() {
+        float STEP = 0.01;  // Size of each step along the path
+        float EXP = 4;  // Determines the curve
+        
+          this.movementPct += STEP;
+          if (this.movementPct < 1.0) {
+              this.xPos = this.initialX + (this.movementPct * 300);
+              this.yPos = this.initialY - (pow(this.movementPct, EXP) * 350);
+          }
+          else {
+              this.currentImage = this.images.get("kicker_moving");
+          }
     }
     
-    protected void resetPlayerDrawing() {};
+    protected void resetPlayerDrawing() {
+    
+    };
     
     public void updateCurrentImage() {
         this.currentImage = this.images.get("kicker_still");
@@ -196,7 +236,8 @@ class Kicker extends Player {
 
     // Constructor
     public Kicker(String team) {
-        super(team);
+        super(team, 0.35*width, 0, 0);
+        
         this.id = (team == "Brazil") ? 'A' : 'B';
         this.kicks = new IntDict();
         this.kicks.set("D", 0);
@@ -239,8 +280,8 @@ class Goalkeeper extends Player {
     
     protected void resizeImages() {
         PImage goalkeeperCenterImage, goalkeeperLeftImage, goalkeeperRightImage;
-        float goalkeeperCenterHeight = 0.85*goalHeight;
-        float goalkeeperSidewaysHeight = 0.75*goalHeight;
+        float goalkeeperCenterHeight = 0.2*height;
+        float goalkeeperSidewaysHeight = 0.18*height;
         
         goalkeeperCenterImage = this.images.get("goalkeeper_center");
         goalkeeperCenterImage.resize(0, int(goalkeeperCenterHeight));
@@ -252,18 +293,15 @@ class Goalkeeper extends Player {
         goalkeeperRightImage.resize(0, int(goalkeeperSidewaysHeight));
     }
     
-    protected void positionPlayer() {
-        translate(
-            width/2, 
-            (height-fieldHeight) + endFieldLineHeight + 32, 
-            0.7*fieldDepth
-        ); // endline coordinates
-        
+    
+    protected void movePlayer() {
         if (this.finalDirection == '1' || this.finalDirection == '2') {
-            translate(-0.15*goalWidth, -48, 0);
+            this.xPos = this.initialX - 0.15*goalWidth;
+            this.yPos = this.initialY - 48;
         }
         else if (this.finalDirection == '4' || this.finalDirection == '5') {
-            translate(0.15*goalWidth, -48, 0);
+            this.xPos = this.initialX + 0.15*goalWidth;
+            this.yPos = this.initialY - 48;
         }
     }
     
@@ -294,7 +332,7 @@ class Goalkeeper extends Player {
 
     // Constructor
     public Goalkeeper(String team) {
-        super(team);
+        super(team, width/2, 0, endFieldLineDepth + 40);
     };
 }
 
@@ -303,6 +341,7 @@ class Match {
     private int[] shotsA, shotsB;
     private Kicker kickerA, kickerB;
     private Goalkeeper goalkeeperA, goalkeeperB;
+    private boolean firstRender;
     
     public Kicker currentKicker;
     public Goalkeeper currentGoalkeeper;
@@ -324,10 +363,12 @@ class Match {
                 this.round = round_tx;  
             }
             
+            serialConnetion.write('3'); // reset goalkeeper in digital circuit to middle position
+            this.currentGoalkeeper.resetPlayerDrawing();
+            
             this.currentKicker = (kicker_tx == 'A') ? kickerA : kickerB;
             this.currentGoalkeeper = (kicker_tx == 'A') ? goalkeeperB : goalkeeperA;
             this.setCurrentShot(1);
-            
         }
     }
     
@@ -341,9 +382,8 @@ class Match {
         
         else {
             currentKicker.updateKickCount(kickerDirection_tx);
-            // this.currentGoalkeeper.setDirection('1'); // DELETE THIS LATER
             this.currentGoalkeeper.updateCurrentImage();
-            this.currentKicker.updateCurrentImage();
+            this.currentKicker.isMoving = true;
         }
     }
     
@@ -366,8 +406,6 @@ class Match {
                 this.setCurrentShot((goalsB_tx != this.goalsB) ? 2 : -1);
                 this.goalsB = goalsB_tx;
             }
-            
-            this.currentGoalkeeper.resetPlayerDrawing();
         }
     }
     
@@ -385,14 +423,24 @@ class Match {
         return team == 'A' ? this.shotsA : this.shotsB;
     }
     
-    public Match() {
-        this.kickerA = new Kicker("Brazil");
-        this.kickerB = new Kicker("Argentina");
-        this.goalkeeperA = new Goalkeeper("Brazil");
-        this.goalkeeperB = new Goalkeeper("Argentina");
-        this.currentKicker = this.kickerA;
-        this.currentGoalkeeper = this.goalkeeperB;
+    public void drawPlayers() {
+        if (this.firstRender) {
+            this.kickerA = new Kicker("Brazil");
+            this.kickerB = new Kicker("Argentina");
+            this.goalkeeperA = new Goalkeeper("Brazil");
+            this.goalkeeperB = new Goalkeeper("Argentina");
+            
+            this.currentKicker = this.kickerA;
+            this.currentGoalkeeper = this.goalkeeperB;
+            
+            this.firstRender = false;
+        }
         
+        this.currentGoalkeeper.drawPlayer();
+        this.currentKicker.drawPlayer();
+    }
+    
+    public Match() {        
         this.round = 0;
         this.goalsA = 0;
         this.goalsB = 0;
@@ -405,17 +453,21 @@ class Match {
         }
         
         this.winner = 'O';
+        this.firstRender = true;
     };
 }
 
 
 // Global drawing parameters variables
-float fieldHeight, fieldDepth;
+float fieldDepth;
 float goalHeight, goalWidth;
-float endFieldLineHeight;
+float smallAreaLineDepth, endFieldLineDepth;
 float advertHeight;
+float crowdWidth, crowdHeight;
+boolean isFirstRender;
 
 // Global object variables
+PeasyCam cam;
 Serial serialConnetion;
 PostgresClient client;
 Match currentMatch;
@@ -429,6 +481,9 @@ void setup() {
     size(2400, 1800, P3D); // actual size to use
     //size(1400, 1050, P3D); // size when adjusting window position
     
+    cam = new PeasyCam(this, width/2, -0.2*height, 0, 0.25*width);
+    cam.setMaximumDistance(50000);
+    
     configureSerialComm();
     client = new PostgresClient();
     currentMatch = new Match();
@@ -437,19 +492,21 @@ void setup() {
     loadSounds();
     
     sounds.get("background").loop();
+    
+    isFirstRender = true;
 }
 
 
 // Configures serial port for communication
 void configureSerialComm() {
-    String port = "COM6";   // <-- change value depending on machine
+    String port = "COM3";   // <-- change value depending on machine
     int baudrate = 115200;  // 115200 bauds
     char parity = 'E';      // even
     int databits = 7;       // 7 data bits
     float stopbits = 2.0;   // 2 stop bits
     
-    int lf = 10;  // ASCII for linefeed -> actual value to use
-    //int lf = 46;  // ASCII for . -> use this for debugging
+    //int lf = 10;  // ASCII for linefeed -> actual value to use
+    int lf = 46;  // ASCII for . -> use this for debugging
     
     serialConnetion = new Serial(this, port, baudrate, parity, databits, stopbits);
     serialConnetion.bufferUntil(lf);
@@ -470,31 +527,34 @@ void loadSounds() {
 void loadOtherImages() {
     otherImages.put("pcs_logo", loadImage("adverts/PCS_logo.png"));
     otherImages.put("qatar_logo", loadImage("adverts/Qatar_logo.jpg"));
-    otherImages.put("crowd", loadImage("Crowd.jpg"));
+    otherImages.put("crowd", loadImage("Pixel_crowd.jpg"));
 }
 
 
 void draw() {
     // Setting drawing variables
-    fieldHeight = 0.6*height;
-    fieldDepth = -0.2*width;
-    goalHeight = height - fieldHeight;
-    goalWidth = 0.666*width;
-    endFieldLineHeight = 0.125*fieldHeight;
-    advertHeight = 0.1*height;
+    fieldDepth = -0.8*width;
+    goalHeight = 0.25*height;
+    goalWidth = 0.55*width;
+    smallAreaLineDepth = 0.4*fieldDepth;
+    endFieldLineDepth = 0.8*fieldDepth;
+    advertHeight = 0.08*height;
+    crowdWidth = 2.4*width;
     
+    background(100);
     // lights();
+    
+    firstRender();
+    
     drawField();
     drawGoal();
     drawAdverts();
-    drawScoreboard();
     drawCrowd();
-    
+    drawScoreboardHUD();
+
     // For some reason, the order of drawing matters here:
     // to keep the background of characters transparent, render them last.
-    currentMatch.currentKicker.drawPlayer();
-    currentMatch.currentGoalkeeper.drawPlayer();
-    
+    currentMatch.drawPlayers(); 
 }
 
 
@@ -502,13 +562,10 @@ void draw() {
 void drawField() {
     int NUM_OF_SUBFIELDS = 4; // Change this to have more/less subfields
     float subfieldWidth = (2*width)/float(NUM_OF_SUBFIELDS);
-    float smallAreaLineHeight = 0.60*fieldHeight;
-    int lineStroke = 8;
+    int lineStroke = 12;
 
     pushMatrix();
     pushStyle();
-  
-    translate(0, (height-fieldHeight), 0);
 
     // Subfields: parts of field with different shades of green
     for (int i = 0; i < NUM_OF_SUBFIELDS; i += 1) {
@@ -520,8 +577,8 @@ void drawField() {
             fill(boolean(i % 2) ? #13A30D : #13930D);
             vertex(subfieldStart, 0, fieldDepth);
             vertex(subfieldEnd, 0, fieldDepth);
-            vertex(subfieldEnd, fieldHeight, 0);
-            vertex(subfieldStart, fieldHeight, 0);
+            vertex(subfieldEnd, 0, -0.5*fieldDepth);
+            vertex(subfieldStart, 0, -0.5*fieldDepth);
         endShape();
     }
   
@@ -530,18 +587,18 @@ void drawField() {
     
     // Line on the field: small area
     beginShape();
-        vertex(-0.5*width, smallAreaLineHeight, 0.1*fieldDepth);
-        vertex(1.5*width, smallAreaLineHeight, 0.1*fieldDepth);
-        vertex(1.5*width, smallAreaLineHeight + lineStroke, 0.1*fieldDepth);
-        vertex(-0.5*width, smallAreaLineHeight + lineStroke, 0.1*fieldDepth);
+        vertex(-0.5*width, -1, smallAreaLineDepth);
+        vertex(1.5*width, -1, smallAreaLineDepth);
+        vertex(1.5*width, -1, smallAreaLineDepth + lineStroke);
+        vertex(-0.5*width, -1, smallAreaLineDepth + lineStroke);
     endShape();
     
     // Line on the field: end of field
     beginShape();
-        vertex(-0.5*width, endFieldLineHeight, 0.75*fieldDepth);
-        vertex(1.5*width, endFieldLineHeight, 0.75*fieldDepth);
-        vertex(1.5*width, endFieldLineHeight + lineStroke, 0.75*fieldDepth);
-        vertex(-0.5*width, endFieldLineHeight + lineStroke, 0.75*fieldDepth);
+        vertex(-0.5*width, -1, endFieldLineDepth);
+        vertex(1.5*width, -1, endFieldLineDepth);
+        vertex(1.5*width, -1, endFieldLineDepth + lineStroke);
+        vertex(-0.5*width, -1, endFieldLineDepth + lineStroke);
     endShape();
     
     popStyle();
@@ -551,12 +608,12 @@ void drawField() {
 
 // Draws the goal on the screen: completely static
 void drawGoal() {
-    float goalThickness = 0.01*width;
+    float goalThickness = 0.004*width;
 
     pushMatrix();
     pushStyle();
     
-    translate(width/2, (height-fieldHeight) + endFieldLineHeight, 0.75*fieldDepth);
+    translate(width/2, 0, endFieldLineDepth);
     stroke(#EEEEEE);
     
     // Goal structure
@@ -575,16 +632,16 @@ void drawGoal() {
 
 // Draws the football field on the screen: completely static
 void drawAdverts() {
-    int NUM_OF_ADS = 5; // Change this to have more/less adverts
-    float advertWidth = (1.5*width)/float(NUM_OF_ADS);
+    int NUM_OF_ADS = 7; // Change this to have more/less adverts
+    float advertWidth = (2*width)/float(NUM_OF_ADS);
     
     pushMatrix();
     pushStyle();
     
-    translate(0, (height-fieldHeight), fieldDepth);
+    translate(0, 0, fieldDepth);
   
     for (int i = 0; i < NUM_OF_ADS; i += 1) {
-        float adStart = -0.25*width + i*advertWidth;
+        float adStart = -0.5*width + i*advertWidth;
         float adEnd = adStart + advertWidth;
         PImage currentImage = otherImages.get(
             boolean(i % 2) 
@@ -611,28 +668,22 @@ void drawAdverts() {
 
 // Draws the crowd behind the goal on the screen: completely static
 void drawCrowd() {
-    PImage crowdImage;
-    int crowdHeight;
-    float crowdWidth = 1.55*width;
-
-    // Crowd image from data folder
-    crowdImage = otherImages.get("crowd");
-    crowdImage.resize(int(crowdWidth), 0);
-    crowdHeight = crowdImage.height;
+    PImage crowdTile = otherImages.get("crowd");
     
     pushMatrix();
     pushStyle();
     
-    translate(-0.27*width, -0.55*height, 1.7*fieldDepth);
+    translate(width/2, 0, 1.2*fieldDepth);
 
     textureMode(NORMAL);
     beginShape();
         noStroke();
-        texture(crowdImage);
-        vertex(0, 0, 0, 0, 0);
-        vertex(crowdWidth, 0, 0, 1, 0);
-        vertex(crowdWidth, crowdHeight, 0, 1, 1);
-        vertex(0, crowdHeight, 0, 0, 1);
+        textureWrap(REPEAT);
+        texture(crowdTile);
+        vertex(-crowdWidth/2, -2*crowdHeight, 0, 0, 0);
+        vertex(crowdWidth/2, -2*crowdHeight, 0, 3, 0);
+        vertex(crowdWidth/2, 0, 0, 3, 2);
+        vertex(-crowdWidth/2, 0, 0, 0, 2);
     endShape();
 
     popStyle();
@@ -642,9 +693,10 @@ void drawCrowd() {
 
 // Draws a dynamic scoreboard, showing the number of points
 // for each team, as well as which shots were goals, etc.
-void drawScoreboard() {
-    float scoreboardX = 0.04 * width;
-    float scoreBoardY = 0.04 * height;
+void drawScoreboardHUD() {
+
+    float scoreboardX = 0.06 * width;
+    float scoreBoardY = 0.06 * height;
     float teamScoreHeight = 0.045 * height;
     
     int teamNameBoxWidth = 120;
@@ -662,6 +714,8 @@ void drawScoreboard() {
                      + 5*(circleDiameter + circleMargin) 
                      + 1.5*circleMargin;
 
+    cam.beginHUD();
+    
     pushMatrix();
     pushStyle();
     
@@ -770,81 +824,80 @@ void drawScoreboard() {
 
     popStyle();
     popMatrix();
+    
+    cam.endHUD();
 }
 
 
 // Decodes message received with serial transmission
 void serialEvent (Serial serialConnetion) {
-    String message, segment1;
+    int MSG_SIZE = 3;
+    String buffer, message, segment1;
     int segment2;
     char header;
   
     try {
-        message = serialConnetion.readString();
-        println(
-            "Mensagem recebida é: " 
-            + message.substring(0, message.length() - 1)
-        );  // debug
+        // Reads last 3 characters from buffer as the intended message
+        buffer = serialConnetion.readString();
         
-        // Error in case the transmission cannot be interpreted
-        if (message.length() != 4) {
-            println("ERRO: mensagem tem tamanho diferente de 3");
-        } else {
-            
-            // Conversions
-            header = message.charAt(0);
-            segment1 = message.substring(1, 2);
-            segment2 = unhex(message.substring(2, 3));
-            
-            // If header is 0, the game has just been turned on
-            if (header == '0') {
-                println("JOGO COMEÇANDO");
-                currentMatch = new Match();
-            }
-            
-            // If header is 1, a match has just begun
-            else if (header == '1') {
-                println("RODADA " + segment2 + ": JOGADOR " + segment1 + " BATENDO");
-                
-                serialConnetion.write('3'); // reset goalkeeper in digital circuit to middle position
-                currentMatch.updateRound(segment1.charAt(0), segment2);
-            }
-            
-            // If header is 2, the game is preparing itself for a new shot
-            else if (header == '2') {
-                println("JOGADOR JÁ PODE BATER");
-                sounds.get("whistle").play();
-            }
-            
-            else if (header == '3') {
-                currentMatch.playPenalty(segment1.charAt(0));
-            }
-            
-            // If header is 4, a shot has just happened, and we update the scoreboard
-            else if (header == '4') {
-                println("NOVO PLACAR:  A  |  B");
-                println("              " + unhex(segment1) + "  |  " + segment2);
-                
-                currentMatch.updateScore(unhex(segment1), segment2);
-            }
-            
-            // If header is 5, the match has ended, and we check who is the winner
-            else if (header == '5') {
-                println("FIM DO JOGO!!!!");
-                println("PLACAR FINAL:  A  |  B");
-                println("               " + unhex(segment1) + "  |  " + segment2);
-                
-                currentMatch.updateScore(unhex(segment1), segment2);
-                currentMatch.endMatch();
-                client.saveMatchToDatabase(currentMatch);
-            }
-            
-            // If header is any other value, there is a transmission error
-            else {
-                println("ERRO: header é " + header);
-            }
+        if (buffer.length() < MSG_SIZE + 1) {throw new Exception("ERRO: mensagem tem tamanho menor que 3.");}
+        
+        message = buffer.substring(buffer.length() - (MSG_SIZE + 1), buffer.length() - 1);
+        
+        // Debug
+        println("Mensagem recebida é: " + message);
+        
+        // Conversions
+        header = message.charAt(0);
+        segment1 = message.substring(1, 2);
+        segment2 = unhex(message.substring(2, 3));
+        
+        // If header is 0, the game has just been turned on
+        if (header == '0') {
+            println("PARTIDA COMEÇANDO");
+            currentMatch = new Match();
         }
-    } catch(RuntimeException e) {
+        
+        // If header is 1, a match has just begun
+        else if (header == '1') {
+            println("RODADA " + segment2 + ": JOGADOR " + segment1 + " BATENDO");
+            currentMatch.updateRound(segment1.charAt(0), segment2);
+        }
+        
+        // If header is 2, the game is preparing itself for a new shot
+        else if (header == '2') {
+            println("JOGADOR JÁ PODE BATER");
+            sounds.get("whistle").play();
+        }
+        
+        else if (header == '3') {
+            currentMatch.playPenalty(segment1.charAt(0));
+        }
+        
+        // If header is 4, a shot has just happened, and we update the scoreboard
+        else if (header == '4') {
+            println("NOVO PLACAR:  A  |  B");
+            println("              " + unhex(segment1) + "  |  " + segment2);
+            
+            currentMatch.updateScore(unhex(segment1), segment2);
+        }
+        
+        // If header is 5, the match has ended, and we check who is the winner
+        else if (header == '5') {
+            println("FIM DO JOGO!!!!");
+            println("PLACAR FINAL:  A  |  B");
+            println("               " + unhex(segment1) + "  |  " + segment2);
+            
+            currentMatch.updateScore(unhex(segment1), segment2);
+            currentMatch.endMatch();
+            client.saveMatchToDatabase(currentMatch);
+        }
+        
+        // If header is any other value, there is a transmission error
+        else {
+            println("ERRO: header é " + header);
+        }
+    } catch(Exception e) {
       e.printStackTrace();
     }
 }
@@ -852,10 +905,32 @@ void serialEvent (Serial serialConnetion) {
 
 // Detects key press and sends it to the serial port
 void keyPressed() {
-    if (key == '1' || key == '2' || key == '3' || key == '4' || key == '5') {
-        println("Enviando tecla '" + key + "' para a porta serial.");
-        serialConnetion.write(key);
-        currentMatch.currentGoalkeeper.setCurrentDirection(key);
+
+    
+    // Use this during real games
+    //if (key == '1' || key == '2' || key == '3' || key == '4' || key == '5') {
+    //    println("Enviando tecla '" + key + "' para a porta serial.");
+    //    serialConnetion.write(key);
+    //    currentMatch.currentGoalkeeper.setCurrentDirection(key);
+    //}
+    
+    // Debug
+    println("Enviando tecla '" + key + "' para a porta serial.");
+    serialConnetion.write(key);
+    if (key == 'G') {
+        currentMatch.currentGoalkeeper.setCurrentDirection('1');
+    }
+    else if (key == 'H') {
+        currentMatch.currentGoalkeeper.setCurrentDirection('2');
+    }
+    else if (key == 'J') {
+        currentMatch.currentGoalkeeper.setCurrentDirection('3');
+    }
+    else if (key == 'K') {
+        currentMatch.currentGoalkeeper.setCurrentDirection('4');
+    }
+    else if (key == 'L') {
+        currentMatch.currentGoalkeeper.setCurrentDirection('5');
     }
 }
 
@@ -885,4 +960,17 @@ void textInsideBox(
     text(text, 0, 0, width, height); 
 
     popStyle();
+}
+
+
+void firstRender() {
+    if (isFirstRender) {
+        // Crowd image from data folder
+        PImage crowdImage = otherImages.get("crowd");
+        crowdImage.resize(int(crowdWidth/3), 0);
+        crowdHeight = crowdImage.height;
+        otherImages.put("crowd", crowdImage);
+    
+        isFirstRender = false;
+    }
 }
