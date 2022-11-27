@@ -91,23 +91,27 @@ class PostgresClient {
 }
 
 
-// Abtract class for creating players, such as Kickers or Goalkeepers
-abstract class Player {
-    protected String team;
+abstract class AnimatedObject {
     protected HashMap<String,PImage> images;
     protected PImage currentImage;
     
-    protected boolean isMoving;
+    protected boolean isMoving, completedMovement;
     protected float initialX, initialY, initialZ;
     protected float xPos, yPos, zPos;
     protected float movementPct;
-    
+        
     protected abstract void loadImages(); // Loads images based on team
     protected abstract void resizeImages(); // Resize images proportionally
-    protected abstract void updateCurrentImage(); // Updates current image of player
-    protected abstract void movePlayer();
+    protected abstract void updateCurrentImage(); // Updates current image of player   
+    protected abstract void moveObject(); // Animates object trajectory
     
-    // Draws player centered in the given coordinates
+    
+    protected void resetDrawing() {
+        this.xPos = this.initialX;
+        this.yPos = this.initialY;
+        this.zPos = this.initialZ;
+    }
+    
     protected void drawCurrentImage() {        
         float currentHeight = this.currentImage.height;
         float currentWidth = this.currentImage.width;
@@ -132,35 +136,40 @@ abstract class Player {
         popMatrix();
     }
     
-    protected void resetPlayerDrawing() {
-        this.xPos = this.initialX;
-        this.yPos = this.initialY;
-        this.zPos = this.initialZ;
-    }
-    
-    public void drawPlayer() {
+    public void drawObject() {
         if (this.isMoving) {
-            this.movePlayer();
+            this.moveObject();
         }
         
         this.drawCurrentImage();
     }
     
-    
-    
-    public Player(String team, float initialX, float initialY, float initialZ) {
-        this.team = team;
-        
+    public AnimatedObject(float initialX, float initialY, float initialZ) {        
         this.initialX = initialX;
         this.initialY = initialY;
         this.initialZ = initialZ;
         this.xPos = initialX;
         this.yPos = initialY;
         this.zPos = initialZ;
+
+        this.isMoving = false;
+        this.completedMovement = false;
         
         this.images = new HashMap<String,PImage>();
-        this.isMoving = false;
         
+
+    }
+}
+
+
+// Abtract class for creating players, such as Kickers or Goalkeepers
+abstract class Player extends AnimatedObject {
+    protected String team;
+    
+    public Player(String team, float initialX, float initialY, float initialZ) {
+        super(initialX, initialY, initialZ);
+        
+        this.team = team;
         this.loadImages();
         this.resizeImages();
         this.updateCurrentImage();
@@ -200,21 +209,24 @@ class Kicker extends Player {
         this.images.get("kicker_moving").resize(0, int(kickerHeight));
     }
     
-    protected void movePlayer() {
+    protected void moveObject() {
         float STEP = 0.01;  // Size of each step along the path
         float EXP = 4;  // Determines the curve
+        float xDistanceToBall = 0.7*(width/2 - this.initialX);
+        float zDistanceToBall = 0.9*(ballMarkerDepth - this.initialZ);
         
           this.movementPct += STEP;
           if (this.movementPct < 1.0) {
-              this.xPos = this.initialX + (this.movementPct * 300);
-              this.yPos = this.initialY - (pow(this.movementPct, EXP) * 350);
+              this.xPos = this.initialX + (this.movementPct * xDistanceToBall);
+              this.zPos = this.initialZ + (pow(this.movementPct, EXP) * zDistanceToBall);
           }
           else {
               this.currentImage = this.images.get("kicker_moving");
+              this.completedMovement = true;
           }
     }
     
-    protected void resetPlayerDrawing() {
+    protected void resetDrawing() {
     
     };
     
@@ -294,7 +306,7 @@ class Goalkeeper extends Player {
     }
     
     
-    protected void movePlayer() {
+    protected void moveObject() {
         if (this.finalDirection == '1' || this.finalDirection == '2') {
             this.xPos = this.initialX - 0.15*goalWidth;
             this.yPos = this.initialY - 48;
@@ -305,7 +317,7 @@ class Goalkeeper extends Player {
         }
     }
     
-    protected void resetPlayerDrawing() {
+    protected void resetDrawing() {
         this.currentDirection = '3';
         updateCurrentImage();
     };
@@ -337,14 +349,80 @@ class Goalkeeper extends Player {
 }
 
 
+class Ball extends AnimatedObject {
+    private PShape sphere;
+    private float ballRadius = 0.5*ballMarkerDiameter;
+    private char trajectoryDirection;
+    
+    protected void drawCurrentImage() {        
+        pushMatrix();
+        pushStyle();
+        
+        translate(this.xPos, this.yPos, this.zPos);
+        translate(0, -this.ballRadius, 0);
+
+        shape(this.sphere);
+    
+        popStyle();
+        popMatrix();
+    }
+    
+    protected void loadImages() {
+        this.images.put("ball_texture", loadImage("others/Soccer_ball.png"));
+    }
+    
+    protected void resizeImages() {
+        PImage ballTexture = this.images.get("ball_texture");
+        ballTexture.resize(0, int(5*this.ballRadius));
+    }
+    
+    protected void moveObject() {
+        float STEP = 0.01;  // Size of each step along the path
+        float EXP = 2;  // Determines the curve
+        float xDistanceToGoal = 300;
+        float yDistanceToGoal = 0.75*(goalHeight - this.initialY);
+        float zDistanceToGoal = 0.95*(endFieldLineDepth - this.initialZ);
+        
+          this.movementPct += STEP;
+          if (this.movementPct < 1.0) {
+              this.xPos = this.initialX + (pow(this.movementPct, EXP) * xDistanceToGoal);
+              this.yPos = this.initialY - (pow(this.movementPct, EXP) * yDistanceToGoal);
+              this.zPos = this.initialZ + (this.movementPct * zDistanceToGoal);
+          }
+    }
+    
+    protected void resetDrawing() {
+    
+    };
+    
+    public void updateCurrentImage() {
+        sphere.setTexture(this.images.get("ball_texture"));
+    }
+
+    public Ball(float initialX, float initialY, float initialZ) {
+        super(initialX, initialY, initialZ);
+        
+        pushStyle();
+        noStroke();
+        this.sphere = createShape(SPHERE, this.ballRadius);
+        popStyle();
+        
+        this.loadImages();
+        this.resizeImages();
+        this.updateCurrentImage();
+    }
+}
+
+
 class Match {
-    private int[] shotsA, shotsB;
     private Kicker kickerA, kickerB;
     private Goalkeeper goalkeeperA, goalkeeperB;
+    private int[] shotsA, shotsB;
     private boolean firstRender;
     
     public Kicker currentKicker;
     public Goalkeeper currentGoalkeeper;
+    public Ball ball;
     public int round, goalsA, goalsB;
     public char winner;
 
@@ -364,7 +442,7 @@ class Match {
             }
             
             serialConnetion.write('3'); // reset goalkeeper in digital circuit to middle position
-            this.currentGoalkeeper.resetPlayerDrawing();
+            this.currentGoalkeeper.resetDrawing();
             
             this.currentKicker = (kicker_tx == 'A') ? kickerA : kickerB;
             this.currentGoalkeeper = (kicker_tx == 'A') ? goalkeeperB : goalkeeperA;
@@ -429,6 +507,7 @@ class Match {
             this.kickerB = new Kicker("Argentina");
             this.goalkeeperA = new Goalkeeper("Brazil");
             this.goalkeeperB = new Goalkeeper("Argentina");
+            this.ball = new Ball(width/2, 0, smallAreaLineDepth/2);
             
             this.currentKicker = this.kickerA;
             this.currentGoalkeeper = this.goalkeeperB;
@@ -436,8 +515,14 @@ class Match {
             this.firstRender = false;
         }
         
-        this.currentGoalkeeper.drawPlayer();
-        this.currentKicker.drawPlayer();
+        if (this.currentKicker.completedMovement) {
+            this.ball.isMoving = true;
+            this.currentKicker.completedMovement = false;
+        }
+        
+        this.ball.drawObject();
+        this.currentGoalkeeper.drawObject();
+        this.currentKicker.drawObject();
     }
     
     public Match() {        
@@ -461,7 +546,8 @@ class Match {
 // Global drawing parameters variables
 float fieldWidth, fieldDepth;
 float goalHeight, goalWidth;
-float endFieldLineDepth;
+float endFieldLineDepth, smallAreaLineDepth;
+float ballMarkerDiameter, ballMarkerDepth;
 float advertHeight;
 float crowdWidth, crowdHeight;
 boolean isFirstRender;
@@ -527,7 +613,7 @@ void loadSounds() {
 void loadOtherImages() {
     otherImages.put("pcs_logo", loadImage("adverts/PCS_logo.png"));
     otherImages.put("qatar_logo", loadImage("adverts/Qatar_logo.jpg"));
-    otherImages.put("crowd", loadImage("Pixel_crowd.jpg"));
+    otherImages.put("crowd", loadImage("others/Pixel_crowd.jpg"));
 }
 
 
@@ -535,14 +621,17 @@ void draw() {
     // Setting drawing variables
     fieldWidth = 2*width;
     fieldDepth = -0.8*width;
+    endFieldLineDepth = 0.8*fieldDepth;
+    smallAreaLineDepth = 0.4*fieldDepth;
+    ballMarkerDiameter = 0.02*width;
+    ballMarkerDepth = smallAreaLineDepth/2.0;
     goalHeight = 0.25*height;
     goalWidth = 0.55*width;
-    endFieldLineDepth = 0.8*fieldDepth;
     advertHeight = 0.08*height;
     crowdWidth = 2.4*width;
     
     background(100);
-    // lights();
+    //lights();
     
     firstRender();
     
@@ -563,9 +652,7 @@ void drawField() {
     int NUM_OF_SUBFIELDS = 4; // Change this to have more/less subfields
     float subfieldWidth = fieldWidth/float(NUM_OF_SUBFIELDS);
     int lineStroke = 6;
-    float smallAreaLineDepth = 0.4*fieldDepth;
     float largeAreaLineDepth = 0.04*fieldDepth;
-    float ballMarkerDiameter = 0.02*width;
 
     pushMatrix();
     pushStyle();
@@ -618,7 +705,7 @@ void drawField() {
     // Marking where ball should be
     pushMatrix();
         fill(#FFFFFF);
-        translate(0, -1, smallAreaLineDepth/2);
+        translate(0, -1, ballMarkerDepth);
         rotateX(PI/2);
         circle(0, 0, ballMarkerDiameter);
     popMatrix();
