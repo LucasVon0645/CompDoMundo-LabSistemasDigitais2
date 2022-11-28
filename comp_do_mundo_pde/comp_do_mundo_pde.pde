@@ -198,7 +198,7 @@ class Kicker extends Player {
             loadImage(
                 this.team == "Brazil" 
                 ? "characters/brazil/Kicker_moving.png" 
-                : "characters/brazil/Kicker_moving.png"
+                : "characters/argentina/Kicker_moving.png"
             )
         );
     }
@@ -266,7 +266,7 @@ class Goalkeeper extends Player {
             loadImage(
                 this.team == "Brazil" 
                 ? "characters/brazil/Goalkeeper_center.png" 
-                : "characters/brazil/Goalkeeper_center.png"
+                : "characters/argentina/Goalkeeper_center.png"
             )
         );
         this.images.put(
@@ -274,7 +274,7 @@ class Goalkeeper extends Player {
             loadImage(
                 this.team == "Brazil" 
                 ? "characters/brazil/Goalkeeper_left.png" 
-                : "characters/brazil/Goalkeeper_left.png"
+                : "characters/argentina/Goalkeeper_left.png"
             )
         );
         this.images.put(
@@ -282,7 +282,7 @@ class Goalkeeper extends Player {
             loadImage(
                 this.team == "Brazil" 
                 ? "characters/brazil/Goalkeeper_right.png" 
-                : "characters/brazil/Goalkeeper_right.png"
+                : "characters/argentina/Goalkeeper_right.png"
             )
         );
     }
@@ -356,7 +356,7 @@ class Goalkeeper extends Player {
 
 class Ball extends AnimatedObject {
     private PShape sphere;
-    private float ballRadius = 0.5*ballMarkerDiameter;
+    private float ballRadius = 0.01*width;
     private char trajectoryDirection;
     
     protected void drawCurrentImage() {        
@@ -373,7 +373,7 @@ class Ball extends AnimatedObject {
     }
     
     protected void loadImages() {
-        this.images.put("ball_texture", loadImage("others/Soccer_ball.png"));
+        this.images.put("ball_texture", loadImage("others/Pixel_football.png"));
     }
     
     protected void resizeImages() {
@@ -635,7 +635,7 @@ void draw() {
     fieldDepth = -0.8*width;
     endFieldLineDepth = 0.8*fieldDepth;
     smallAreaLineDepth = 0.4*fieldDepth;
-    ballMarkerDiameter = 0.02*width;
+    ballMarkerDiameter = 0.015*width;
     ballMarkerDepth = smallAreaLineDepth/2.0;
     goalHeight = 0.25*height;
     goalWidth = 0.55*width;
