@@ -110,6 +110,12 @@ abstract class AnimatedObject {
         this.xPos = this.initialX;
         this.yPos = this.initialY;
         this.zPos = this.initialZ;
+        
+        this.isMoving = false;
+        this.completedMovement = false;
+        this.movementPct = 0.0;
+        
+        this.updateCurrentImage();
     }
     
     protected void drawCurrentImage() {        
@@ -148,16 +154,11 @@ abstract class AnimatedObject {
         this.initialX = initialX;
         this.initialY = initialY;
         this.initialZ = initialZ;
-        this.xPos = initialX;
-        this.yPos = initialY;
-        this.zPos = initialZ;
-
+        
         this.isMoving = false;
         this.completedMovement = false;
         
         this.images = new HashMap<String,PImage>();
-        
-
     }
 }
 
@@ -172,7 +173,7 @@ abstract class Player extends AnimatedObject {
         this.team = team;
         this.loadImages();
         this.resizeImages();
-        this.updateCurrentImage();
+        this.resetDrawing();
     }
 }
 
@@ -221,17 +222,13 @@ class Kicker extends Player {
               this.zPos = this.initialZ + (pow(this.movementPct, EXP) * zDistanceToBall);
           }
           else {
-              this.currentImage = this.images.get("kicker_moving");
               this.completedMovement = true;
+              this.updateCurrentImage();
           }
     }
     
-    protected void resetDrawing() {
-    
-    };
-    
     public void updateCurrentImage() {
-        this.currentImage = this.images.get("kicker_still");
+        this.currentImage = this.images.get(this.completedMovement ? "kicker_moving" : "kicker_still"); 
     }
     
     // Adds 1 to the current kick count of a given direction
@@ -261,7 +258,7 @@ class Kicker extends Player {
 // Class to draw and keep info about Goalkeeper
 class Goalkeeper extends Player {
     
-    private char currentDirection, finalDirection;
+    private char direction; // ranges from 1 to 5
     
     protected void loadImages() {
         this.images.put(
@@ -307,38 +304,46 @@ class Goalkeeper extends Player {
     
     
     protected void moveObject() {
-        if (this.finalDirection == '1' || this.finalDirection == '2') {
-            this.xPos = this.initialX - 0.15*goalWidth;
-            this.yPos = this.initialY - 48;
-        }
-        else if (this.finalDirection == '4' || this.finalDirection == '5') {
-            this.xPos = this.initialX + 0.15*goalWidth;
-            this.yPos = this.initialY - 48;
-        }
+        float STEP = 0.01;  // Size of each step along the path
+        float EXP = 2;  // Determines the curve
+        int directionOffset = (this.direction == '1' || this.direction == '2')
+                              ? 1
+                              : (this.direction == '4' || this.direction == '5')
+                              ? -1
+                              : 0;
+        float xDistanceToJumpPos = 0.65*directionOffset*(goalWidth/2 - this.initialX);
+        float yDistanceToJumpPos = 0.15*(directionOffset != 0 ? 1 : 0)*(goalHeight - this.initialY);
+        
+          this.movementPct += STEP;
+          if (this.movementPct < 1.0) {
+              
+              if (this.movementPct < 2*STEP) { // Only happens first time
+                  this.updateCurrentImage();
+              }
+              
+              this.xPos = this.initialX + (pow(this.movementPct, EXP) * xDistanceToJumpPos);
+              this.yPos = this.initialY - (this.movementPct * yDistanceToJumpPos);
+          }
     }
     
     protected void resetDrawing() {
-        this.currentDirection = '3';
-        updateCurrentImage();
+        this.direction = '3';
+        super.resetDrawing();
     };
     
-    public void updateCurrentImage() {
-        this.finalDirection = this.currentDirection;
-        
-        if (this.finalDirection == '1' || this.finalDirection == '2') {
-            this.currentImage = this.images.get("goalkeeper_left");
-        }
-        else if (this.finalDirection == '4' || this.finalDirection == '5') {
-            this.currentImage = this.images.get("goalkeeper_right");
-        }
-        else {
-            this.currentImage = this.images.get("goalkeeper_center");
-        }
+    public void updateCurrentImage() {                         
+        this.currentImage = this.images.get(
+                            (this.direction == '1' || this.direction == '2')
+                            ? "goalkeeper_left"
+                            : (this.direction == '4' || this.direction == '5')
+                            ? "goalkeeper_right"
+                            : "goalkeeper_center"
+        );
     }
     
     // Setter of the direction attribute
-    public void setCurrentDirection(char newDirection) {
-        this.currentDirection = newDirection;
+    public void setDirection(char newDirection) {
+        this.direction = newDirection;
     }
     
 
@@ -379,8 +384,8 @@ class Ball extends AnimatedObject {
     protected void moveObject() {
         float STEP = 0.01;  // Size of each step along the path
         float EXP = 2;  // Determines the curve
-        float xDistanceToGoal = 300;
-        float yDistanceToGoal = 0.75*(goalHeight - this.initialY);
+        float xDistanceToGoal = 0.85*(this.trajectoryDirection == 'E' ? 1 : -1)*(goalWidth/2 - this.initialX);
+        float yDistanceToGoal = 0.70*(goalHeight - this.initialY);
         float zDistanceToGoal = 0.95*(endFieldLineDepth - this.initialZ);
         
           this.movementPct += STEP;
@@ -390,10 +395,6 @@ class Ball extends AnimatedObject {
               this.zPos = this.initialZ + (this.movementPct * zDistanceToGoal);
           }
     }
-    
-    protected void resetDrawing() {
-    
-    };
     
     public void updateCurrentImage() {
         sphere.setTexture(this.images.get("ball_texture"));
@@ -409,7 +410,7 @@ class Ball extends AnimatedObject {
         
         this.loadImages();
         this.resizeImages();
-        this.updateCurrentImage();
+        this.resetDrawing();
     }
 }
 
@@ -425,6 +426,13 @@ class Match {
     public Ball ball;
     public int round, goalsA, goalsB;
     public char winner;
+    
+    
+    private void resetDrawings() {
+        this.currentKicker.resetDrawing();
+        this.currentGoalkeeper.resetDrawing();
+        this.ball.resetDrawing();
+    }
 
     
     // Updates match variables when a new shot is about to happen
@@ -442,7 +450,8 @@ class Match {
             }
             
             serialConnetion.write('3'); // reset goalkeeper in digital circuit to middle position
-            this.currentGoalkeeper.resetDrawing();
+            
+            this.resetDrawings();
             
             this.currentKicker = (kicker_tx == 'A') ? kickerA : kickerB;
             this.currentGoalkeeper = (kicker_tx == 'A') ? goalkeeperB : goalkeeperA;
@@ -459,8 +468,9 @@ class Match {
         }
         
         else {
-            currentKicker.updateKickCount(kickerDirection_tx);
-            this.currentGoalkeeper.updateCurrentImage();
+            this.currentKicker.updateKickCount(kickerDirection_tx);
+            this.ball.trajectoryDirection = kickerDirection_tx;
+            
             this.currentKicker.isMoving = true;
         }
     }
@@ -517,6 +527,7 @@ class Match {
         
         if (this.currentKicker.completedMovement) {
             this.ball.isMoving = true;
+            this.currentGoalkeeper.isMoving = true;
             this.currentKicker.completedMovement = false;
         }
         
@@ -524,6 +535,7 @@ class Match {
         this.currentGoalkeeper.drawObject();
         this.currentKicker.drawObject();
     }
+    
     
     public Match() {        
         this.round = 0;
@@ -577,7 +589,7 @@ void setup() {
     loadOtherImages();
     loadSounds();
     
-    sounds.get("background").loop();
+    // sounds.get("background").loop();
     
     isFirstRender = true;
 }
@@ -1020,26 +1032,26 @@ void keyPressed() {
     //if (key == '1' || key == '2' || key == '3' || key == '4' || key == '5') {
     //    println("Enviando tecla '" + key + "' para a porta serial.");
     //    serialConnetion.write(key);
-    //    currentMatch.currentGoalkeeper.setCurrentDirection(key);
+    //    currentMatch.currentGoalkeeper.setDirection(key);
     //}
     
     // Debug
     println("Enviando tecla '" + key + "' para a porta serial.");
     serialConnetion.write(key);
     if (key == 'G') {
-        currentMatch.currentGoalkeeper.setCurrentDirection('1');
+        currentMatch.currentGoalkeeper.setDirection('1');
     }
     else if (key == 'H') {
-        currentMatch.currentGoalkeeper.setCurrentDirection('2');
+        currentMatch.currentGoalkeeper.setDirection('2');
     }
     else if (key == 'J') {
-        currentMatch.currentGoalkeeper.setCurrentDirection('3');
+        currentMatch.currentGoalkeeper.setDirection('3');
     }
     else if (key == 'K') {
-        currentMatch.currentGoalkeeper.setCurrentDirection('4');
+        currentMatch.currentGoalkeeper.setDirection('4');
     }
     else if (key == 'L') {
-        currentMatch.currentGoalkeeper.setCurrentDirection('5');
+        currentMatch.currentGoalkeeper.setDirection('5');
     }
 }
 
