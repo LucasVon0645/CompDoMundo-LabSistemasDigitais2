@@ -167,6 +167,8 @@ abstract class AnimatedObject {
 abstract class Player extends AnimatedObject {
     protected String team;
     
+    protected abstract void resetPlayer();
+    
     public Player(String team, float initialX, float initialY, float initialZ) {
         super(initialX, initialY, initialZ);
         
@@ -225,6 +227,12 @@ class Kicker extends Player {
               this.completedMovement = true;
               this.updateCurrentImage();
           }
+    }
+    
+    protected void resetPlayer() {
+        this.kicks.set("D", 0);
+        this.kicks.set("E", 0);
+        this.resetDrawing();
     }
     
     public void updateCurrentImage() {
@@ -329,7 +337,11 @@ class Goalkeeper extends Player {
     protected void resetDrawing() {
         this.direction = '3';
         super.resetDrawing();
-    };
+    }
+    
+    protected void resetPlayer() { // Redundant, but keeps things organized
+        this.resetDrawing();
+    }
     
     public void updateCurrentImage() {                         
         this.currentImage = this.images.get(
@@ -350,6 +362,7 @@ class Goalkeeper extends Player {
     // Constructor
     public Goalkeeper(String team) {
         super(team, width/2, 0, endFieldLineDepth + 40);
+        this.direction = '3';
     };
 }
 
@@ -500,6 +513,9 @@ class Match {
     public void endMatch() {
         this.winner = (this.goalsA > this.goalsB) ? 'A' : 'B';
         this.round += 1; // corrects num of rounds because it started at 0
+        
+        this.resetDrawings();
+        cam.reset(2000);
     }
     
     public void setCurrentShot(int status) {
@@ -534,6 +550,29 @@ class Match {
         this.ball.drawObject();
         this.currentGoalkeeper.drawObject();
         this.currentKicker.drawObject();
+    }
+    
+    public void resetMatch() {
+        this.round = 0;
+        this.goalsA = 0;
+        this.goalsB = 0;
+        
+        for (int i = 0; i < shotsA.length; i += 1) {
+            this.shotsA[i] = 0;
+            this.shotsB[i] = 0;
+        }
+        
+        this.kickerA.resetPlayer();
+        this.kickerB.resetPlayer();
+        this.goalkeeperA.resetPlayer();
+        this.goalkeeperB.resetPlayer();
+        
+        this.currentKicker = this.kickerA;
+        this.currentGoalkeeper = this.goalkeeperB;
+        
+        this.winner = 'O';
+        
+        cam.lookAt(width/2, -0.20*height, 0, 0.25*width, 2000);
     }
     
 
@@ -576,11 +615,19 @@ HashMap<String,PImage> otherImages = new HashMap<String,PImage>();
 
 
 void setup() {
-    // size(2400, 1800, P3D); // actual size to use
-    // size(1400, 1050, P3D); // size when adjusting window position
-    size(800, 600, P3D); // size for Palmiro's screen
+    size(2400, 1800, P3D);    // size for bigger screens
+    //size(1400, 1050, P3D);  // size for medium size screens
+    //size(800, 600, P3D);    // size for smaller screens
     
-    cam = new PeasyCam(this, width/2, -0.2*height, 0, 0.25*width);
+
+    cam = new PeasyCam(this, width/2, -0.1*height, 0, 0.04*width);
+    
+    // Uncomment this for different camera positionS
+    //cam = new PeasyCam(this, width/2, -0.20*height, 0, 0.25*width);
+    //
+    //cam = new PeasyCam(this, width/2, -0.21*height, 0, 0.25*width);
+    //cam.rotateX(0.1);
+    
     cam.setMaximumDistance(3*width);
     
     configureSerialComm();
@@ -1049,7 +1096,7 @@ void serialEvent (Serial serialConnetion) {
         // If header is 0, the game has just been turned on
         if (header == '0') {
             println("PARTIDA COMEÇANDO");
-            currentMatch = new Match();
+            currentMatch.resetMatch();
         }
         
         // If header is 1, a match has just begun
@@ -1099,7 +1146,6 @@ void serialEvent (Serial serialConnetion) {
 
 // Detects key press and sends it to the serial port
 void keyPressed() {
-
     
     // Use this during real games
     //if (key == '1' || key == '2' || key == '3' || key == '4' || key == '5') {
@@ -1125,6 +1171,10 @@ void keyPressed() {
     }
     else if (key == 'L') {
         currentMatch.currentGoalkeeper.setDirection('5');
+    }
+    else if (key == 'P') {
+        float[] camCoords = cam.getLookAt();
+        println(camCoords[0], camCoords[1], camCoords[2], cam.getDistance());
     }
 }
 
