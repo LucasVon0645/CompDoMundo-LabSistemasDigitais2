@@ -110,7 +110,7 @@ abstract class AnimatedObject {
         this.xPos = this.initialX;
         this.yPos = this.initialY;
         this.zPos = this.initialZ;
-        
+
         this.isMoving = false;
         this.completedMovement = false;
         this.movementPct = 0.0;
@@ -154,7 +154,7 @@ abstract class AnimatedObject {
         this.initialX = initialX;
         this.initialY = initialY;
         this.initialZ = initialZ;
-        
+
         this.isMoving = false;
         this.completedMovement = false;
         
@@ -228,7 +228,7 @@ class Kicker extends Player {
     }
     
     public void updateCurrentImage() {
-        this.currentImage = this.images.get(this.completedMovement ? "kicker_moving" : "kicker_still"); 
+        this.currentImage = this.images.get(this.completedMovement ? "kicker_moving" : "kicker_still");
     }
     
     // Adds 1 to the current kick count of a given direction
@@ -426,7 +426,7 @@ class Match {
     public Ball ball;
     public int round, goalsA, goalsB;
     public char winner;
-    
+
     
     private void resetDrawings() {
         this.currentKicker.resetDrawing();
@@ -434,7 +434,7 @@ class Match {
         this.ball.resetDrawing();
     }
 
-    
+
     // Updates match variables when a new shot is about to happen
     public void updateRound(char kicker_tx, int round_tx) {
         // Error conditions
@@ -470,7 +470,7 @@ class Match {
         else {
             this.currentKicker.updateKickCount(kickerDirection_tx);
             this.ball.trajectoryDirection = kickerDirection_tx;
-            
+
             this.currentKicker.isMoving = true;
         }
     }
@@ -536,7 +536,7 @@ class Match {
         this.currentKicker.drawObject();
     }
     
-    
+
     public Match() {        
         this.round = 0;
         this.goalsA = 0;
@@ -557,7 +557,7 @@ class Match {
 
 // Global drawing parameters variables
 float fieldWidth, fieldDepth;
-float goalHeight, goalWidth;
+float goalHeight, goalWidth, goalDepth;
 float endFieldLineDepth, smallAreaLineDepth;
 float ballMarkerDiameter, ballMarkerDepth;
 float advertHeight;
@@ -576,8 +576,9 @@ HashMap<String,PImage> otherImages = new HashMap<String,PImage>();
 
 
 void setup() {
-    size(2400, 1800, P3D); // actual size to use
-    //size(1400, 1050, P3D); // size when adjusting window position
+    // size(2400, 1800, P3D); // actual size to use
+    // size(1400, 1050, P3D); // size when adjusting window position
+    size(800, 600, P3D); // size for Palmiro's screen
     
     cam = new PeasyCam(this, width/2, -0.2*height, 0, 0.25*width);
     cam.setMaximumDistance(3*width);
@@ -639,9 +640,10 @@ void draw() {
     ballMarkerDepth = smallAreaLineDepth/2.0;
     goalHeight = 0.25*height;
     goalWidth = 0.55*width;
+    goalDepth = -0.18*fieldDepth;
     advertHeight = 0.08*height;
     crowdWidth = 2.4*width;
-    
+
     background(100);
     //lights();
     
@@ -729,22 +731,93 @@ void drawField() {
 
 // Draws the goal on the screen: completely static
 void drawGoal() {
-    float goalThickness = 0.004*width;
+    float goalPostThickness = 0.004*width;
+    float goalNetThickness = 0.1*goalPostThickness;
+
+    float d, h, w;
+    float netSpace = (goalHeight*goalWidth*goalDepth)/1000000;
 
     pushMatrix();
     pushStyle();
     
     translate(width/2, 0, endFieldLineDepth);
     stroke(#EEEEEE);
-    
+
     // Goal structure
-    strokeWeight(goalThickness);
+    strokeWeight(goalPostThickness);
+
     line((-goalWidth/2), 0, 0, (-goalWidth/2), -goalHeight, 0);
     line((goalWidth/2), 0, 0, (goalWidth/2), -goalHeight, 0);
     line(
-        (-(goalWidth + goalThickness)/2), -goalHeight, 0, 
-        ((goalWidth+goalThickness)/2), -goalHeight, 0
+        (-goalWidth/2), -goalHeight, 0, 
+        (goalWidth/2), -goalHeight, 0
     );
+
+    // Goal net
+    strokeWeight(goalNetThickness);
+
+    h = 0;
+    d = -goalDepth;
+    while (d <= 0) {
+        if (d < -goalDepth/2) {
+            line((-goalWidth/2), h, d, (goalWidth/2), h, d);
+
+            line((-goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2, (goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2);
+
+            line((-goalWidth/2), 0, d, (-goalWidth/2), h, d);
+            line((goalWidth/2), 0, d, (goalWidth/2), h, d);
+
+            line((-goalWidth/2), h, 0, (-goalWidth/2), h, d);
+            line((goalWidth/2), h, 0, (goalWidth/2), h, d);
+
+            line((-goalWidth/2), h-(goalHeight/goalDepth)*netSpace, 0, (-goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2);
+            line((goalWidth/2), h-(goalHeight/goalDepth)*netSpace, 0, (goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2);
+
+            h -= (2*goalHeight/goalDepth)*netSpace;
+        } else { // if (d >= -goalDepth/2)
+            line((-goalWidth/2), -goalHeight, d, (goalWidth/2), -goalHeight, d);
+            line((-goalWidth/2), 0, d, (-goalWidth/2), -goalHeight, d);
+            line((goalWidth/2), 0, d, (goalWidth/2), -goalHeight, d);
+        }
+        d += netSpace; 
+    }
+
+    h += (goalHeight/goalDepth)*netSpace;
+    line((-goalWidth/2), h, (-goalDepth/2), (-goalWidth/2), 0, -goalDepth);
+    line((goalWidth/2), h, (-goalDepth/2), (goalWidth/2), 0, -goalDepth);
+
+    w = -goalWidth/2+netSpace;
+    while (w <= goalWidth/2) {
+        line(w, -goalHeight, 0, w, -goalHeight, (-goalDepth/2));
+        line(w, -goalHeight, (-goalDepth/2), w, 0, -goalDepth);
+        w += netSpace;
+    }
+
+    // Triangle
+    // h = 0;
+    // d = -goalDepth;
+    // while (d <= 0) {
+    //     line((-goalWidth/2), h, d, (goalWidth/2), h, d);
+
+    //     line((-goalWidth/2), 0, d, (-goalWidth/2), h, d);
+    //     line((goalWidth/2), 0, d, (goalWidth/2), h, d);
+
+    //     line((-goalWidth/2), h, 0, (-goalWidth/2), h, d);
+    //     line((goalWidth/2), h, 0, (goalWidth/2), h, d);
+
+    //     h -= (goalHeight/goalDepth)*netSpace;
+    //     d += netSpace; 
+    // }
+
+    // w = -goalWidth/2;
+    // while (w <= goalWidth/2) {
+    //     line(w, -goalHeight, 0, w, 0, -goalDepth);
+    //     w += netSpace;
+    // }
+    // line((goalWidth/2), -goalHeight, 0, (goalWidth/2), 0, -goalDepth);
+
+    // line((-goalWidth/2), 0, 0, (-goalWidth/2), 0, -goalDepth);
+    // line((goalWidth/2), 0, 0, (goalWidth/2), 0, -goalDepth);
 
     popStyle();
     popMatrix();
@@ -872,7 +945,7 @@ void drawScoreboardHUD() {
     
         // Draws the name of each team
         textInsideBox(
-            "Time " + currentScoreboard, 
+            (currentScoreboard == 'A' ? "Brasil" : "Argentina"), 
             teamNameBoxWidth, 
             teamScoreHeight, 
             #CBB75D, 
