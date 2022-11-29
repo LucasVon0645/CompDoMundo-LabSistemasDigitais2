@@ -83,7 +83,7 @@ begin
     
     timer_medicao: contador_m
         generic map (
-            M => 5000000, -- 100 mseg (experimento pratico)
+            M => 7500000, -- 150 mseg (experimento pratico)
             -- M => 200000, -- 400 useg (simulacao testbench)
             N => 27
         )
@@ -114,7 +114,7 @@ begin
     comparador_gol: comparador_bcd_3digitos
         port map (
             bcd_1 => s_medida,
-            bcd_2 => "000010000111", -- 87 mm -> 8.7 cm 
+            bcd_2 => "000010010101", -- 95 mm -> 9.5 cm 
             menor  => distancia_menor,
             igual  => open,
             maior  => open
