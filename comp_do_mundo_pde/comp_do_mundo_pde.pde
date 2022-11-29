@@ -762,7 +762,10 @@ void drawGoal() {
         if (d < -goalDepth/2) {
             line((-goalWidth/2), h, d, (goalWidth/2), h, d);
 
-            line((-goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2, (goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2);
+            line(
+                (-goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2, 
+                (goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2
+            );
 
             line((-goalWidth/2), 0, d, (-goalWidth/2), h, d);
             line((goalWidth/2), 0, d, (goalWidth/2), h, d);
@@ -770,8 +773,13 @@ void drawGoal() {
             line((-goalWidth/2), h, 0, (-goalWidth/2), h, d);
             line((goalWidth/2), h, 0, (goalWidth/2), h, d);
 
-            line((-goalWidth/2), h-(goalHeight/goalDepth)*netSpace, 0, (-goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2);
-            line((goalWidth/2), h-(goalHeight/goalDepth)*netSpace, 0, (goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2);
+            line(
+                (-goalWidth/2), h-(goalHeight/goalDepth)*netSpace, 0, 
+                (-goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2);
+            line(
+                (goalWidth/2), h-(goalHeight/goalDepth)*netSpace, 0, 
+                (goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2
+            );
 
             h -= (2*goalHeight/goalDepth)*netSpace;
         } else { // if (d >= -goalDepth/2)
