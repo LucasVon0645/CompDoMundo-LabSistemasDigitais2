@@ -1094,8 +1094,8 @@ void serialEvent (Serial serialConnetion) {
             println("NOVO PLACAR:  A  |  B");
             println("              " + unhex(segment1) + "  |  " + segment2);
             
-            currentMatch.updateScore(unhex(segment1), segment2);
             currentMatch.updateGoalsByDirection(unhex(segment1), segment2);
+            currentMatch.updateScore(unhex(segment1), segment2);
         }
         
         // If header is 5, the match has ended, and we check who is the winner
