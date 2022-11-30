@@ -435,15 +435,10 @@ class Match {
     }
 
     public void updateGoalsByDirection(int goalsA_tx, int goalsB_tx) {
-        this.goals_with_left_kicks += (
-            (goalsA_tx != this.goalsA || goalsB_tx != this.goalsB) 
-            && this.lastKickerDirection == 'E'
-        ) ? 1 : 0;
-
-        this.goals_with_left_kicks += (
-            (goalsA_tx != this.goalsA || goalsB_tx != this.goalsB) 
-            && this.lastKickerDirection == 'D'
-        ) ? 1 : 0;
+        if ((goalsA_tx != this.goalsA || goalsB_tx != this.goalsB)) {
+            this.goals_with_left_kicks += (this.lastKickerDirection == 'E') ? 1 : 0;
+            this.goals_with_left_kicks += (this.lastKickerDirection == 'D') ? 1 : 0;
+        }
     }
 
     // Updates match variables when a new shot is about to happen
