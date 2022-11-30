@@ -55,8 +55,8 @@ class PostgresClient {
         return query;
     }
 
-    // Get sugestion variables from the db using the previous matches info
-    public void getSugestionsFromDatabase(int numMatches) {
+    // Get suggestion variables from the db using the previous matches info
+    public void getSuggestionsFromDatabase(int numMatches) {
         if (this.connect()) {
             println("Lendo dados do banco de dados!");
             
@@ -92,7 +92,7 @@ class PostgresClient {
                 float rightKickProb = goalsWithRightKicks / (leftKicks + rightKicks);
 
                 hitProb = (leftKickProb >= rightKickProb) ? leftKickProb : rightKickProb;
-                sugestedDirection = (leftKickProb >= rightKickProb) ? 'E' : 'D';
+                suggestedDirection = (leftKickProb >= rightKickProb) ? 'E' : 'D';
                 
             } catch (Exception e) {
                 println(e.getClass().getName() + ": " + e.getMessage());
@@ -636,7 +636,7 @@ float advertHeight;
 float crowdWidth, crowdHeight;
 boolean isFirstRender;
 boolean playing;
-char sugestedDirection;
+char suggestedDirection;
 float hitProb;
 
 // Global object variables
@@ -731,7 +731,7 @@ void draw() {
     drawScoreboardHUD();
 
     if (playing) {
-        drawSugestionHUD();
+        drawsuggestionHUD();
     }
 
     // For some reason, the order of drawing matters here:
@@ -1112,26 +1112,26 @@ void drawScoreboardHUD() {
 
 // Draws a suggestion banner, showing kick direction and goal
 // occurrence stats in previous matches
-void drawSugestionHUD() {
+void drawsuggestionHUD() {
 
-    float sugestionBannerX = 0.06 * width;
-    float sugestionBannerY = 0.70 * height;
+    float suggestionBannerX = 0.60 * width;
+    float suggestionBannerY = 0.06 * height;
 
-    float sugestionBannerWidth = 0.3 * width;
-    float sugestionBannerHeight = 0.045 * height;
+    float suggestionBannerWidth = 0.3 * width;
+    float suggestionBannerHeight = 0.045 * height;
 
     cam.beginHUD();
     
     pushMatrix();
     pushStyle();
     
-    translate(sugestionBannerX, sugestionBannerY, 0);
+    translate(suggestionBannerX, suggestionBannerY, 0);
     textSize(28);
 
     textInsideBox(
-        "Chute para a " + sugestedDirection + " (" + str(hitProb*100) + "% de chance de acerto)", 
-        sugestionBannerWidth, 
-        sugestionBannerHeight, 
+        "Chute para a " + suggestedDirection + " (" + str(hitProb*100) + "% de chance de acerto)", 
+        suggestionBannerWidth, 
+        suggestionBannerHeight, 
         #CBB75D, 
         #443514
     );
@@ -1176,7 +1176,7 @@ void serialEvent (Serial serialConnetion) {
         else if (header == '1') {
             println("RODADA " + segment2 + ": JOGADOR " + segment1 + " BATENDO");
             currentMatch.updateRound(segment1.charAt(0), segment2);
-            client.getSugestionsFromDatabase(100);
+            client.getSuggestionsFromDatabase(100);
             playing = true;
         }
         
