@@ -55,9 +55,9 @@ class PostgresClient {
                 long now = System.currentTimeMillis();
                 Timestamp timestamp = new Timestamp(now);
                 
-                String query = "INSERT INTO matches ";
-                query += "(timestamp, winner, rounds, goals_by_a, goals_by_b, left_kicks_by_A, ";
-                query += "left_kicks_by_B, right_kicks_by_A, right_kicks_by_B) ";
+                String query = "INSERT INTO matches_statistics ";
+                query += "(timestamp, winner, rounds, goals_by_a, goals_by_b, left_kicks, ";
+                query += "right_kicks, goals_with_left_kicks, goals_with_right_kicks) ";
                 query += "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 
                 pstmt = conn.prepareStatement(query);
@@ -66,10 +66,10 @@ class PostgresClient {
                 pstmt.setInt(3, match.round);
                 pstmt.setInt(4, match.goalsA);
                 pstmt.setInt(5, match.goalsB);
-                pstmt.setInt(6, match.kickerA.getKicks('E'));
-                pstmt.setInt(7, match.kickerB.getKicks('E'));
-                pstmt.setInt(8, match.kickerA.getKicks('D'));
-                pstmt.setInt(9, match.kickerB.getKicks('D'));
+                pstmt.setInt(6, match.left_kicks);
+                pstmt.setInt(7, match.right_kicks);
+                pstmt.setInt(8, match.goals_with_left_kicks);
+                pstmt.setInt(9, match.goals_with_right_kicks);
     
                 pstmt.executeUpdate();
                 pstmt.close();
@@ -424,7 +424,7 @@ class Match {
     public Kicker currentKicker;
     public Goalkeeper currentGoalkeeper;
     public Ball ball;
-    public int round, goalsA, goalsB;
+    public int round, left_kicks, right_kicks, goalsA, goalsB, goals_with_left_kicks, goals_with_right_kicks;
     public char winner;
 
     
@@ -467,7 +467,10 @@ class Match {
             println("kickerDirection_tx: " + kickerDirection_tx);
         }
         
-        else {
+        else {            
+            this.left_kicks += (kickerDirection_tx == 'E') ? 1 : 0;
+            this.right_kicks += (kickerDirection_tx == 'D') ? 1 : 0;
+
             this.currentKicker.updateKickCount(kickerDirection_tx);
             this.ball.trajectoryDirection = kickerDirection_tx;
 
@@ -476,7 +479,7 @@ class Match {
     }
     
     // Updates match variables after a shot has happened
-    void updateScore(int goalsA_tx, int goalsB_tx) {
+    void updateScore(char kickerDirection_tx, int goalsA_tx, int goalsB_tx) {
         
         // Error conditions
         if ((goalsA_tx < 0 || goalsA_tx > 16 ) || (goalsB_tx < 0 || goalsB_tx > 16 )) {
@@ -485,6 +488,16 @@ class Match {
             println("goalsB_tx: " + goalsB_tx);
     
         } else {
+
+            goals_with_left_kicks += (
+                (goalsA_tx != this.goalsA || goalsB_tx != this.goalsB) 
+                && kickerDirection_tx == 'E'
+            ) ? 1 : 0;
+
+            goals_with_left_kicks += (
+                (goalsA_tx != this.goalsA || goalsB_tx != this.goalsB) 
+                && kickerDirection_tx == 'D'
+            ) ? 1 : 0;
             
             if (this.currentKicker.id == 'A') {
                 this.setCurrentShot((goalsA_tx != this.goalsA) ? 2 : -1);
@@ -539,8 +552,12 @@ class Match {
 
     public Match() {        
         this.round = 0;
+        this.left_kicks = 0;
+        this.right_kicks = 0;
         this.goalsA = 0;
         this.goalsB = 0;
+        this.goals_with_left_kicks = 0;
+        this.goals_with_right_kicks = 0;
         
         this.shotsA = new int[16];
         this.shotsB = new int[16];
@@ -578,7 +595,7 @@ HashMap<String,PImage> otherImages = new HashMap<String,PImage>();
 void setup() {
     // size(2400, 1800, P3D); // actual size to use
     // size(1400, 1050, P3D); // size when adjusting window position
-    size(800, 600, P3D); // size for Palmiro's screen
+    size(900, 675, P3D); // size for Palmiro's screen
     
     cam = new PeasyCam(this, width/2, -0.2*height, 0, 0.25*width);
     cam.setMaximumDistance(3*width);
@@ -607,8 +624,8 @@ void configureSerialComm() {
     //int lf = 10;  // ASCII for linefeed -> actual value to use
     int lf = 46;  // ASCII for . -> use this for debugging
     
-    serialConnetion = new Serial(this, port, baudrate, parity, databits, stopbits);
-    serialConnetion.bufferUntil(lf);
+    //serialConnetion = new Serial(this, port, baudrate, parity, databits, stopbits);
+    //serialConnetion.bufferUntil(lf);
 }
 
 
