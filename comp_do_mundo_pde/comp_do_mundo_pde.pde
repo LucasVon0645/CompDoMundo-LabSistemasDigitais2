@@ -45,6 +45,65 @@ class PostgresClient {
             println(e.getClass().getName() + ": " + e.getMessage());
         }
     }
+
+    private String createQuery(String column, int numMatches) {
+        String query = "SELECT SUM(" + column + ") FROM (";
+        query += "SELECT " + column + " FROM matches_statistics ";
+        query += "ORDER BY match_id DESC LIMIT " + str(numMatches);
+        query += ") AS last_matches";
+
+        return query;
+    }
+
+    // Get sugestion variables from the db using the previous matches info
+    public void getSugestionsFromDatabase(int numMatches) {
+        if (this.connect()) {
+            println("Lendo dados do banco de dados!");
+            
+            try {     
+                String[] queries = new String[4];
+                ResultSet rs;
+                int[] results = new int[4];
+
+                queries[0] = createQuery("left_kicks", numMatches);
+                queries[1] = createQuery("right_kicks", numMatches);
+                queries[2] = createQuery("goals_with_left_kicks", numMatches);
+                queries[3] = createQuery("goals_with_right_kicks", numMatches);
+
+                for (int i = 0; i < 4; i++) {
+                    pstmt = conn.prepareStatement(queries[i]);    
+                    rs = pstmt.executeQuery();
+
+                    while (rs.next()) {
+                        results[i] = rs.getInt(1);
+                    }
+
+                    pstmt.close();
+                }
+                
+                conn.commit();
+
+                int leftKicks = results[0];
+                int rightKicks = results[1];
+                int goalsWithLeftKicks = results[2];
+                int goalsWithRightKicks = results[3];
+
+                float leftKickProb = goalsWithLeftKicks / (leftKicks + rightKicks);
+                float rightKickProb = goalsWithRightKicks / (leftKicks + rightKicks);
+
+                hitProb = (leftKickProb >= rightKickProb) ? leftKickProb : rightKickProb;
+                sugestedDirection = (leftKickProb >= rightKickProb) ? 'E' : 'D';
+                
+            } catch (Exception e) {
+                println(e.getClass().getName() + ": " + e.getMessage());
+            }
+            
+            this.disconnect();
+        }
+        else {
+            println("ERRO: Incapaz de se conectar ao servidor.");
+        }
+    }
     
     // Save a match to the db using the latest match info
     public void saveMatchToDatabase(Match match) {
@@ -576,6 +635,9 @@ float ballMarkerDiameter, ballMarkerDepth;
 float advertHeight;
 float crowdWidth, crowdHeight;
 boolean isFirstRender;
+boolean playing;
+char sugestedDirection;
+float hitProb;
 
 // Global object variables
 PeasyCam cam;
@@ -667,6 +729,10 @@ void draw() {
     drawAdverts();
     drawCrowd();
     drawScoreboardHUD();
+
+    if (playing) {
+        drawSugestionHUD();
+    }
 
     // For some reason, the order of drawing matters here:
     // to keep the background of characters transparent, render them last.
@@ -1044,6 +1110,39 @@ void drawScoreboardHUD() {
 }
 
 
+// Draws a suggestion banner, showing kick direction and goal
+// occurrence stats in previous matches
+void drawSugestionHUD() {
+
+    float sugestionBannerX = 0.06 * width;
+    float sugestionBannerY = 0.06 * height;
+
+    float sugestionBannerWidth = 40;
+    float sugestionBannerHeight = 0.045 * height;
+
+    cam.beginHUD();
+    
+    pushMatrix();
+    pushStyle();
+    
+    translate(sugestionBannerX, sugestionBannerY, 0);
+    textSize(28);
+
+    textInsideBox(
+        "Chute para a " + sugestedDirection + " (" + str(hitProb*100) + "% de chance de acerto)", 
+        sugestionBannerWidth, 
+        sugestionBannerHeight, 
+        #CBB75D, 
+        #443514
+    );
+
+    popStyle();
+    popMatrix();
+    
+    cam.endHUD();
+}
+
+
 // Decodes message received with serial transmission
 void serialEvent (Serial serialConnetion) {
     int MSG_SIZE = 3;
@@ -1077,6 +1176,8 @@ void serialEvent (Serial serialConnetion) {
         else if (header == '1') {
             println("RODADA " + segment2 + ": JOGADOR " + segment1 + " BATENDO");
             currentMatch.updateRound(segment1.charAt(0), segment2);
+            client.getSugestionsFromDatabase(100);
+            playing = true;
         }
         
         // If header is 2, the game is preparing itself for a new shot
@@ -1107,6 +1208,7 @@ void serialEvent (Serial serialConnetion) {
             currentMatch.updateScore(unhex(segment1), segment2);
             currentMatch.endMatch();
             client.saveMatchToDatabase(currentMatch);
+            playing = false;
         }
         
         // If header is any other value, there is a transmission error
