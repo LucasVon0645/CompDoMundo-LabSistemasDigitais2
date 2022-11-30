@@ -66,10 +66,10 @@ class PostgresClient {
                 pstmt.setInt(3, match.round);
                 pstmt.setInt(4, match.goalsA);
                 pstmt.setInt(5, match.goalsB);
-                pstmt.setInt(6, match.left_kicks);
-                pstmt.setInt(7, match.right_kicks);
-                pstmt.setInt(8, match.goals_with_left_kicks);
-                pstmt.setInt(9, match.goals_with_right_kicks);
+                pstmt.setInt(6, match.leftKicks);
+                pstmt.setInt(7, match.rightKicks);
+                pstmt.setInt(8, match.goalsWithLeftKicks);
+                pstmt.setInt(9, match.goalsWithRightKicks);
     
                 pstmt.executeUpdate();
                 pstmt.close();
@@ -424,8 +424,8 @@ class Match {
     public Kicker currentKicker;
     public Goalkeeper currentGoalkeeper;
     public Ball ball;
-    public int round, left_kicks, right_kicks, goalsA, goalsB, goals_with_left_kicks, goals_with_right_kicks;
-    public char winner;
+    public int round, leftKicks, rightKicks, goalsA, goalsB, goalsWithLeftKicks, goalsWithRightKicks;
+    public char winner, lastKickerDirection;
 
     
     private void resetDrawings() {
@@ -434,6 +434,17 @@ class Match {
         this.ball.resetDrawing();
     }
 
+    public void updateGoalsByDirection(int goalsA_tx, int goalsB_tx) {
+        this.goals_with_left_kicks += (
+            (goalsA_tx != this.goalsA || goalsB_tx != this.goalsB) 
+            && this.lastKickerDirection == 'E'
+        ) ? 1 : 0;
+
+        this.goals_with_left_kicks += (
+            (goalsA_tx != this.goalsA || goalsB_tx != this.goalsB) 
+            && this.lastKickerDirection == 'D'
+        ) ? 1 : 0;
+    }
 
     // Updates match variables when a new shot is about to happen
     public void updateRound(char kicker_tx, int round_tx) {
@@ -468,8 +479,9 @@ class Match {
         }
         
         else {            
-            this.left_kicks += (kickerDirection_tx == 'E') ? 1 : 0;
-            this.right_kicks += (kickerDirection_tx == 'D') ? 1 : 0;
+            this.leftKicks += (kickerDirection_tx == 'E') ? 1 : 0;
+            this.rightKicks += (kickerDirection_tx == 'D') ? 1 : 0;
+            this.lastKickerDirection = kickerDirection_tx;
 
             this.currentKicker.updateKickCount(kickerDirection_tx);
             this.ball.trajectoryDirection = kickerDirection_tx;
@@ -479,7 +491,7 @@ class Match {
     }
     
     // Updates match variables after a shot has happened
-    void updateScore(char kickerDirection_tx, int goalsA_tx, int goalsB_tx) {
+    public void updateScore(int goalsA_tx, int goalsB_tx) {
         
         // Error conditions
         if ((goalsA_tx < 0 || goalsA_tx > 16 ) || (goalsB_tx < 0 || goalsB_tx > 16 )) {
@@ -488,17 +500,6 @@ class Match {
             println("goalsB_tx: " + goalsB_tx);
     
         } else {
-
-            goals_with_left_kicks += (
-                (goalsA_tx != this.goalsA || goalsB_tx != this.goalsB) 
-                && kickerDirection_tx == 'E'
-            ) ? 1 : 0;
-
-            goals_with_left_kicks += (
-                (goalsA_tx != this.goalsA || goalsB_tx != this.goalsB) 
-                && kickerDirection_tx == 'D'
-            ) ? 1 : 0;
-            
             if (this.currentKicker.id == 'A') {
                 this.setCurrentShot((goalsA_tx != this.goalsA) ? 2 : -1);
                 this.goalsA = goalsA_tx;
@@ -1099,6 +1100,7 @@ void serialEvent (Serial serialConnetion) {
             println("              " + unhex(segment1) + "  |  " + segment2);
             
             currentMatch.updateScore(unhex(segment1), segment2);
+            currentMatch.updateGoalsByDirection(unhex(segment1), segment2);
         }
         
         // If header is 5, the match has ended, and we check who is the winner
