@@ -92,7 +92,7 @@ class PostgresClient {
                 float rightKickProb = goalsWithRightKicks / (leftKicks + rightKicks);
 
                 hitProb = (leftKickProb >= rightKickProb) ? leftKickProb : rightKickProb;
-                suggestedDirection = (leftKickProb >= rightKickProb) ? 'E' : 'D';
+                suggestedDirection = (leftKickProb >= rightKickProb) ? 'esquerda' : 'direita';
                 
             } catch (Exception e) {
                 println(e.getClass().getName() + ": " + e.getMessage());
@@ -636,7 +636,7 @@ float advertHeight;
 float crowdWidth, crowdHeight;
 boolean isFirstRender;
 boolean playing;
-char suggestedDirection;
+String suggestedDirection;
 float hitProb;
 
 // Global object variables
@@ -1177,12 +1177,12 @@ void serialEvent (Serial serialConnetion) {
             println("RODADA " + segment2 + ": JOGADOR " + segment1 + " BATENDO");
             currentMatch.updateRound(segment1.charAt(0), segment2);
             client.getSuggestionsFromDatabase(100);
-            playing = true;
         }
         
         // If header is 2, the game is preparing itself for a new shot
         else if (header == '2') {
             println("JOGADOR JÁ PODE BATER");
+            playing = true;
             sounds.get("whistle").play();
         }
         
