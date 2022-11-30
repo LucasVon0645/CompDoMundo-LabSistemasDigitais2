@@ -1117,7 +1117,7 @@ void drawSugestionHUD() {
     float sugestionBannerX = 0.06 * width;
     float sugestionBannerY = 0.70 * height;
 
-    float sugestionBannerWidth = 40;
+    float sugestionBannerWidth = 0.3 * width;
     float sugestionBannerHeight = 0.045 * height;
 
     cam.beginHUD();
