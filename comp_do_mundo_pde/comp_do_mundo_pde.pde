@@ -436,8 +436,8 @@ class Match {
 
     public void updateGoalsByDirection(int goalsA_tx, int goalsB_tx) {
         if ((goalsA_tx != this.goalsA || goalsB_tx != this.goalsB)) {
-            this.goals_with_left_kicks += (this.lastKickerDirection == 'E') ? 1 : 0;
-            this.goals_with_left_kicks += (this.lastKickerDirection == 'D') ? 1 : 0;
+            this.goalsWithLeftKicks += (this.lastKickerDirection == 'E') ? 1 : 0;
+            this.goalsWithRightKicks += (this.lastKickerDirection == 'D') ? 1 : 0;
         }
     }
 
@@ -548,12 +548,12 @@ class Match {
 
     public Match() {        
         this.round = 0;
-        this.left_kicks = 0;
-        this.right_kicks = 0;
+        this.leftKicks = 0;
+        this.rightKicks = 0;
         this.goalsA = 0;
         this.goalsB = 0;
-        this.goals_with_left_kicks = 0;
-        this.goals_with_right_kicks = 0;
+        this.goalsWithLeftKicks = 0;
+        this.goalsWithRightKicks = 0;
         
         this.shotsA = new int[16];
         this.shotsB = new int[16];
