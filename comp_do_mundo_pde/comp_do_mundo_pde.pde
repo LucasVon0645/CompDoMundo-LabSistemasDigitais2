@@ -837,6 +837,7 @@ HashMap<String,PImage> otherImages = new HashMap<String,PImage>();
 
 
 void setup() {
+    //size(3600, 1800, P3D);    // size for biger full screens
     size(2400, 1800, P3D);    // size for bigger screens
     //size(1400, 1050, P3D);  // size for medium size screens
     //size(800, 600, P3D);    // size for smaller screens
@@ -866,14 +867,14 @@ void setup() {
 
 // Configures serial port for communication
 void configureSerialComm() {
-    String port = "COM3";   // <-- change value depending on machine
+    String port = "COM4";   // <-- change value depending on machine
     int baudrate = 115200;  // 115200 bauds
     char parity = 'E';      // even
     int databits = 7;       // 7 data bits
     float stopbits = 2.0;   // 2 stop bits
     
-    //int lf = 10;  // ASCII for linefeed -> actual value to use
-    int lf = 46;  // ASCII for . -> use this for debugging
+    int lf = 10;  // ASCII for linefeed -> actual value to use
+    //int lf = 46;  // ASCII for . -> use this for debugging
     
     serialConnetion = new Serial(this, port, baudrate, parity, databits, stopbits);
     serialConnetion.bufferUntil(lf);
@@ -899,7 +900,7 @@ void loadOtherImages() {
 
 
 void draw() {
-    // Setting drawing variables
+    // Setting drawing variables    
     fieldWidth = 2*width;
     fieldDepth = -0.8*width;
     endFieldLineDepth = 0.8*fieldDepth;
@@ -932,7 +933,7 @@ void draw() {
 void drawField() {
     int NUM_OF_SUBFIELDS = 4; // Change this to have more/less subfields
     float subfieldWidth = fieldWidth/float(NUM_OF_SUBFIELDS);
-    int lineStroke = 6;
+    int lineStroke = 16;
     float largeAreaLineDepth = 0.04*fieldDepth;
 
     pushMatrix();
@@ -954,33 +955,83 @@ void drawField() {
             vertex(subfieldStart, 0, -0.5*fieldDepth);
         endShape();
     }
-    
-    noFill();
-    strokeWeight(lineStroke);
-    stroke(#FFFFFF);
+
     
     // Line on the field: large area
     beginShape();
-        vertex(-fieldWidth/3.0, 0, largeAreaLineDepth);
-        vertex(fieldWidth/3.0, 0, largeAreaLineDepth);
-        vertex(fieldWidth/3.0, 0, endFieldLineDepth);
-        vertex(-fieldWidth/3.0, 0, endFieldLineDepth);
-    endShape(CLOSE);
+        noStroke();
+        fill(#FFFFFF);
+        vertex(-fieldWidth/3.0, -1, largeAreaLineDepth);
+        vertex(-fieldWidth/3.0 + lineStroke, -1, largeAreaLineDepth);
+        vertex(-fieldWidth/3.0 + lineStroke, -1, endFieldLineDepth);
+        vertex(-fieldWidth/3.0, -1, endFieldLineDepth);
+    endShape();
     
-    // Line on the field: small area
     beginShape();
-        vertex(-(goalWidth/2 + 0.05*width), 0, smallAreaLineDepth);
-        vertex((goalWidth/2 + 0.05*width), 0, smallAreaLineDepth);
-        vertex((goalWidth/2 + 0.05*width), 0, endFieldLineDepth);
-        vertex(-(goalWidth/2 + 0.05*width), 0, endFieldLineDepth);
-    endShape(CLOSE);
+        noStroke();
+        fill(#FFFFFF);
+        vertex(fieldWidth/3.0 + lineStroke, -1, largeAreaLineDepth);
+        vertex(fieldWidth/3.0, -1, largeAreaLineDepth);
+        vertex(fieldWidth/3.0, -1, endFieldLineDepth);
+        vertex(fieldWidth/3.0 + lineStroke, -1, endFieldLineDepth);
+    endShape();
     
-    // Line on the field: end of field
     beginShape();
-        vertex(-fieldWidth/2.0, 0, endFieldLineDepth);
-        vertex(fieldWidth/2.0, 0, endFieldLineDepth);
-        vertex(fieldWidth/2.0, 0, endFieldLineDepth);
-        vertex(-fieldWidth/2.0, 0, endFieldLineDepth);
+        noStroke();
+        fill(#FFFFFF);
+        vertex(-fieldWidth/3.0, -1, largeAreaLineDepth + lineStroke);
+        vertex(fieldWidth/3.0, -1, largeAreaLineDepth + lineStroke);
+        vertex(fieldWidth/3.0, -1, largeAreaLineDepth);
+        vertex(-fieldWidth/3.0, -1, largeAreaLineDepth);
+    endShape();
+    
+    beginShape();
+        noStroke();
+        fill(#FFFFFF);
+        vertex(-fieldWidth/3.0, -1, endFieldLineDepth + lineStroke);
+        vertex(fieldWidth/3.0, -1, endFieldLineDepth + lineStroke);
+        vertex(fieldWidth/3.0, -1, endFieldLineDepth);
+        vertex(-fieldWidth/3.0, -1, endFieldLineDepth);
+    endShape();
+
+    
+    // Line on the field: small area    
+    beginShape();
+        noStroke();
+        fill(#FFFFFF);
+        vertex(-(goalWidth/2 + 0.05*width), -1, smallAreaLineDepth);
+        vertex(-(goalWidth/2 + 0.05*width) + lineStroke, -1, smallAreaLineDepth);
+        vertex(-(goalWidth/2 + 0.05*width) + lineStroke, -1, endFieldLineDepth);
+        vertex(-(goalWidth/2 + 0.05*width), -1, endFieldLineDepth);
+    endShape();
+    
+    beginShape();
+        noStroke();
+        fill(#FFFFFF);
+        vertex((goalWidth/2 + 0.05*width) + lineStroke, -1, smallAreaLineDepth);
+        vertex((goalWidth/2 + 0.05*width), -1, smallAreaLineDepth);
+        vertex((goalWidth/2 + 0.05*width), -1, endFieldLineDepth);
+        vertex((goalWidth/2 + 0.05*width) + lineStroke, -1, endFieldLineDepth);
+    endShape();
+    
+    beginShape();
+        noStroke();
+        fill(#FFFFFF);
+        vertex(-(goalWidth/2 + 0.05*width), -1, smallAreaLineDepth + lineStroke);
+        vertex((goalWidth/2 + 0.05*width), -1, smallAreaLineDepth + lineStroke);
+        vertex((goalWidth/2 + 0.05*width), -1, smallAreaLineDepth);
+        vertex(-(goalWidth/2 + 0.05*width), -1, smallAreaLineDepth);
+    endShape();
+    
+    
+    // Line on the field: end of field    
+    beginShape();
+        noStroke();
+        fill(#FFFFFF);
+        vertex(-fieldWidth/2.0, -1, endFieldLineDepth + lineStroke);
+        vertex(fieldWidth/2.0, -1, endFieldLineDepth + lineStroke);
+        vertex(fieldWidth/2.0, -1, endFieldLineDepth);
+        vertex(-fieldWidth/2.0, -1, endFieldLineDepth);
     endShape();
      
     // Marking where ball should be
@@ -1232,34 +1283,34 @@ void serialEvent (Serial serialConnetion) {
 void keyPressed() {
     
     // Use this during real games
-    //if (key == '1' || key == '2' || key == '3' || key == '4' || key == '5') {
-    //    println("Enviando tecla '" + key + "' para a porta serial.");
-    //    serialConnetion.write(key);
-    //    currentMatch.currentGoalkeeper.setDirection(key);
-    //}
+    if (key == '1' || key == '2' || key == '3' || key == '4' || key == '5') {
+        println("Enviando tecla '" + key + "' para a porta serial.");
+        serialConnetion.write(key);
+        currentMatch.currentGoalkeeper.setDirection(key);
+    }
     
     // Debug
-    println("Enviando tecla '" + key + "' para a porta serial.");
-    serialConnetion.write(key);
-    if (key == 'G') {
-        currentMatch.currentGoalkeeper.setDirection('1');
-    }
-    else if (key == 'H') {
-        currentMatch.currentGoalkeeper.setDirection('2');
-    }
-    else if (key == 'J') {
-        currentMatch.currentGoalkeeper.setDirection('3');
-    }
-    else if (key == 'K') {
-        currentMatch.currentGoalkeeper.setDirection('4');
-    }
-    else if (key == 'L') {
-        currentMatch.currentGoalkeeper.setDirection('5');
-    }
-    else if (key == 'P') {
-        float[] camCoords = cam.getLookAt();
-        println(camCoords[0], camCoords[1], camCoords[2], cam.getDistance());
-    }
+    //println("Enviando tecla '" + key + "' para a porta serial.");
+    //serialConnetion.write(key);
+    //if (key == 'G') {
+    //    currentMatch.currentGoalkeeper.setDirection('1');
+    //}
+    //else if (key == 'H') {
+    //    currentMatch.currentGoalkeeper.setDirection('2');
+    //}
+    //else if (key == 'J') {
+    //    currentMatch.currentGoalkeeper.setDirection('3');
+    //}
+    //else if (key == 'K') {
+    //    currentMatch.currentGoalkeeper.setDirection('4');
+    //}
+    //else if (key == 'L') {
+    //    currentMatch.currentGoalkeeper.setDirection('5');
+    //}
+    //else if (key == 'P') {
+    //    float[] camCoords = cam.getLookAt();
+    //    println(camCoords[0], camCoords[1], camCoords[2], cam.getDistance());
+    //}
 }
 
 
