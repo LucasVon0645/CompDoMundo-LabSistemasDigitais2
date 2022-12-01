@@ -87,12 +87,20 @@ class PostgresClient {
                 int rightKicks = results[1];
                 int goalsWithLeftKicks = results[2];
                 int goalsWithRightKicks = results[3];
+                
+                print("leftKicks = " + str(leftKicks) + "\n");
+                print("rightKicks = " + str(rightKicks) + "\n");
+                print("goalsWithLeftKicks = " + str(goalsWithLeftKicks) + "\n");
+                print("goalsWithRightKicks = " + str(goalsWithRightKicks) + "\n");
 
-                float leftKickProb = goalsWithLeftKicks / (leftKicks + rightKicks);
-                float rightKickProb = goalsWithRightKicks / (leftKicks + rightKicks);
+                float leftKickProb = 100 * goalsWithLeftKicks / (leftKicks + rightKicks);
+                float rightKickProb = 100 * goalsWithRightKicks / (leftKicks + rightKicks);
+                
+                print("leftKickProb = " + str(leftKickProb) + "\n");
+                print("rightKickProb = " + str(rightKickProb) + "\n");
 
                 hitProb = (leftKickProb >= rightKickProb) ? leftKickProb : rightKickProb;
-                suggestedDirection = (leftKickProb >= rightKickProb) ? 'esquerda' : 'direita';
+                suggestedDirection = (leftKickProb >= rightKickProb) ? "esquerda" : "direita";
                 
             } catch (Exception e) {
                 println(e.getClass().getName() + ": " + e.getMessage());
@@ -690,10 +698,13 @@ void configureSerialComm() {
 // Fills global hashmap variable with all the sound effects used in sketch
 void loadSounds() {
     SoundFile whistle = new SoundFile(this, "sounds/Whistle.wav");
+    SoundFile brasil = new SoundFile(this, "sounds/Brasil_sil_sil.wav");
+
     whistle.amp(0.1);
     
     sounds.put("background", new SoundFile(this, "sounds/Crowd_background_noise.wav"));
     sounds.put("whistle", whistle);
+    sounds.put("brasil", brasil);
 }
 
 
@@ -731,7 +742,7 @@ void draw() {
     drawScoreboardHUD();
 
     if (playing) {
-        drawsuggestionHUD();
+        drawSuggestionHUD();
     }
 
     // For some reason, the order of drawing matters here:
@@ -1001,7 +1012,7 @@ void drawScoreboardHUD() {
     pushStyle();
     
     translate(scoreboardX, scoreBoardY, 0);
-    textSize(28);
+    textSize(20);
     
     for (int i = 0; i < 2; i += 1) {
         char currentScoreboard = boolean(i) ? 'B' : 'A';
@@ -1022,8 +1033,9 @@ void drawScoreboardHUD() {
     
         // Draws a small rectangle on the left with the color of each team
         beginShape();
-            noStroke();
-            fill(boolean(i) ? #1981CE : #F58B20);
+            // noStroke();
+            stroke(#00000077);
+            fill(boolean(i) ? #00bbd4 : #fff200);
             vertex(-teamMarkerWidth, 0, 0);
             vertex(0, 0, 0);
             vertex(0, teamScoreHeight, 0);
@@ -1035,7 +1047,7 @@ void drawScoreboardHUD() {
             (currentScoreboard == 'A' ? "Brasil" : "Argentina"), 
             teamNameBoxWidth, 
             teamScoreHeight, 
-            #CBB75D, 
+            #f3da6b, 
             #443514
         );
         translate(teamNameBoxWidth, 0, 0);
@@ -1112,29 +1124,34 @@ void drawScoreboardHUD() {
 
 // Draws a suggestion banner, showing kick direction and goal
 // occurrence stats in previous matches
-void drawsuggestionHUD() {
+void drawSuggestionHUD() {
 
-    float suggestionBannerX = 0.60 * width;
+    float suggestionBannerX = 0.50 * width;
     float suggestionBannerY = 0.06 * height;
 
-    float suggestionBannerWidth = 0.3 * width;
+    float suggestionBannerWidth = 0.44 * width;
     float suggestionBannerHeight = 0.045 * height;
+
+    color rectColor = #f3da6b;
+    color textColor = #443514;
+
+    String text = "Chute para a " + suggestedDirection + " (" + str(hitProb) + "% de chance de acerto)";
 
     cam.beginHUD();
     
     pushMatrix();
     pushStyle();
-    
-    translate(suggestionBannerX, suggestionBannerY, 0);
-    textSize(28);
 
-    textInsideBox(
-        "Chute para a " + suggestedDirection + " (" + str(hitProb*100) + "% de chance de acerto)", 
-        suggestionBannerWidth, 
-        suggestionBannerHeight, 
-        #CBB75D, 
-        #443514
-    );
+    translate(suggestionBannerX, suggestionBannerY, 0);
+
+    fill(rectColor);
+    rect(0, 0, suggestionBannerWidth, suggestionBannerHeight, (suggestionBannerWidth/100));
+    
+    fill(textColor);
+    rectMode(CORNER);
+    textAlign(CENTER, BASELINE);
+    textSize(20);
+    text(text, 0, 0, suggestionBannerWidth, suggestionBannerHeight); 
 
     popStyle();
     popMatrix();
@@ -1195,6 +1212,10 @@ void serialEvent (Serial serialConnetion) {
             println("NOVO PLACAR:  A  |  B");
             println("              " + unhex(segment1) + "  |  " + segment2);
             
+            if (unhex(segment1) != currentMatch.goalsA) {
+                sounds.get("brasil").play();
+            }
+
             currentMatch.updateGoalsByDirection(unhex(segment1), segment2);
             currentMatch.updateScore(unhex(segment1), segment2);
         }
