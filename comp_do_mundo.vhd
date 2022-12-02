@@ -90,6 +90,7 @@ architecture arch_comp_do_mundo of comp_do_mundo is
         );
     end component;
 
+    signal s_not_iniciar, s_not_bater_direita, s_not_bater_esquerda    : std_logic;
     signal s_iniciar, s_bater_direita, s_bater_esquerda                : std_logic;
     signal s_trigger, s_echo                                           : std_logic;
     signal s_fim_jogo, s_jogador, s_ganhador                           : std_logic;
@@ -127,21 +128,21 @@ begin
     iniciar_detector: edge_detector
         port map (  
             clock     => clock,
-            signal_in => iniciar,
+            signal_in => s_not_iniciar,
             output    => s_iniciar
         );
     
     direita_detector: edge_detector
         port map (  
             clock     => clock,
-            signal_in => bater_direita,
+            signal_in => s_not_bater_direita,
             output    => s_bater_direita
         );
 
     esquerda_detector: edge_detector
         port map (  
             clock     => clock,
-            signal_in => bater_esquerda,
+            signal_in => s_not_bater_esquerda,
             output    => s_bater_esquerda
         );
 
@@ -163,6 +164,10 @@ begin
             traco              => db_traco -- puramente estetico
         );
 
+    -- Pull up
+    s_not_iniciar        <= not iniciar;
+    s_not_bater_direita  <= not bater_direita;
+    s_not_bater_esquerda <= not bater_esquerda;
 
     -- Sinais internos
     trigger <= s_trigger;
