@@ -46,6 +46,73 @@ class PostgresClient {
             println(e.getClass().getName() + ": " + e.getMessage());
         }
     }
+
+    private String createQuery(String column, int numMatches) {
+        String query = "SELECT SUM(" + column + ") FROM (";
+        query += "SELECT " + column + " FROM matches_statistics ";
+        query += "ORDER BY match_id DESC LIMIT " + str(numMatches);
+        query += ") AS last_matches";
+
+        return query;
+    }
+
+    // Get suggestion variables from the db using the previous matches info
+    public void getSuggestionsFromDatabase(int numMatches) {
+        if (this.connect()) {
+            println("Lendo dados do banco de dados!");
+            
+            try {     
+                String[] queries = new String[4];
+                ResultSet rs;
+                int[] results = new int[4];
+
+                queries[0] = createQuery("left_kicks", numMatches);
+                queries[1] = createQuery("right_kicks", numMatches);
+                queries[2] = createQuery("goals_with_left_kicks", numMatches);
+                queries[3] = createQuery("goals_with_right_kicks", numMatches);
+
+                for (int i = 0; i < 4; i++) {
+                    pstmt = conn.prepareStatement(queries[i]);    
+                    rs = pstmt.executeQuery();
+
+                    while (rs.next()) {
+                        results[i] = rs.getInt(1);
+                    }
+
+                    pstmt.close();
+                }
+                
+                conn.commit();
+
+                int leftKicks = results[0];
+                int rightKicks = results[1];
+                int goalsWithLeftKicks = results[2];
+                int goalsWithRightKicks = results[3];
+                
+                print("leftKicks = " + str(leftKicks) + "\n");
+                print("rightKicks = " + str(rightKicks) + "\n");
+                print("goalsWithLeftKicks = " + str(goalsWithLeftKicks) + "\n");
+                print("goalsWithRightKicks = " + str(goalsWithRightKicks) + "\n");
+
+                float leftKickProb = 100 * goalsWithLeftKicks / (leftKicks + rightKicks);
+                float rightKickProb = 100 * goalsWithRightKicks / (leftKicks + rightKicks);
+                
+                print("leftKickProb = " + str(leftKickProb) + "\n");
+                print("rightKickProb = " + str(rightKickProb) + "\n");
+
+                hitProb = (leftKickProb >= rightKickProb) ? leftKickProb : rightKickProb;
+                suggestedDirection = (leftKickProb >= rightKickProb) ? "esquerda" : "direita";
+                
+            } catch (Exception e) {
+                println(e.getClass().getName() + ": " + e.getMessage());
+            }
+            
+            this.disconnect();
+        }
+        else {
+            println("ERRO: Incapaz de se conectar ao servidor.");
+        }
+    }
     
     // Save a match to the db using the latest match info
     public void saveMatchToDatabase(Match match) {
@@ -56,9 +123,9 @@ class PostgresClient {
                 long now = System.currentTimeMillis();
                 Timestamp timestamp = new Timestamp(now);
                 
-                String query = "INSERT INTO matches ";
-                query += "(timestamp, winner, rounds, goals_by_a, goals_by_b, left_kicks_by_A, ";
-                query += "left_kicks_by_B, right_kicks_by_A, right_kicks_by_B) ";
+                String query = "INSERT INTO matches_statistics ";
+                query += "(timestamp, winner, rounds, goals_by_a, goals_by_b, left_kicks, ";
+                query += "right_kicks, goals_with_left_kicks, goals_with_right_kicks) ";
                 query += "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 
                 pstmt = conn.prepareStatement(query);
@@ -67,10 +134,10 @@ class PostgresClient {
                 pstmt.setInt(3, match.round);
                 pstmt.setInt(4, match.goalsA);
                 pstmt.setInt(5, match.goalsB);
-                pstmt.setInt(6, match.kickerA.getKicks('E'));
-                pstmt.setInt(7, match.kickerB.getKicks('E'));
-                pstmt.setInt(8, match.kickerA.getKicks('D'));
-                pstmt.setInt(9, match.kickerB.getKicks('D'));
+                pstmt.setInt(6, match.leftKicks);
+                pstmt.setInt(7, match.rightKicks);
+                pstmt.setInt(8, match.goalsWithLeftKicks);
+                pstmt.setInt(9, match.goalsWithRightKicks);
     
                 pstmt.executeUpdate();
                 pstmt.close();
@@ -175,7 +242,7 @@ abstract class AnimatedObject {
 // Abtract class for creating players, such as Kickers or Goalkeepers
 abstract class Player extends AnimatedObject {
     protected String team;
-    
+
     protected abstract void resetPlayer();
     
     public Player(String team, float initialX, float initialY, float initialZ) {
@@ -232,7 +299,7 @@ class Kicker extends Player {
               this.updateCurrentImage();
           }
     }
-    
+
     protected void resetPlayer() {
         this.kicks.set("D", 0);
         this.kicks.set("E", 0);
@@ -329,7 +396,7 @@ class Goalkeeper extends Player {
         this.direction = '3';
         super.resetDrawing();
     }
-    
+
     protected void resetPlayer() { // Redundant, but keeps things organized
         this.resetDrawing();
     }
@@ -424,8 +491,8 @@ class Match {
     public Kicker currentKicker;
     public Goalkeeper currentGoalkeeper;
     public Ball ball;
-    public int round, goalsA, goalsB;
-    public char winner;
+    public int round, leftKicks, rightKicks, goalsA, goalsB, goalsWithLeftKicks, goalsWithRightKicks;
+    public char winner, lastKickerDirection;
 
     
     private void resetDrawings() {
@@ -434,6 +501,20 @@ class Match {
         this.ball.resetDrawing();
     }
 
+    public boolean detectGoalOfA(int goalsA_tx) {
+        return (goalsA_tx != this.goalsA);
+    }
+
+    public boolean detectGoalOfB(int goalsB_tx) {
+        return (goalsB_tx != this.goalsB);
+    }
+
+    public void updateGoalsByDirection(int goalsA_tx, int goalsB_tx) {
+        if (detectGoalOfA(goalsA_tx) || detectGoalOfB(goalsB_tx)) {
+            this.goalsWithLeftKicks += (this.lastKickerDirection == 'E') ? 1 : 0;
+            this.goalsWithRightKicks += (this.lastKickerDirection == 'D') ? 1 : 0;
+        }
+    }
 
     // Updates match variables when a new shot is about to happen
     public void updateRound(char kicker_tx, int round_tx) {
@@ -467,7 +548,11 @@ class Match {
             println("kickerDirection_tx: " + kickerDirection_tx);
         }
         
-        else {
+        else {            
+            this.leftKicks += (kickerDirection_tx == 'E') ? 1 : 0;
+            this.rightKicks += (kickerDirection_tx == 'D') ? 1 : 0;
+            this.lastKickerDirection = kickerDirection_tx;
+
             this.currentKicker.updateKickCount(kickerDirection_tx);
             this.ball.trajectoryDirection = kickerDirection_tx;
 
@@ -476,7 +561,7 @@ class Match {
     }
     
     // Updates match variables after a shot has happened
-    void updateScore(int goalsA_tx, int goalsB_tx) {
+    public void updateScore(int goalsA_tx, int goalsB_tx) {
         
         // Error conditions
         if ((goalsA_tx < 0 || goalsA_tx > 16 ) || (goalsB_tx < 0 || goalsB_tx > 16 )) {
@@ -485,13 +570,12 @@ class Match {
             println("goalsB_tx: " + goalsB_tx);
     
         } else {
-            
             if (this.currentKicker.id == 'A') {
-                this.setCurrentShot((goalsA_tx != this.goalsA) ? 2 : -1);
+                this.setCurrentShot(detectGoalOfA(goalsA_tx) ? 2 : -1);
                 this.goalsA = goalsA_tx;
             }
             else if (this.currentKicker.id == 'B') {
-                this.setCurrentShot((goalsB_tx != this.goalsB) ? 2 : -1);
+                this.setCurrentShot(detectGoalOfB(goalsB_tx) ? 2 : -1);
                 this.goalsB = goalsB_tx;
             }
         }
@@ -544,12 +628,12 @@ class Match {
         this.round = 0;
         this.goalsA = 0;
         this.goalsB = 0;
-        
+
         for (int i = 0; i < shotsA.length; i += 1) {
             this.shotsA[i] = 0;
             this.shotsB[i] = 0;
         }
-        
+
         this.kickerA.resetPlayer();
         this.kickerB.resetPlayer();
         this.goalkeeperA.resetPlayer();
@@ -565,8 +649,12 @@ class Match {
 
     public Match() {        
         this.round = 0;
+        this.leftKicks = 0;
+        this.rightKicks = 0;
         this.goalsA = 0;
         this.goalsB = 0;
+        this.goalsWithLeftKicks = 0;
+        this.goalsWithRightKicks = 0;
         
         this.shotsA = new int[16];
         this.shotsB = new int[16];
@@ -829,6 +917,8 @@ class HUD {
     private ScoreBanner endmatchBanner;
     private GoalBanner goalBanner;
 
+    private boolean isShowingSuggestion;
+
     // Draws a dynamic scoreboard, showing the number of points
     // for each team, as well as which shots were goals, etc.
     private void drawScoreboard() { 
@@ -960,6 +1050,38 @@ class HUD {
         popStyle();
         popMatrix();
     }
+
+    // Draws a suggestion banner, showing kick direction and goal
+    // occurrence stats in previous matches
+    void drawSuggestion() {
+        float suggestionX = 0.50 * width;
+        float suggestionY = 0.06 * height;
+
+        float suggestionWidth = 0.44 * width;
+        float suggestionHeight = 0.045 * height;
+
+        color rectColor = #f3da6b;
+        color textColor = #443514;
+
+        String text = "Chute para a " + suggestedDirection + " (" + str(hitProb) + "% de chance de acerto)";
+        
+        pushMatrix();
+        pushStyle();
+
+        translate(suggestionX, suggestionY, 0);
+
+        fill(rectColor);
+        rect(0, 0, suggestionWidth, suggestionHeight, (suggestionWidth/100));
+        
+        fill(textColor);
+        rectMode(CORNER);
+        textAlign(CENTER, CENTER);
+        textSize(20);
+        text(text, 0, 0, suggestionWidth, suggestionHeight); 
+
+        popStyle();
+        popMatrix();
+    }
     
     public void zoomOut() {
        cam.lookAt(width/2, -0.20*height, 0, 0.25*width, 2000);
@@ -977,11 +1099,21 @@ class HUD {
         this.goalBanner.exibitionTime = 0;
         this.goalBanner.isShowing = true;
     }
+
+    public void showSuggestionHUD() {
+        this.isShowingSuggestion = true;
+    }
+
+    public void hideSuggestionHUD() {
+        this.isShowingSuggestion = false;
+    }
     
     public void drawHUD() {
         cam.beginHUD();
         
         this.drawScoreboard();
+        this.drawSuggestion();
+
         this.startBanner.drawBanner();
         this.endmatchBanner.drawBanner();
         this.goalBanner.drawBanner();
@@ -996,6 +1128,7 @@ class HUD {
     }
 
     public HUD(Match match) {
+        this.isShowingSuggestion = false;
         this.match = match;
     }
 }
@@ -1009,6 +1142,8 @@ float ballMarkerDiameter, ballMarkerDepth;
 float advertHeight;
 float crowdWidth, crowdHeight;
 boolean isFirstRender;
+String suggestedDirection;
+float hitProb;
 
 // Global object variables
 PeasyCam cam;
@@ -1066,18 +1201,21 @@ void configureSerialComm() {
     //int lf = 10;  // ASCII for linefeed -> actual value to use
     int lf = 46;  // ASCII for . -> use this for debugging
     
-    serialConnetion = new Serial(this, port, baudrate, parity, databits, stopbits);
-    serialConnetion.bufferUntil(lf);
+    //serialConnetion = new Serial(this, port, baudrate, parity, databits, stopbits);
+    //serialConnetion.bufferUntil(lf);
 }
 
 
 // Fills global hashmap variable with all the sound effects used in sketch
 void loadSounds() {
     SoundFile whistle = new SoundFile(this, "sounds/Whistle.wav");
+    SoundFile brasil = new SoundFile(this, "sounds/Brasil_sil_sil.wav");
+
     whistle.amp(0.1);
     
     sounds.put("background", new SoundFile(this, "sounds/Crowd_background_noise.wav"));
     sounds.put("whistle", whistle);
+    sounds.put("brasil", brasil);
 }
 
 
@@ -1184,6 +1322,16 @@ void drawField() {
         vertex(-fieldWidth/3.0, -1, endFieldLineDepth);
     endShape();
 
+    // Small square
+    beginShape();
+        noStroke();
+        fill(#FFFFFF);
+        vertex(fieldWidth/3.0, -1, largeAreaLineDepth);
+        vertex(fieldWidth/3.0 + lineStroke, -1, largeAreaLineDepth);
+        vertex(fieldWidth/3.0 + lineStroke, -1, largeAreaLineDepth + lineStroke);
+        vertex(fieldWidth/3.0, -1, largeAreaLineDepth + lineStroke);
+    endShape();
+
     
     // Line on the field: small area    
     beginShape();
@@ -1212,6 +1360,16 @@ void drawField() {
         vertex((goalWidth/2 + 0.05*width), -1, smallAreaLineDepth);
         vertex(-(goalWidth/2 + 0.05*width), -1, smallAreaLineDepth);
     endShape();
+
+    // Small square
+    beginShape();
+        noStroke();
+        fill(#FFFFFF);
+        vertex((goalWidth/2 + 0.05*width), -1, smallAreaLineDepth);
+        vertex((goalWidth/2 + 0.05*width) + lineStroke, -1, smallAreaLineDepth);
+        vertex((goalWidth/2 + 0.05*width) + lineStroke, -1, smallAreaLineDepth + lineStroke);
+        vertex((goalWidth/2 + 0.05*width), -1, smallAreaLineDepth + lineStroke);
+    endShape();
     
     
     // Line on the field: end of field    
@@ -1236,6 +1394,52 @@ void drawField() {
     popMatrix();
 }
 
+void drawGoalLine(
+    float x1, float y1, float z1, 
+    float x2, float y2, float z2, 
+    float thickness, String principalDirection, String depthAspect
+) {
+    if (principalDirection == "width") {
+        beginShape();
+            noStroke();
+            fill(#EEEEEE);
+            vertex(x1, y1, z1);
+            vertex(x1, y1-thickness, z1);
+            vertex(x2, y2-thickness, z2);
+            vertex(x2, y2, z2);
+        endShape();  
+    } else if (principalDirection == "height") {
+        beginShape();
+            noStroke();
+            fill(#EEEEEE);
+            vertex(x1, y1, z1);
+            vertex(x1+thickness, y1, z1);
+            vertex(x2+thickness, y2, z2);
+            vertex(x2, y2, z2);
+        endShape();
+    } else {
+        if (depthAspect == "up") {
+            beginShape();
+                noStroke();
+                fill(#EEEEEE);
+                vertex(x1, y1, z1);
+                vertex(x1+thickness, y1, z1);
+                vertex(x2+thickness, y1, z2);
+                vertex(x2, y2, z2);
+            endShape();
+        } else if (depthAspect == "side") {
+            beginShape();
+                noStroke();
+                fill(#EEEEEE);
+                vertex(x1, y1, z1);
+                vertex(x1, y1-thickness, z1);
+                vertex(x2, y2-thickness, z2);
+                vertex(x2, y2, z2);
+            endShape();
+        }
+    }
+}
+
 
 // Draws the goal on the screen: completely static
 void drawGoal() {
@@ -1249,91 +1453,132 @@ void drawGoal() {
     pushStyle();
     
     translate(width/2, 0, endFieldLineDepth);
-    stroke(#EEEEEE);
 
     // Goal structure
-    strokeWeight(goalPostThickness);
 
-    line((-goalWidth/2), 0, 0, (-goalWidth/2), -goalHeight, 0);
-    line((goalWidth/2), 0, 0, (goalWidth/2), -goalHeight, 0);
-    line(
+    drawGoalLine(
+        (-goalWidth/2), 0, 0, 
         (-goalWidth/2), -goalHeight, 0, 
-        (goalWidth/2), -goalHeight, 0
+        goalPostThickness, "height", ""
+    );
+    drawGoalLine(
+        (goalWidth/2), 0, 0, 
+        (goalWidth/2), -goalHeight, 0, 
+        goalPostThickness, "height", ""
+    );
+    drawGoalLine(
+        (-goalWidth/2), -goalHeight, 0, 
+        (goalWidth/2), -goalHeight, 0,
+        goalPostThickness, "width", ""
     );
 
     // Goal net
-    strokeWeight(goalNetThickness);
 
     h = 0;
     d = -goalDepth;
     while (d <= 0) {
         if (d < -goalDepth/2) {
-            line((-goalWidth/2), h, d, (goalWidth/2), h, d);
-
-            line(
-                (-goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2, 
-                (goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2
+            drawGoalLine(
+                (-goalWidth/2), h, d, 
+                (goalWidth/2), h, d, 
+                goalNetThickness, "width", ""
             );
 
-            line((-goalWidth/2), 0, d, (-goalWidth/2), h, d);
-            line((goalWidth/2), 0, d, (goalWidth/2), h, d);
+            drawGoalLine(
+                (-goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2, 
+                (goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2,
+                goalNetThickness, "width", ""
+            );
 
-            line((-goalWidth/2), h, 0, (-goalWidth/2), h, d);
-            line((goalWidth/2), h, 0, (goalWidth/2), h, d);
+            drawGoalLine(
+                (-goalWidth/2), 0, d, 
+                (-goalWidth/2), h, d, 
+                goalNetThickness, "height", ""
+            );
+            drawGoalLine(
+                (goalWidth/2), 0, d, 
+                (goalWidth/2), h, d, 
+                goalNetThickness, "height", ""
+            );
 
-            line(
+            drawGoalLine(
+                (-goalWidth/2), h, 0, 
+                (-goalWidth/2), h, d, 
+                goalNetThickness, "depth", "side"
+            );
+            drawGoalLine(
+                (goalWidth/2), h, 0, 
+                (goalWidth/2), h, d, 
+                goalNetThickness, "depth", "side"
+            );
+
+            drawGoalLine(
                 (-goalWidth/2), h-(goalHeight/goalDepth)*netSpace, 0, 
-                (-goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2);
-            line(
+                (-goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2,
+                goalNetThickness, "depth", "side"
+            );
+            drawGoalLine(
                 (goalWidth/2), h-(goalHeight/goalDepth)*netSpace, 0, 
-                (goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2
+                (goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2,
+                goalNetThickness, "depth", "side"
             );
 
             h -= (2*goalHeight/goalDepth)*netSpace;
         } else { // if (d >= -goalDepth/2)
-            line((-goalWidth/2), -goalHeight, d, (goalWidth/2), -goalHeight, d);
-            line((-goalWidth/2), 0, d, (-goalWidth/2), -goalHeight, d);
-            line((goalWidth/2), 0, d, (goalWidth/2), -goalHeight, d);
+            drawGoalLine(
+                (-goalWidth/2), -goalHeight, d, 
+                (goalWidth/2), -goalHeight, d, 
+                goalNetThickness, "width", ""
+            );
+            drawGoalLine(
+                (-goalWidth/2), 0, d, 
+                (-goalWidth/2), -goalHeight, d, 
+                goalNetThickness, "height", ""
+            );
+            drawGoalLine(
+                (goalWidth/2), 0, d, 
+                (goalWidth/2), -goalHeight, d, 
+                goalNetThickness, "height", ""
+            );
         }
         d += netSpace; 
     }
 
     h += (goalHeight/goalDepth)*netSpace;
-    line((-goalWidth/2), h, (-goalDepth/2), (-goalWidth/2), 0, -goalDepth);
-    line((goalWidth/2), h, (-goalDepth/2), (goalWidth/2), 0, -goalDepth);
+    drawGoalLine(
+        (-goalWidth/2), h, (-goalDepth/2), 
+        (-goalWidth/2), 0, -goalDepth,
+        goalNetThickness, "height", ""
+    );
+    drawGoalLine(
+        (goalWidth/2), h, (-goalDepth/2), 
+        (goalWidth/2), 0, -goalDepth,
+        goalNetThickness, "height", ""
+    );
 
     w = -goalWidth/2+netSpace;
     while (w <= goalWidth/2) {
-        line(w, -goalHeight, 0, w, -goalHeight, (-goalDepth/2));
-        line(w, -goalHeight, (-goalDepth/2), w, 0, -goalDepth);
+        drawGoalLine(
+            w, -goalHeight, 0, 
+            w, -goalHeight, (-goalDepth/2),
+            goalNetThickness, "depth", "up"
+        );
+        drawGoalLine(
+            w, -goalHeight, (-goalDepth/2), 
+            w, 0, -goalDepth,
+            goalNetThickness, "height", ""
+        );
         w += netSpace;
     }
 
-    // Triangle
-    // h = 0;
-    // d = -goalDepth;
-    // while (d <= 0) {
-    //     line((-goalWidth/2), h, d, (goalWidth/2), h, d);
-
-    //     line((-goalWidth/2), 0, d, (-goalWidth/2), h, d);
-    //     line((goalWidth/2), 0, d, (goalWidth/2), h, d);
-
-    //     line((-goalWidth/2), h, 0, (-goalWidth/2), h, d);
-    //     line((goalWidth/2), h, 0, (goalWidth/2), h, d);
-
-    //     h -= (goalHeight/goalDepth)*netSpace;
-    //     d += netSpace; 
-    // }
-
-    // w = -goalWidth/2;
-    // while (w <= goalWidth/2) {
-    //     line(w, -goalHeight, 0, w, 0, -goalDepth);
-    //     w += netSpace;
-    // }
-    // line((goalWidth/2), -goalHeight, 0, (goalWidth/2), 0, -goalDepth);
-
-    // line((-goalWidth/2), 0, 0, (-goalWidth/2), 0, -goalDepth);
-    // line((goalWidth/2), 0, 0, (goalWidth/2), 0, -goalDepth);
+    beginShape();
+        noStroke();
+        fill(#EEEEEE);
+        vertex(goalWidth/2, -goalHeight, 0);
+        vertex(goalWidth/2, -goalHeight-goalPostThickness, 0);
+        vertex(goalWidth/2+goalPostThickness, -goalHeight-goalPostThickness, 0);
+        vertex(goalWidth/2+goalPostThickness, -goalHeight, 0);
+    endShape();
 
     popStyle();
     popMatrix();
@@ -1428,13 +1673,16 @@ void serialEvent (Serial serialConnetion) {
         if (header == '0') {
             println("PARTIDA COMEÇANDO");
             currentMatch.resetMatch();
+
             hud.zoomOut();
+            client.getSuggestionsFromDatabase(100);
         }
         
         // If header is 1, a match has just begun
         else if (header == '1') {
             println("RODADA " + segment2 + ": JOGADOR " + segment1 + " BATENDO");
             currentMatch.updateRound(segment1.charAt(0), segment2);
+            hud.showSuggestionHUD();
         }
         
         // If header is 2, the game is preparing itself for a new shot
@@ -1451,7 +1699,15 @@ void serialEvent (Serial serialConnetion) {
         else if (header == '4') {
             println("NOVO PLACAR:  A  |  B");
             println("              " + unhex(segment1) + "  |  " + segment2);
-            
+
+            if (currentMatch.detectGoalOfA(unhex(segment1)) || currentMatch.detectGoalOfB(segment2)) {
+                if (currentMatch.detectGoalOfA(unhex(segment1))) {
+                    sounds.get("brasil").play();
+                }
+                hud.showGoalBanner();
+            }
+
+            currentMatch.updateGoalsByDirection(unhex(segment1), segment2);
             currentMatch.updateScore(unhex(segment1), segment2);
             hud.showGoalBanner();
         }
@@ -1463,7 +1719,8 @@ void serialEvent (Serial serialConnetion) {
             println("               " + unhex(segment1) + "  |  " + segment2);
             
             currentMatch.endMatch(unhex(segment1), segment2);
-            //client.saveMatchToDatabase(currentMatch);
+            client.saveMatchToDatabase(currentMatch);
+            hud.hideSuggestionHUD();
             hud.zoomIn();
         }
         
