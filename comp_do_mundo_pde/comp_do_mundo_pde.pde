@@ -5,6 +5,7 @@ import java.sql.*;               // lib for interfacing with postgreSQL
 import peasy.*;                  // cam lib
 import java.io.IOException;
 import java.util.Map;
+import java.util.Random;
 
 
 // Class to connect to PostgreSQL remote database
@@ -92,19 +93,25 @@ class PostgresClient {
 
 
 abstract class AnimatedObject {
+    private Random rand = new Random();
+    
+    protected float ANIMATION_SPEED = 1.6;
+    protected float RANDOM_FLOAT;
+    
     protected HashMap<String,PImage> images;
     protected PImage currentImage;
-    
     protected boolean isMoving, completedMovement;
     protected float initialX, initialY, initialZ;
     protected float xPos, yPos, zPos;
     protected float movementPct;
         
     protected abstract void loadImages(); // Loads images based on team
-    protected abstract void resizeImages(); // Resize images proportionally
     protected abstract void updateCurrentImage(); // Updates current image of player   
     protected abstract void moveObject(); // Animates object trajectory
     
+    protected void updateRandomFloat() {
+        this.RANDOM_FLOAT = this.rand.nextFloat();
+    }
     
     protected void resetDrawing() {
         this.xPos = this.initialX;
@@ -116,6 +123,7 @@ abstract class AnimatedObject {
         this.movementPct = 0.0;
         
         this.updateCurrentImage();
+        this.updateRandomFloat();
     }
     
     protected void drawCurrentImage() {        
@@ -159,6 +167,7 @@ abstract class AnimatedObject {
         this.completedMovement = false;
         
         this.images = new HashMap<String,PImage>();
+        this.updateRandomFloat();
     }
 }
 
@@ -174,7 +183,6 @@ abstract class Player extends AnimatedObject {
         
         this.team = team;
         this.loadImages();
-        this.resizeImages();
         this.resetDrawing();
     }
 }
@@ -187,33 +195,29 @@ class Kicker extends Player {
     public char id;
     
     protected void loadImages() {
-        this.images.put(
-            "kicker_still", 
-            loadImage(
-                this.team == "Brazil" 
-                ? "characters/brazil/Kicker_still.png" 
-                : "characters/argentina/Kicker_still.png"
-            )
+        PImage kickerStillImage = loadImage(
+                                    this.team == "Brazil" 
+                                    ? "characters/brazil/Kicker_still.png" 
+                                    : "characters/argentina/Kicker_still.png"
         );
-        this.images.put(
-            "kicker_moving", 
-            loadImage(
-                this.team == "Brazil" 
-                ? "characters/brazil/Kicker_moving.png" 
-                : "characters/argentina/Kicker_moving.png"
-            )
+        PImage kickerMovingImage = loadImage(
+                                        this.team == "Brazil" 
+                                        ? "characters/brazil/Kicker_moving.png" 
+                                        : "characters/argentina/Kicker_moving.png"
         );
-    }
-    
-    protected void resizeImages() {
+        
         float kickerHeight = 0.18*height;
 
-        this.images.get("kicker_still").resize(0, int(kickerHeight));
-        this.images.get("kicker_moving").resize(0, int(kickerHeight));
+        
+        kickerStillImage.resize(0, int(kickerHeight));
+        this.images.put("kicker_still", kickerStillImage);
+        
+        kickerMovingImage.resize(0, int(kickerHeight));
+        this.images.put("kicker_moving", kickerMovingImage);
     }
     
     protected void moveObject() {
-        float STEP = 0.01;  // Size of each step along the path
+        float STEP = 0.01 * this.ANIMATION_SPEED;  // Size of each step along the path
         float EXP = 4;  // Determines the curve
         float xDistanceToBall = 0.7*(width/2 - this.initialX);
         float zDistanceToBall = 0.9*(ballMarkerDepth - this.initialZ);
@@ -269,58 +273,45 @@ class Goalkeeper extends Player {
     private char direction; // ranges from 1 to 5
     
     protected void loadImages() {
-        this.images.put(
-            "goalkeeper_center", 
-            loadImage(
-                this.team == "Brazil" 
-                ? "characters/brazil/Goalkeeper_center.png" 
-                : "characters/argentina/Goalkeeper_center.png"
-            )
+        PImage goalkeeperCenterImage = loadImage(
+                                        this.team == "Brazil" 
+                                        ? "characters/brazil/Goalkeeper_center.png" 
+                                        : "characters/argentina/Goalkeeper_center.png"
         );
-        this.images.put(
-            "goalkeeper_left", 
-            loadImage(
-                this.team == "Brazil" 
-                ? "characters/brazil/Goalkeeper_left.png" 
-                : "characters/argentina/Goalkeeper_left.png"
-            )
+        PImage goalkeeperLeftImage = loadImage(
+                                        this.team == "Brazil" 
+                                        ? "characters/brazil/Goalkeeper_left.png" 
+                                        : "characters/argentina/Goalkeeper_left.png"
         );
-        this.images.put(
-            "goalkeeper_right", 
-            loadImage(
-                this.team == "Brazil" 
-                ? "characters/brazil/Goalkeeper_right.png" 
-                : "characters/argentina/Goalkeeper_right.png"
-            )
+        PImage goalkeeperRightImage = loadImage(
+                                        this.team == "Brazil" 
+                                        ? "characters/brazil/Goalkeeper_right.png" 
+                                        : "characters/argentina/Goalkeeper_right.png"
         );
-    }
-    
-    protected void resizeImages() {
-        PImage goalkeeperCenterImage, goalkeeperLeftImage, goalkeeperRightImage;
+                                       
         float goalkeeperCenterHeight = 0.2*height;
         float goalkeeperSidewaysHeight = 0.18*height;
         
-        goalkeeperCenterImage = this.images.get("goalkeeper_center");
         goalkeeperCenterImage.resize(0, int(goalkeeperCenterHeight));
+        this.images.put("goalkeeper_center", goalkeeperCenterImage);
         
-        goalkeeperLeftImage = this.images.get("goalkeeper_left");
         goalkeeperLeftImage.resize(0, int(goalkeeperSidewaysHeight));
+        this.images.put("goalkeeper_left", goalkeeperLeftImage);
         
-        goalkeeperRightImage = this.images.get("goalkeeper_right");
         goalkeeperRightImage.resize(0, int(goalkeeperSidewaysHeight));
+        this.images.put("goalkeeper_right", goalkeeperRightImage);
     }
     
-    
     protected void moveObject() {
-        float STEP = 0.01;  // Size of each step along the path
+        float STEP = 0.01 * this.ANIMATION_SPEED;  // Size of each step along the path
         float EXP = 2;  // Determines the curve
         int directionOffset = (this.direction == '1' || this.direction == '2')
                               ? 1
                               : (this.direction == '4' || this.direction == '5')
                               ? -1
                               : 0;
-        float xDistanceToJumpPos = 0.65*directionOffset*(goalWidth/2 - this.initialX);
-        float yDistanceToJumpPos = 0.15*(directionOffset != 0 ? 1 : 0)*(goalHeight - this.initialY);
+        float xDistanceToJumpPos = (0.3 + this.RANDOM_FLOAT * 0.40)*directionOffset*(goalWidth/2 - this.initialX);
+        float yDistanceToJumpPos = (0.05 + this.RANDOM_FLOAT * 0.15)*(directionOffset != 0 ? 1 : 0)*(goalHeight - this.initialY);
         
           this.movementPct += STEP;
           if (this.movementPct < 1.0) {
@@ -386,19 +377,16 @@ class Ball extends AnimatedObject {
     }
     
     protected void loadImages() {
-        this.images.put("ball_texture", loadImage("others/Pixel_football.png"));
-    }
-    
-    protected void resizeImages() {
-        PImage ballTexture = this.images.get("ball_texture");
+        PImage ballTexture = loadImage("others/Pixel_football.png");
         ballTexture.resize(0, int(5*this.ballRadius));
+        this.images.put("ball_texture", ballTexture);
     }
     
     protected void moveObject() {
-        float STEP = 0.01;  // Size of each step along the path
+        float STEP = 0.01 * this.ANIMATION_SPEED;  // Size of each step along the path
         float EXP = 2;  // Determines the curve
-        float xDistanceToGoal = 0.85*(this.trajectoryDirection == 'E' ? 1 : -1)*(goalWidth/2 - this.initialX);
-        float yDistanceToGoal = 0.70*(goalHeight - this.initialY);
+        float xDistanceToGoal = (0.55 + this.RANDOM_FLOAT * 0.40)*(this.trajectoryDirection == 'E' ? 1 : -1)*(goalWidth/2 - this.initialX);
+        float yDistanceToGoal = (0.45 + this.RANDOM_FLOAT * 0.40)*(goalHeight - this.initialY);
         float zDistanceToGoal = 0.95*(endFieldLineDepth - this.initialZ);
         
           this.movementPct += STEP;
@@ -422,7 +410,6 @@ class Ball extends AnimatedObject {
         popStyle();
         
         this.loadImages();
-        this.resizeImages();
         this.resetDrawing();
     }
 }
@@ -510,12 +497,13 @@ class Match {
         }
     }
     
-    public void endMatch() {
+    public void endMatch(int goalsA_tx, int goalsB_tx) {
+        this.updateScore(goalsA_tx, goalsB_tx);
+        
         this.winner = (this.goalsA > this.goalsB) ? 'A' : 'B';
         this.round += 1; // corrects num of rounds because it started at 0
         
         this.resetDrawings();
-        cam.reset(2000);
     }
     
     public void setCurrentShot(int status) {
@@ -566,13 +554,12 @@ class Match {
         this.kickerB.resetPlayer();
         this.goalkeeperA.resetPlayer();
         this.goalkeeperB.resetPlayer();
+        this.ball.resetDrawing();
         
         this.currentKicker = this.kickerA;
         this.currentGoalkeeper = this.goalkeeperB;
         
         this.winner = 'O';
-        
-        cam.lookAt(width/2, -0.20*height, 0, 0.25*width, 2000);
     }
     
 
@@ -914,20 +901,15 @@ class HUD {
         popMatrix();
     }
     
-    public void showStartScreen() {
-        this.startBanner.isShowing = true;
+    public void zoomOut() {
+       cam.lookAt(width/2, -0.20*height, 0, 0.25*width, 2000);
+       this.startBanner.isShowing = false;
+       this.endmatchBanner.isShowing = false;
     }
     
-    public void hideStartScreen() {
-        this.startBanner.isShowing = false;
-    }
-    
-    public void showScoreScreen() {
-        this.endmatchBanner.isShowing = true;
-    }
-    
-    public void hideScoreScreen() {
-        this.endmatchBanner.isShowing = false;
+    public void zoomIn() {
+       this.endmatchBanner.isShowing = true;
+       cam.reset(2000);
     }
     
     public void drawHUD() {
@@ -1370,8 +1352,7 @@ void serialEvent (Serial serialConnetion) {
         if (header == '0') {
             println("PARTIDA COMEÇANDO");
             currentMatch.resetMatch();
-            hud.hideStartScreen();
-            hud.hideScoreScreen();
+            hud.zoomOut();
         }
         
         // If header is 1, a match has just begun
@@ -1404,10 +1385,9 @@ void serialEvent (Serial serialConnetion) {
             println("PLACAR FINAL:  A  |  B");
             println("               " + unhex(segment1) + "  |  " + segment2);
             
-            currentMatch.updateScore(unhex(segment1), segment2);
-            currentMatch.endMatch();
+            currentMatch.endMatch(unhex(segment1), segment2);
             //client.saveMatchToDatabase(currentMatch);
-            hud.showScoreScreen();
+            hud.zoomIn();
         }
         
         // If header is any other value, there is a transmission error
