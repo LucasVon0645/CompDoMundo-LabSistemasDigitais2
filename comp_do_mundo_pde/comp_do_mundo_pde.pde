@@ -681,22 +681,17 @@ class Match {
     };
 }
 
-
-class Banner {
-    private boolean isShowing;
-    private float showPct;
-    private PImage image;
-    private float bannerHeight = 0.4*height;
-    private float imageHeight = 0.8*bannerHeight;
-
-    private void loadImages() {
-        this.image = loadImage("others/Comp_logo.png");
-        this.image.resize(0, int(imageHeight));
-    }
-
-    public void drawBanner() {
+abstract class Banner {
+    protected boolean isShowing;
+    protected float showPct;
+    protected HashMap<String,PImage> images;
+    protected float bannerHeight = 0.4*height;
+    
+    protected abstract void loadImages();
+    protected abstract void drawBannerContent();
+    
+    protected void drawBanner() {
         float STEP = 0.02;
-        float logoWidth = this.image.width;
 
         if (this.isShowing && this.showPct < 1.0) {
             this.showPct += STEP;
@@ -704,58 +699,82 @@ class Banner {
         else if (!this.isShowing && this.showPct > 0) {
             this.showPct -= STEP;
         }
+        
+        this.drawBannerContent();
+    }
+    
+    public Banner(boolean isShowing) {
+        this.isShowing = isShowing;
+        this.showPct = (isShowing ? 1.0 : 0.0);
+        this.images = new HashMap<String,PImage>();
+    }
+}
 
+
+class StartBanner extends Banner {
+    private float imageHeight = 0.8*this.bannerHeight;
+    
+    protected void loadImages() {
+        PImage compDoMundoLogo = loadImage("logos/Comp_logo.png");
+        compDoMundoLogo.resize(0, int(this.imageHeight));
+        this.images.put("comp_do_mundo_logo", compDoMundoLogo);
+    }
+    
+    public void drawBannerContent() {
+        PImage startLogo = this.images.get("comp_do_mundo_logo");
+        float logoWidth = startLogo.width;
+        
         pushMatrix();
         pushStyle();
-
+        
         translate(width/2, height/2, 0);
-
+        
         beginShape();
             noStroke();
             fill(64, 64, 64, this.showPct*200);
-            vertex(-width/2.0, bannerHeight/2, 0);
-            vertex(width/2.0, bannerHeight/2, 0);
-            vertex(width/2.0, -bannerHeight/2, 0);
-            vertex(-width/2.0, -bannerHeight/2, 0);
+            vertex(-width/2.0, this.bannerHeight/2, 0);
+            vertex(width/2.0, this.bannerHeight/2, 0);
+            vertex(width/2.0, -this.bannerHeight/2, 0);
+            vertex(-width/2.0, -this.bannerHeight/2, 0);
         endShape();
-
+        
         textureMode(NORMAL);
         beginShape();
             noStroke();
             tint(255, this.showPct*255);
-            texture(this.image);
-            vertex(-logoWidth/2, -imageHeight/2, 0, 0, 0);
-            vertex(logoWidth/2, -imageHeight/2, 0, 1, 0);
-            vertex(logoWidth/2, imageHeight/2, 0, 1, 1);
-            vertex(-logoWidth/2, imageHeight/2, 0, 0, 1);
+            texture(startLogo);
+            vertex(-logoWidth/2, -this.imageHeight/2, 0, 0, 0);
+            vertex(logoWidth/2, -this.imageHeight/2, 0, 1, 0);
+            vertex(logoWidth/2, this.imageHeight/2, 0, 1, 1);
+            vertex(-logoWidth/2, this.imageHeight/2, 0, 0, 1);
         endShape();
-
+        
         popStyle();
         popMatrix();
     }
-
-    public Banner(boolean isShowing) {
-        this.isShowing = isShowing;
-        this.showPct = (isShowing ? 1.0 : 0.0);
+    
+    public StartBanner() {
+        super(true);
         this.loadImages();
     }
 }
 
-class GoalBanner {
+
+class GoalNotification {
     private boolean isShowing;
-    private float goalBannerHeight = 0.2*height;
+    private float goalNotificationHeight = 0.2*height;
 
     private float goalTextX, proxGoalTextX;
     private color goalTextColor = #FFFFFF;
-    private int goalTextSize = int(0.8*goalBannerHeight);
-    private float goalTextY = goalBannerHeight/4;
+    private int goalTextSize = int(0.8*goalNotificationHeight);
+    private float goalTextY = goalNotificationHeight/4;
     private float goalTextVx = width/80;
     private String goalText = "GOOOOOL!!!";
 
     private int exibitionTime;
     private int timeLimit = 180;
 
-    public void drawGoalBanner() {
+    public void drawGoalNotification() {
         if (isShowing) {
             if (exibitionTime == timeLimit) {
                 isShowing = false;
@@ -772,18 +791,16 @@ class GoalBanner {
             beginShape();
                 noStroke();
                 fill(64, 64, 64, 200);
-                vertex(0, goalBannerHeight/2, 0);
-                vertex(width, goalBannerHeight/2, 0);
-                vertex(width, -goalBannerHeight/2, 0);
-                vertex(0, -goalBannerHeight/2, 0);
+                vertex(0, goalNotificationHeight/2, 0);
+                vertex(width, goalNotificationHeight/2, 0);
+                vertex(width, -goalNotificationHeight/2, 0);
+                vertex(0, -goalNotificationHeight/2, 0);
             endShape();
 
             // Goal Text            
             fill(goalTextColor);
-            // textSize(goalTextSize);
+            textSize(goalTextSize);
             textMode(SHAPE);
-            f = createFont("Qatar2022 Arabic Bold", goalTextSize);
-            textFont(f);
 
             proxGoalTextX = goalTextX + goalTextVx;
             goalTextX = (proxGoalTextX > width) ? -textWidth(goalText) : proxGoalTextX;
@@ -795,16 +812,123 @@ class GoalBanner {
         }
     }
 
-    public GoalBanner() {
+    public GoalNotification() {
         this.goalTextX = 0;
         this.exibitionTime = 0;
     }
 }
 
 
-class HUD {    
+class ScoreBanner extends Banner {
+    private float imageHeight = 0.8*this.bannerHeight;
+    private Match matchToShow;
+    
+    protected void loadImages() {
+        PImage cbfLogo = loadImage("logos/CBF_logo2.png");
+        cbfLogo.resize(0, int(this.imageHeight));
+        this.images.put("cbf_logo", cbfLogo);
+        
+        PImage afaLogo = loadImage("logos/AFA_logo.png");
+        afaLogo.resize(0, int(this.imageHeight));
+        this.images.put("afa_logo", afaLogo);
+    }
+    
+    public void drawBannerContent() {
+        PImage cbfLogo = this.images.get("cbf_logo");
+        PImage afaLogo = this.images.get("afa_logo");
+        float cbfLogoWidth = cbfLogo.width;
+        float afaLogoWidth = afaLogo.width;
+        
+        pushMatrix();
+        pushStyle();
+        
+        translate(width/2, height/2, 0);
+        
+        beginShape();
+            noStroke();
+            fill(64, 64, 64, this.showPct*200);
+            vertex(-width/2.0, bannerHeight/2, 0);
+            vertex(width/2.0, bannerHeight/2, 0);
+            vertex(width/2.0, -bannerHeight/2, 0);
+            vertex(-width/2.0, -bannerHeight/2, 0);
+        endShape();
+        
+        textSize(0.75*this.imageHeight);
+        
+        // Brazil side
+        pushMatrix();
+        pushStyle();
+            translate(-width/3, 0, 0);
+            
+            textureMode(NORMAL);
+            beginShape();
+                noStroke();
+                tint(255, this.showPct*255);
+                texture(cbfLogo);
+                vertex(-cbfLogoWidth/2, -this.imageHeight/2, 0, 0, 0);
+                vertex(cbfLogoWidth/2, -this.imageHeight/2, 0, 1, 0);
+                vertex(cbfLogoWidth/2, this.imageHeight/2, 0, 1, 1);
+                vertex(-cbfLogoWidth/2, this.imageHeight/2, 0, 0, 1);
+            endShape();
+        
+            translate(0.18*width, 0, 0);
+            fill(255, this.showPct*255);
+            rectMode(CENTER);
+            textAlign(CENTER, CENTER);
+            text(str(matchToShow.goalsA), 0, 0, width, height);
+        popStyle();
+        popMatrix();
+        
+        // x in the middle
+        pushStyle();
+            textSize(0.6*this.imageHeight);
+            fill(255, this.showPct*255);
+            rectMode(CENTER);
+            textAlign(CENTER, CENTER);
+            text("x", 0, 0, width, height); 
+        popStyle();
+        
+        // Argentina side
+        pushMatrix();
+        pushStyle();
+            translate(width/3, 0, 0);
+            
+            textureMode(NORMAL);
+            beginShape();
+                noStroke();
+                tint(255, this.showPct*255);
+                texture(afaLogo);
+                vertex(-afaLogoWidth/2, -this.imageHeight/2, 0, 0, 0);
+                vertex(afaLogoWidth/2, -this.imageHeight/2, 0, 1, 0);
+                vertex(afaLogoWidth/2, this.imageHeight/2, 0, 1, 1);
+                vertex(-afaLogoWidth/2, this.imageHeight/2, 0, 0, 1);
+            endShape();
+            
+            translate(-0.18*width, 0, 0);
+            fill(255, this.showPct*255);
+            rectMode(CENTER);
+            textAlign(CENTER, CENTER);
+            text(str(matchToShow.goalsB), 0, 0, width, height);
+        popStyle();
+        popMatrix();
+        
+        popStyle();
+        popMatrix();
+    }
+    
+    public ScoreBanner(Match match) {
+        super(false);
+        this.matchToShow = match;
+        this.loadImages();
+    }
+}
+
+
+class HUD {
+    private Match match; 
     private Banner startBanner;
-    private GoalBanner goalBanner;
+    private GoalNotification goalNotification;
+    private ScoreBanner endmatchBanner;
 
     private boolean isShowingSuggestion;
 
@@ -814,37 +938,37 @@ class HUD {
         float scoreboardX = 0.06 * width;
         float scoreBoardY = 0.06 * height;
         float teamScoreHeight = 0.045 * height;
-
-        int teamNameBoxWidth = 120;
-        int teamScoreBoxWidth = 40;
-        int penaltyPointsBoxWidth = 240;
-
-        int teamMarkerWidth = 8;
-        int circleDiameter = 16;
-        int circleMargin = 16;
+        
+        float teamNameBoxWidth = 5*teamScoreHeight;
+        float teamScoreBoxWidth = teamScoreHeight;
+        float penaltyPointsBoxWidth = 5.2*teamScoreHeight;
+        
+        float teamMarkerWidth = 0.2*teamScoreHeight;
+        float circleDiameter = 0.35*teamScoreHeight;
+        float circleMargin = circleDiameter;
         int dividerHeight = 1;
-
+      
         float dividerWidth = teamNameBoxWidth + teamScoreBoxWidth + penaltyPointsBoxWidth;
         float lineOffset = teamNameBoxWidth 
                          + teamScoreBoxWidth 
                          + 5*(circleDiameter + circleMargin) 
                          + 1.5*circleMargin;
-
+        
         pushMatrix();
         pushStyle();
-
+        
         translate(scoreboardX, scoreBoardY, 0);
-        textSize(28);
-
+        textSize(0.5*teamScoreHeight);
+        
         for (int i = 0; i < 2; i += 1) {
             char currentScoreboard = boolean(i) ? 'B' : 'A';
             float scoreStart = i * teamScoreHeight;
-
+            
             pushMatrix();
             pushStyle();
-
+    
             translate(0, scoreStart, 0);
-
+        
             // Draws divider between both teams' scores
             if (boolean(i)) {
                 strokeWeight(dividerHeight);
@@ -852,7 +976,7 @@ class HUD {
                 line(-teamMarkerWidth, 0, 0, dividerWidth, 0, 0);
                 translate(0, dividerHeight, 0);
             }
-
+        
             // Draws a small rectangle on the left with the color of each team
             beginShape();
                 noStroke();
@@ -862,7 +986,7 @@ class HUD {
                 vertex(0, teamScoreHeight, 0);
                 vertex(-teamMarkerWidth, teamScoreHeight, 0);
             endShape();
-
+        
             // Draws the name of each team
             textInsideBox(
                 (currentScoreboard == 'A' ? "Brasil" : "Argentina"), 
@@ -872,12 +996,12 @@ class HUD {
                 #443514
             );
             translate(teamNameBoxWidth, 0, 0);
-
+            
             // Draws the current score for each team
             textInsideBox(
                 (currentScoreboard == 'A' 
-                 ? str(currentMatch.goalsA) 
-                 : str(currentMatch.goalsB)
+                 ? str(this.match.goalsA) 
+                 : str(this.match.goalsB)
                 ),
                 teamScoreBoxWidth, 
                 teamScoreHeight, 
@@ -885,7 +1009,7 @@ class HUD {
                 #FFFFFF
             );
             translate(teamScoreBoxWidth, 0, 0);
-
+    
             // Draws the box in which circles for each of the first 10 shots will be
             beginShape();
                 noStroke();
@@ -895,13 +1019,13 @@ class HUD {
                 vertex(penaltyPointsBoxWidth, teamScoreHeight, 0);
                 vertex(0, teamScoreHeight, 0);
             endShape();
-
+        
             // Draws the circles for each of the first 5 shots, and color it based on its 'status'
             // 0 means the shot has not happened, 1 means it is happening right now;
             // 2 means the shot was a goal, and -1 means it was a miss
             translate(0, teamScoreHeight/2, 0);
             for (int j = 0; j < 5; j += 1) {
-                int[] currentShots = currentMatch.getShots(currentScoreboard);
+                int[] currentShots = this.match.getShots(currentScoreboard);
                 color goalIndicatorColor = (currentShots[j] == 0 ? #FFFFFF : 
                                             currentShots[j] == 1 ? #FFFF00 :
                                             currentShots[j] == 2 ? #00FF00 :
@@ -910,32 +1034,32 @@ class HUD {
                 translate((circleDiameter + circleMargin), 0, 0);
                 circle(0, 0, circleDiameter);
             }
-
-
+        
+    
             // Draw the final circle for each team, indicating who won
             color winnerIndicatorColor = (
-                currentMatch.winner == 'O' 
+                this.match.winner == 'O' 
                 ? #FFFFFF 
-                : ((currentMatch.winner == currentScoreboard) 
+                : ((this.match.winner == currentScoreboard) 
                    ? #00FF00 
                    : #FF0000
                 )
             );
-
+                                          
             fill(winnerIndicatorColor);
             translate(3*circleMargin, 0, 0);
             circle(0, 0, circleDiameter);
-
+            
             popStyle();
             popMatrix();
         }
-
+    
         // Draws a line between the final circles and the other ones
         translate(lineOffset, teamScoreHeight/2, 0);
-        strokeWeight(1);
+        strokeWeight(0.1*circleDiameter);
         stroke(#FFFFFF);
         line(0, -8, 0, 0, teamScoreHeight + 8, 0);
-
+    
         popStyle();
         popMatrix();
     }
@@ -943,11 +1067,11 @@ class HUD {
     // Draws a suggestion banner, showing kick direction and goal
     // occurrence stats in previous matches
     void drawSuggestionHUD() {
-        float suggestionBannerX = 0.50 * width;
-        float suggestionBannerY = 0.06 * height;
+        float suggestionX = 0.50 * width;
+        float suggestionY = 0.06 * height;
 
-        float suggestionBannerWidth = 0.44 * width;
-        float suggestionBannerHeight = 0.045 * height;
+        float suggestionWidth = 0.44 * width;
+        float suggestionHeight = 0.045 * height;
 
         color rectColor = #f3da6b;
         color textColor = #443514;
@@ -957,16 +1081,16 @@ class HUD {
         pushMatrix();
         pushStyle();
 
-        translate(suggestionBannerX, suggestionBannerY, 0);
+        translate(suggestionX, suggestionY, 0);
 
         fill(rectColor);
-        rect(0, 0, suggestionBannerWidth, suggestionBannerHeight, (suggestionBannerWidth/100));
+        rect(0, 0, suggestionWidth, suggestionHeight, (suggestionWidth/100));
         
         fill(textColor);
         rectMode(CORNER);
-        textAlign(CENTER, BASELINE);
+        textAlign(CENTER, CENTER);
         textSize(20);
-        text(text, 0, 0, suggestionBannerWidth, suggestionBannerHeight); 
+        text(text, 0, 0, suggestionWidth, suggestionHeight); 
 
         popStyle();
         popMatrix();
@@ -980,11 +1104,6 @@ class HUD {
         this.startBanner.isShowing = false;
     }
 
-    public void showGoalBanner() {
-        this.goalBanner.isShowing = true;
-        this.goalBanner.exibitionTime = 0;
-    }
-
     public void showSuggestionHUD() {
         this.isShowingSuggestion = true;
     }
@@ -993,24 +1112,41 @@ class HUD {
         this.isShowingSuggestion = false;
     }
 
+    public void showGoalNotification() {
+        this.goalNotification.isShowing = true;
+        this.goalNotification.exibitionTime = 0;
+    }
+
+    public void showScoreScreen() {
+        this.endmatchBanner.isShowing = true;
+    }
+    
+    public void hideScoreScreen() {
+        this.endmatchBanner.isShowing = false;
+    }
+
     public void drawHUD() {
         cam.beginHUD();
 
         this.drawScoreboard();
         this.drawSuggestionHUD();
+
         this.startBanner.drawBanner();
-        this.goalBanner.drawGoalBanner();
+        this.goalNotification.drawGoalNotification();
+        this.endmatchBanner.drawBanner();
 
         cam.endHUD();
     }
 
     public void loadBanners() {
-        this.startBanner = new Banner(true);
-        this.goalBanner = new GoalBanner();
+        this.startBanner = new StartBanner();
+        this.goalNotification = new GoalNotification();
+        this.endmatchBanner = new ScoreBanner(this.match);
     }
 
-    public HUD() {
+    public HUD(Match match) {
         this.isShowingSuggestion = false;
+        this.match = match;
     }
 }
 
@@ -1033,7 +1169,7 @@ HUD hud;
 Serial serialConnetion;
 PostgresClient client;
 Match currentMatch;
-PFont f;
+PFont qatarFont;
 
 // Global hashmaps
 HashMap<String,SoundFile> sounds = new HashMap<String,SoundFile>();
@@ -1041,9 +1177,14 @@ HashMap<String,PImage> otherImages = new HashMap<String,PImage>();
 
 
 void setup() {
-    // size(2400, 1800, P3D);    // size for bigger screens
-    //size(1400, 1050, P3D);  // size for medium size screens
-    size(800, 600, P3D);    // size for smaller screens
+    //size(3600, 1800, P3D);    // size for biger full screens
+    //size(2400, 1800, P3D);    // size for bigger screens
+    size(1400, 1050, P3D);  // size for medium size screens
+    //size(800, 600, P3D);    // size for smaller screens
+    
+    qatarFont = createFont("Qatar2022 Arabic Heavy", 320);
+    textFont(qatarFont);
+    
     
     cam = new PeasyCam(this, width/2, -0.1*height, 0, 0.04*width);
     // Uncomment this for different camera positionS
@@ -1053,9 +1194,9 @@ void setup() {
     //cam.rotateX(0.1);
     cam.setMaximumDistance(3*width);
 
-    hud = new HUD();
-    client = new PostgresClient();
     currentMatch = new Match();
+    hud = new HUD(currentMatch);
+    client = new PostgresClient();
 
     configureSerialComm();
     loadOtherImages();
@@ -1138,7 +1279,7 @@ void draw() {
 void drawField() {
     int NUM_OF_SUBFIELDS = 4; // Change this to have more/less subfields
     float subfieldWidth = fieldWidth/float(NUM_OF_SUBFIELDS);
-    int lineStroke = 6;
+    int lineStroke = 16;
     float largeAreaLineDepth = 0.04*fieldDepth;
 
     pushMatrix();
@@ -1160,33 +1301,83 @@ void drawField() {
             vertex(subfieldStart, 0, -0.5*fieldDepth);
         endShape();
     }
-    
-    noFill();
-    strokeWeight(lineStroke);
-    stroke(#FFFFFF);
+
     
     // Line on the field: large area
     beginShape();
-        vertex(-fieldWidth/3.0, 0, largeAreaLineDepth);
-        vertex(fieldWidth/3.0, 0, largeAreaLineDepth);
-        vertex(fieldWidth/3.0, 0, endFieldLineDepth);
-        vertex(-fieldWidth/3.0, 0, endFieldLineDepth);
-    endShape(CLOSE);
+        noStroke();
+        fill(#FFFFFF);
+        vertex(-fieldWidth/3.0, -1, largeAreaLineDepth);
+        vertex(-fieldWidth/3.0 + lineStroke, -1, largeAreaLineDepth);
+        vertex(-fieldWidth/3.0 + lineStroke, -1, endFieldLineDepth);
+        vertex(-fieldWidth/3.0, -1, endFieldLineDepth);
+    endShape();
     
-    // Line on the field: small area
     beginShape();
-        vertex(-(goalWidth/2 + 0.05*width), 0, smallAreaLineDepth);
-        vertex((goalWidth/2 + 0.05*width), 0, smallAreaLineDepth);
-        vertex((goalWidth/2 + 0.05*width), 0, endFieldLineDepth);
-        vertex(-(goalWidth/2 + 0.05*width), 0, endFieldLineDepth);
-    endShape(CLOSE);
+        noStroke();
+        fill(#FFFFFF);
+        vertex(fieldWidth/3.0 + lineStroke, -1, largeAreaLineDepth);
+        vertex(fieldWidth/3.0, -1, largeAreaLineDepth);
+        vertex(fieldWidth/3.0, -1, endFieldLineDepth);
+        vertex(fieldWidth/3.0 + lineStroke, -1, endFieldLineDepth);
+    endShape();
     
-    // Line on the field: end of field
     beginShape();
-        vertex(-fieldWidth/2.0, 0, endFieldLineDepth);
-        vertex(fieldWidth/2.0, 0, endFieldLineDepth);
-        vertex(fieldWidth/2.0, 0, endFieldLineDepth);
-        vertex(-fieldWidth/2.0, 0, endFieldLineDepth);
+        noStroke();
+        fill(#FFFFFF);
+        vertex(-fieldWidth/3.0, -1, largeAreaLineDepth + lineStroke);
+        vertex(fieldWidth/3.0, -1, largeAreaLineDepth + lineStroke);
+        vertex(fieldWidth/3.0, -1, largeAreaLineDepth);
+        vertex(-fieldWidth/3.0, -1, largeAreaLineDepth);
+    endShape();
+    
+    beginShape();
+        noStroke();
+        fill(#FFFFFF);
+        vertex(-fieldWidth/3.0, -1, endFieldLineDepth + lineStroke);
+        vertex(fieldWidth/3.0, -1, endFieldLineDepth + lineStroke);
+        vertex(fieldWidth/3.0, -1, endFieldLineDepth);
+        vertex(-fieldWidth/3.0, -1, endFieldLineDepth);
+    endShape();
+
+    
+    // Line on the field: small area    
+    beginShape();
+        noStroke();
+        fill(#FFFFFF);
+        vertex(-(goalWidth/2 + 0.05*width), -1, smallAreaLineDepth);
+        vertex(-(goalWidth/2 + 0.05*width) + lineStroke, -1, smallAreaLineDepth);
+        vertex(-(goalWidth/2 + 0.05*width) + lineStroke, -1, endFieldLineDepth);
+        vertex(-(goalWidth/2 + 0.05*width), -1, endFieldLineDepth);
+    endShape();
+    
+    beginShape();
+        noStroke();
+        fill(#FFFFFF);
+        vertex((goalWidth/2 + 0.05*width) + lineStroke, -1, smallAreaLineDepth);
+        vertex((goalWidth/2 + 0.05*width), -1, smallAreaLineDepth);
+        vertex((goalWidth/2 + 0.05*width), -1, endFieldLineDepth);
+        vertex((goalWidth/2 + 0.05*width) + lineStroke, -1, endFieldLineDepth);
+    endShape();
+    
+    beginShape();
+        noStroke();
+        fill(#FFFFFF);
+        vertex(-(goalWidth/2 + 0.05*width), -1, smallAreaLineDepth + lineStroke);
+        vertex((goalWidth/2 + 0.05*width), -1, smallAreaLineDepth + lineStroke);
+        vertex((goalWidth/2 + 0.05*width), -1, smallAreaLineDepth);
+        vertex(-(goalWidth/2 + 0.05*width), -1, smallAreaLineDepth);
+    endShape();
+    
+    
+    // Line on the field: end of field    
+    beginShape();
+        noStroke();
+        fill(#FFFFFF);
+        vertex(-fieldWidth/2.0, -1, endFieldLineDepth + lineStroke);
+        vertex(fieldWidth/2.0, -1, endFieldLineDepth + lineStroke);
+        vertex(fieldWidth/2.0, -1, endFieldLineDepth);
+        vertex(-fieldWidth/2.0, -1, endFieldLineDepth);
     endShape();
      
     // Marking where ball should be
@@ -1394,6 +1585,7 @@ void serialEvent (Serial serialConnetion) {
             println("PARTIDA COMEÇANDO");
             currentMatch.resetMatch();
             hud.hideStartScreen();
+            hud.hideScoreScreen();
             client.getSuggestionsFromDatabase(100);
         }
         
@@ -1423,7 +1615,7 @@ void serialEvent (Serial serialConnetion) {
                 if (currentMatch.detectGoalOfA(unhex(segment1))) {
                     sounds.get("brasil").play();
                 }
-                hud.showGoalBanner();
+                hud.showGoalNotification();
             }
 
             currentMatch.updateGoalsByDirection(unhex(segment1), segment2);
@@ -1436,11 +1628,11 @@ void serialEvent (Serial serialConnetion) {
             println("PLACAR FINAL:  A  |  B");
             println("               " + unhex(segment1) + "  |  " + segment2);
             
-            
             currentMatch.updateScore(unhex(segment1), segment2);
             currentMatch.endMatch();
             client.saveMatchToDatabase(currentMatch);
             hud.hideSuggestionHUD();
+            hud.showScoreScreen();
         }
         
         // If header is any other value, there is a transmission error
