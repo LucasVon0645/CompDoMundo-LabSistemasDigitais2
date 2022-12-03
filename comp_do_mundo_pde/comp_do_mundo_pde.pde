@@ -1340,6 +1340,15 @@ void drawField() {
         vertex(-fieldWidth/3.0, -1, endFieldLineDepth);
     endShape();
 
+    beginShape();
+        noStroke();
+        fill(#FFFFFF);
+        vertex(fieldWidth/3.0, -1, largeAreaLineDepth);
+        vertex(fieldWidth/3.0 + lineStroke, -1, largeAreaLineDepth);
+        vertex(fieldWidth/3.0 + lineStroke, -1, largeAreaLineDepth + lineStroke);
+        vertex(fieldWidth/3.0, -1, largeAreaLineDepth + lineStroke);
+    endShape();
+
     
     // Line on the field: small area    
     beginShape();
@@ -1367,6 +1376,15 @@ void drawField() {
         vertex((goalWidth/2 + 0.05*width), -1, smallAreaLineDepth + lineStroke);
         vertex((goalWidth/2 + 0.05*width), -1, smallAreaLineDepth);
         vertex(-(goalWidth/2 + 0.05*width), -1, smallAreaLineDepth);
+    endShape();
+
+    beginShape();
+        noStroke();
+        fill(#FFFFFF);
+        vertex((goalWidth/2 + 0.05*width), -1, smallAreaLineDepth);
+        vertex((goalWidth/2 + 0.05*width) + lineStroke, -1, smallAreaLineDepth);
+        vertex((goalWidth/2 + 0.05*width) + lineStroke, -1, smallAreaLineDepth + lineStroke);
+        vertex((goalWidth/2 + 0.05*width), -1, smallAreaLineDepth + lineStroke);
     endShape();
     
     
