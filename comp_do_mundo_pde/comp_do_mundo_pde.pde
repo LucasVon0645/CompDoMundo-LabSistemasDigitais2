@@ -88,17 +88,9 @@ class PostgresClient {
                 int rightKicks = results[1];
                 int goalsWithLeftKicks = results[2];
                 int goalsWithRightKicks = results[3];
-                
-                print("leftKicks = " + str(leftKicks) + "\n");
-                print("rightKicks = " + str(rightKicks) + "\n");
-                print("goalsWithLeftKicks = " + str(goalsWithLeftKicks) + "\n");
-                print("goalsWithRightKicks = " + str(goalsWithRightKicks) + "\n");
 
                 float leftKickProb = 100 * goalsWithLeftKicks / (leftKicks + rightKicks);
                 float rightKickProb = 100 * goalsWithRightKicks / (leftKicks + rightKicks);
-                
-                print("leftKickProb = " + str(leftKickProb) + "\n");
-                print("rightKickProb = " + str(rightKickProb) + "\n");
 
                 hitProb = (leftKickProb >= rightKickProb) ? leftKickProb : rightKickProb;
                 suggestedDirection = (leftKickProb >= rightKickProb) ? "esquerda" : "direita";
@@ -502,11 +494,11 @@ class Match {
     }
 
     public boolean detectGoalOfA(int goalsA_tx) {
-        return (goalsA_tx != this.goalsA);
+        return (goalsA_tx > this.goalsA);
     }
 
     public boolean detectGoalOfB(int goalsB_tx) {
-        return (goalsB_tx != this.goalsB);
+        return (goalsB_tx > this.goalsB);
     }
 
     public void updateGoalsByDirection(int goalsA_tx, int goalsB_tx) {
@@ -752,7 +744,7 @@ class ScoreBanner extends Banner {
     private Match matchToShow;
     
     protected void loadImages() {
-        PImage cbfLogo = loadImage("logos/CBF_logo2.png");
+        PImage cbfLogo = loadImage("logos/CBF_logo.png");
         cbfLogo.resize(0, int(this.imageHeight));
         this.images.put("cbf_logo", cbfLogo);
         
@@ -860,15 +852,15 @@ class GoalBanner extends Banner {
     protected void loadImages() {};
 
     protected void drawBannerContent() {
-        int TIME_LIMIT = 180;
+        int TIME_LIMIT = 300;
 
         int goalTextSize = int(0.8*this.goalBannerHeight);
         float goalTextY = this.goalBannerHeight/4;
         float goalTextVx = width/80;
         String goalText = "GOOOOOL!!!";
-
+        
         if (this.isShowing) {
-            if (this.exibitionTime == TIME_LIMIT) {
+            if (this.exibitionTime >= TIME_LIMIT) {
                 this.isShowing = false;
             } else {
                 this.exibitionTime += 1;
@@ -918,6 +910,7 @@ class HUD {
     private GoalBanner goalBanner;
 
     private boolean isShowingSuggestion;
+    private float showSuggestionPct;
 
     // Draws a dynamic scoreboard, showing the number of points
     // for each team, as well as which shots were goals, etc.
@@ -1054,29 +1047,34 @@ class HUD {
     // Draws a suggestion banner, showing kick direction and goal
     // occurrence stats in previous matches
     void drawSuggestion() {
+        float STEP = 0.05;
         float suggestionX = 0.50 * width;
         float suggestionY = 0.06 * height;
-
         float suggestionWidth = 0.44 * width;
         float suggestionHeight = 0.045 * height;
-
-        color rectColor = #f3da6b;
         color textColor = #443514;
-
         String text = "Chute para a " + suggestedDirection + " (" + str(hitProb) + "% de chance de acerto)";
+       
+        if (this.isShowingSuggestion && this.showSuggestionPct < 1.0) {
+            this.showSuggestionPct += STEP;
+        }
+        else if (!this.isShowingSuggestion && this.showSuggestionPct > 0) {
+            this.showSuggestionPct -= STEP;
+        }
         
         pushMatrix();
         pushStyle();
 
         translate(suggestionX, suggestionY, 0);
 
-        fill(rectColor);
+        fill(203, 183, 93, this.showSuggestionPct*225);
+        noStroke();
         rect(0, 0, suggestionWidth, suggestionHeight, (suggestionWidth/100));
         
-        fill(textColor);
+        fill(textColor, this.showSuggestionPct*255);
         rectMode(CORNER);
         textAlign(CENTER, CENTER);
-        textSize(20);
+        textSize(0.02*height);
         text(text, 0, 0, suggestionWidth, suggestionHeight); 
 
         popStyle();
@@ -1160,8 +1158,8 @@ HashMap<String,PImage> otherImages = new HashMap<String,PImage>();
 
 void setup() {
     //size(3600, 1800, P3D);    // size for biger full screens
-    //size(2400, 1800, P3D);    // size for bigger screens
-    size(1400, 1050, P3D);  // size for medium size screens
+    size(2400, 1800, P3D);    // size for bigger screens
+    //size(1400, 1050, P3D);  // size for medium size screens
     //size(800, 600, P3D);    // size for smaller screens
     
     qatarFont = createFont("Qatar2022 Arabic Heavy", 320);
@@ -1201,8 +1199,8 @@ void configureSerialComm() {
     //int lf = 10;  // ASCII for linefeed -> actual value to use
     int lf = 46;  // ASCII for . -> use this for debugging
     
-    //serialConnetion = new Serial(this, port, baudrate, parity, databits, stopbits);
-    //serialConnetion.bufferUntil(lf);
+    serialConnetion = new Serial(this, port, baudrate, parity, databits, stopbits);
+    serialConnetion.bufferUntil(lf);
 }
 
 
@@ -1212,6 +1210,7 @@ void loadSounds() {
     SoundFile brasil = new SoundFile(this, "sounds/Brasil_sil_sil.wav");
 
     whistle.amp(0.1);
+    brasil.amp(0.1);
     
     sounds.put("background", new SoundFile(this, "sounds/Crowd_background_noise.wav"));
     sounds.put("whistle", whistle);
@@ -1222,7 +1221,7 @@ void loadSounds() {
 // Loads adverts images into global hashmap
 void loadOtherImages() {
     otherImages.put("pcs_logo", loadImage("adverts/PCS_logo.png"));
-    otherImages.put("qatar_logo", loadImage("adverts/Qatar_logo.jpg"));
+    otherImages.put("comp_logo", loadImage("adverts/CompDoMundo_ad.png"));
     otherImages.put("crowd", loadImage("others/Pixel_crowd.jpg"));
 }
 
@@ -1238,7 +1237,7 @@ void draw() {
     goalHeight = 0.25*height;
     goalWidth = 0.55*width;
     goalDepth = -0.18*fieldDepth;
-    advertHeight = 0.08*height;
+    advertHeight = 0.094*height;
     crowdWidth = 2.4*width;
 
     background(100);
@@ -1599,9 +1598,9 @@ void drawAdverts() {
         float adStart = -0.5*width + i*advertWidth;
         float adEnd = adStart + advertWidth;
         PImage currentImage = otherImages.get(
-            boolean(i % 2) 
+            !boolean(i % 2) 
             ? "pcs_logo" 
-            : "qatar_logo"
+            : "comp_logo"
         );
         currentImage.resize(int(advertWidth), 0);
         
@@ -1688,7 +1687,7 @@ void serialEvent (Serial serialConnetion) {
         // If header is 2, the game is preparing itself for a new shot
         else if (header == '2') {
             println("JOGADOR JÁ PODE BATER");
-            sounds.get("whistle").play();
+            //sounds.get("whistle").play();
         }
         
         else if (header == '3') {
@@ -1709,7 +1708,6 @@ void serialEvent (Serial serialConnetion) {
 
             currentMatch.updateGoalsByDirection(unhex(segment1), segment2);
             currentMatch.updateScore(unhex(segment1), segment2);
-            hud.showGoalBanner();
         }
         
         // If header is 5, the match has ended, and we check who is the winner
