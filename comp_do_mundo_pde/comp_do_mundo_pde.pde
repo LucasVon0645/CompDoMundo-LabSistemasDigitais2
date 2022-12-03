@@ -764,10 +764,70 @@ class ScoreBanner extends Banner {
 }
 
 
+class GoalBanner extends Banner {
+    private float goalBannerHeight = 0.2*height;
+    private float goalTextX, proxGoalTextX;
+    private int exibitionTime;
+    
+    protected void loadImages() {};
+
+    protected void drawBannerContent() {
+        int TIME_LIMIT = 180;
+
+        int goalTextSize = int(0.8*this.goalBannerHeight);
+        float goalTextY = this.goalBannerHeight/4;
+        float goalTextVx = width/80;
+        String goalText = "GOOOOOL!!!";
+
+        if (this.isShowing) {
+            if (this.exibitionTime == TIME_LIMIT) {
+                this.isShowing = false;
+            } else {
+                this.exibitionTime += 1;
+            }
+        }
+
+        pushMatrix();
+        pushStyle();
+
+        translate(0, height/2, 0);
+
+        // Goal banner text box
+        beginShape();
+            noStroke();
+            fill(64, 64, 64, this.showPct*200);
+            vertex(0, this.goalBannerHeight/2, 0);
+            vertex(width, this.goalBannerHeight/2, 0);
+            vertex(width, -this.goalBannerHeight/2, 0);
+            vertex(0, -this.goalBannerHeight/2, 0);
+        endShape();
+
+        // Goal banner text            
+        fill(255, 255, 255, this.showPct*255);
+        textMode(SHAPE);
+        textSize(goalTextSize);
+        text(goalText, goalTextX, goalTextY);
+
+        proxGoalTextX = goalTextX + goalTextVx;
+        goalTextX = (proxGoalTextX > width) ? -textWidth(goalText) : proxGoalTextX;
+
+        popStyle();
+        popMatrix();
+    }
+
+    public GoalBanner() {
+        super(false);
+        this.goalTextX = 0;
+        this.exibitionTime = 0;
+    }
+}
+
+
 class HUD {   
     private Match match;
     private StartBanner startBanner;
     private ScoreBanner endmatchBanner;
+    private GoalBanner goalBanner;
 
     // Draws a dynamic scoreboard, showing the number of points
     // for each team, as well as which shots were goals, etc.
@@ -911,6 +971,12 @@ class HUD {
        this.endmatchBanner.isShowing = true;
        cam.reset(2000);
     }
+
+    public void showGoalBanner() {
+        this.goalBanner.goalTextX = -width/2;
+        this.goalBanner.exibitionTime = 0;
+        this.goalBanner.isShowing = true;
+    }
     
     public void drawHUD() {
         cam.beginHUD();
@@ -918,6 +984,7 @@ class HUD {
         this.drawScoreboard();
         this.startBanner.drawBanner();
         this.endmatchBanner.drawBanner();
+        this.goalBanner.drawBanner();
         
         cam.endHUD();
     }
@@ -925,6 +992,7 @@ class HUD {
     public void loadBanners() {
         this.startBanner = new StartBanner();
         this.endmatchBanner = new ScoreBanner(this.match);
+        this.goalBanner = new GoalBanner();
     }
 
     public HUD(Match match) {
@@ -1385,6 +1453,7 @@ void serialEvent (Serial serialConnetion) {
             println("              " + unhex(segment1) + "  |  " + segment2);
             
             currentMatch.updateScore(unhex(segment1), segment2);
+            hud.showGoalBanner();
         }
         
         // If header is 5, the match has ended, and we check who is the winner
