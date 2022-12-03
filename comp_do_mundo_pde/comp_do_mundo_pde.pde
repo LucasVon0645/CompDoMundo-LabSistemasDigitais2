@@ -706,8 +706,9 @@ class ScoreBanner extends Banner {
             vertex(-width/2.0, -bannerHeight/2, 0);
         endShape();
         
-        textSize(0.5*this.imageHeight);
+        textSize(0.75*this.imageHeight);
         
+        // Brazil side
         pushMatrix();
         pushStyle();
             translate(-width/3, 0, 0);
@@ -723,18 +724,24 @@ class ScoreBanner extends Banner {
                 vertex(-cbfLogoWidth/2, this.imageHeight/2, 0, 0, 1);
             endShape();
         
-            translate(0.1*width, 0, 0);
-            
-            println(matchToShow.goalsA);
-            
-            fill(255, 255, 255);
-            circle(0, 0, 200);
-            rectMode(CORNER);
+            translate(0.18*width, 0, 0);
+            fill(255, this.showPct*255);
+            rectMode(CENTER);
             textAlign(CENTER, CENTER);
-            text(str(matchToShow.goalsA), 0, 0, width, height); 
+            text(str(matchToShow.goalsA), 0, 0, width, height);
         popStyle();
         popMatrix();
         
+        // x in the middle
+        pushStyle();
+            textSize(0.6*this.imageHeight);
+            fill(255, this.showPct*255);
+            rectMode(CENTER);
+            textAlign(CENTER, CENTER);
+            text("x", 0, 0, width, height); 
+        popStyle();
+        
+        // Argentina side
         pushMatrix();
         pushStyle();
             translate(width/3, 0, 0);
@@ -750,12 +757,11 @@ class ScoreBanner extends Banner {
                 vertex(-afaLogoWidth/2, this.imageHeight/2, 0, 0, 1);
             endShape();
             
-            translate(0.1*width, 0, 0);
-            
-            fill(0, 0, 0);
-            rectMode(CORNER);
+            translate(-0.18*width, 0, 0);
+            fill(255, this.showPct*255);
+            rectMode(CENTER);
             textAlign(CENTER, CENTER);
-            text(str(matchToShow.goalsB), 0, 0, width, height); 
+            text(str(matchToShow.goalsB), 0, 0, width, height);
         popStyle();
         popMatrix();
         
@@ -960,6 +966,7 @@ HUD hud;
 Serial serialConnetion;
 PostgresClient client;
 Match currentMatch;
+PFont qatarFont;
 
 // Global hashmaps
 HashMap<String,SoundFile> sounds = new HashMap<String,SoundFile>();
@@ -971,6 +978,9 @@ void setup() {
     //size(2400, 1800, P3D);    // size for bigger screens
     size(1400, 1050, P3D);  // size for medium size screens
     //size(800, 600, P3D);    // size for smaller screens
+    
+    qatarFont = createFont("Qatar2022 Arabic Heavy", 320);
+    textFont(qatarFont);
     
     
     cam = new PeasyCam(this, width/2, -0.1*height, 0, 0.04*width);
@@ -997,7 +1007,7 @@ void setup() {
 
 // Configures serial port for communication
 void configureSerialComm() {
-    String port = "COM7";   // <-- change value depending on machine
+    String port = "COM3";   // <-- change value depending on machine
     int baudrate = 115200;  // 115200 bauds
     char parity = 'E';      // even
     int databits = 7;       // 7 data bits
