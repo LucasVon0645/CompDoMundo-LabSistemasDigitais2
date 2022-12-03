@@ -5,6 +5,7 @@ import java.sql.*;               // lib for interfacing with postgreSQL
 import peasy.*;                  // cam lib
 import java.io.IOException;
 import java.util.Map;
+import java.util.Random;
 
 
 // Class to connect to PostgreSQL remote database
@@ -92,19 +93,25 @@ class PostgresClient {
 
 
 abstract class AnimatedObject {
+    private Random rand = new Random();
+    
+    protected float ANIMATION_SPEED = 1.6;
+    protected float RANDOM_FLOAT;
+    
     protected HashMap<String,PImage> images;
     protected PImage currentImage;
-    
     protected boolean isMoving, completedMovement;
     protected float initialX, initialY, initialZ;
     protected float xPos, yPos, zPos;
     protected float movementPct;
         
     protected abstract void loadImages(); // Loads images based on team
-    protected abstract void resizeImages(); // Resize images proportionally
     protected abstract void updateCurrentImage(); // Updates current image of player   
     protected abstract void moveObject(); // Animates object trajectory
     
+    protected void updateRandomFloat() {
+        this.RANDOM_FLOAT = this.rand.nextFloat();
+    }
     
     protected void resetDrawing() {
         this.xPos = this.initialX;
@@ -116,6 +123,7 @@ abstract class AnimatedObject {
         this.movementPct = 0.0;
         
         this.updateCurrentImage();
+        this.updateRandomFloat();
     }
     
     protected void drawCurrentImage() {        
@@ -159,6 +167,7 @@ abstract class AnimatedObject {
         this.completedMovement = false;
         
         this.images = new HashMap<String,PImage>();
+        this.updateRandomFloat();
     }
 }
 
@@ -167,12 +176,13 @@ abstract class AnimatedObject {
 abstract class Player extends AnimatedObject {
     protected String team;
     
+    protected abstract void resetPlayer();
+    
     public Player(String team, float initialX, float initialY, float initialZ) {
         super(initialX, initialY, initialZ);
         
         this.team = team;
         this.loadImages();
-        this.resizeImages();
         this.resetDrawing();
     }
 }
@@ -185,33 +195,29 @@ class Kicker extends Player {
     public char id;
     
     protected void loadImages() {
-        this.images.put(
-            "kicker_still", 
-            loadImage(
-                this.team == "Brazil" 
-                ? "characters/brazil/Kicker_still.png" 
-                : "characters/argentina/Kicker_still.png"
-            )
+        PImage kickerStillImage = loadImage(
+                                    this.team == "Brazil" 
+                                    ? "characters/brazil/Kicker_still.png" 
+                                    : "characters/argentina/Kicker_still.png"
         );
-        this.images.put(
-            "kicker_moving", 
-            loadImage(
-                this.team == "Brazil" 
-                ? "characters/brazil/Kicker_moving.png" 
-                : "characters/argentina/Kicker_moving.png"
-            )
+        PImage kickerMovingImage = loadImage(
+                                        this.team == "Brazil" 
+                                        ? "characters/brazil/Kicker_moving.png" 
+                                        : "characters/argentina/Kicker_moving.png"
         );
-    }
-    
-    protected void resizeImages() {
+        
         float kickerHeight = 0.18*height;
 
-        this.images.get("kicker_still").resize(0, int(kickerHeight));
-        this.images.get("kicker_moving").resize(0, int(kickerHeight));
+        
+        kickerStillImage.resize(0, int(kickerHeight));
+        this.images.put("kicker_still", kickerStillImage);
+        
+        kickerMovingImage.resize(0, int(kickerHeight));
+        this.images.put("kicker_moving", kickerMovingImage);
     }
     
     protected void moveObject() {
-        float STEP = 0.01;  // Size of each step along the path
+        float STEP = 0.01 * this.ANIMATION_SPEED;  // Size of each step along the path
         float EXP = 4;  // Determines the curve
         float xDistanceToBall = 0.7*(width/2 - this.initialX);
         float zDistanceToBall = 0.9*(ballMarkerDepth - this.initialZ);
@@ -225,6 +231,12 @@ class Kicker extends Player {
               this.completedMovement = true;
               this.updateCurrentImage();
           }
+    }
+    
+    protected void resetPlayer() {
+        this.kicks.set("D", 0);
+        this.kicks.set("E", 0);
+        this.resetDrawing();
     }
     
     public void updateCurrentImage() {
@@ -261,58 +273,45 @@ class Goalkeeper extends Player {
     private char direction; // ranges from 1 to 5
     
     protected void loadImages() {
-        this.images.put(
-            "goalkeeper_center", 
-            loadImage(
-                this.team == "Brazil" 
-                ? "characters/brazil/Goalkeeper_center.png" 
-                : "characters/argentina/Goalkeeper_center.png"
-            )
+        PImage goalkeeperCenterImage = loadImage(
+                                        this.team == "Brazil" 
+                                        ? "characters/brazil/Goalkeeper_center.png" 
+                                        : "characters/argentina/Goalkeeper_center.png"
         );
-        this.images.put(
-            "goalkeeper_left", 
-            loadImage(
-                this.team == "Brazil" 
-                ? "characters/brazil/Goalkeeper_left.png" 
-                : "characters/argentina/Goalkeeper_left.png"
-            )
+        PImage goalkeeperLeftImage = loadImage(
+                                        this.team == "Brazil" 
+                                        ? "characters/brazil/Goalkeeper_left.png" 
+                                        : "characters/argentina/Goalkeeper_left.png"
         );
-        this.images.put(
-            "goalkeeper_right", 
-            loadImage(
-                this.team == "Brazil" 
-                ? "characters/brazil/Goalkeeper_right.png" 
-                : "characters/argentina/Goalkeeper_right.png"
-            )
+        PImage goalkeeperRightImage = loadImage(
+                                        this.team == "Brazil" 
+                                        ? "characters/brazil/Goalkeeper_right.png" 
+                                        : "characters/argentina/Goalkeeper_right.png"
         );
-    }
-    
-    protected void resizeImages() {
-        PImage goalkeeperCenterImage, goalkeeperLeftImage, goalkeeperRightImage;
+                                       
         float goalkeeperCenterHeight = 0.2*height;
         float goalkeeperSidewaysHeight = 0.18*height;
         
-        goalkeeperCenterImage = this.images.get("goalkeeper_center");
         goalkeeperCenterImage.resize(0, int(goalkeeperCenterHeight));
+        this.images.put("goalkeeper_center", goalkeeperCenterImage);
         
-        goalkeeperLeftImage = this.images.get("goalkeeper_left");
         goalkeeperLeftImage.resize(0, int(goalkeeperSidewaysHeight));
+        this.images.put("goalkeeper_left", goalkeeperLeftImage);
         
-        goalkeeperRightImage = this.images.get("goalkeeper_right");
         goalkeeperRightImage.resize(0, int(goalkeeperSidewaysHeight));
+        this.images.put("goalkeeper_right", goalkeeperRightImage);
     }
     
-    
     protected void moveObject() {
-        float STEP = 0.01;  // Size of each step along the path
+        float STEP = 0.01 * this.ANIMATION_SPEED;  // Size of each step along the path
         float EXP = 2;  // Determines the curve
         int directionOffset = (this.direction == '1' || this.direction == '2')
                               ? 1
                               : (this.direction == '4' || this.direction == '5')
                               ? -1
                               : 0;
-        float xDistanceToJumpPos = 0.65*directionOffset*(goalWidth/2 - this.initialX);
-        float yDistanceToJumpPos = 0.15*(directionOffset != 0 ? 1 : 0)*(goalHeight - this.initialY);
+        float xDistanceToJumpPos = (0.3 + this.RANDOM_FLOAT * 0.40)*directionOffset*(goalWidth/2 - this.initialX);
+        float yDistanceToJumpPos = (0.05 + this.RANDOM_FLOAT * 0.15)*(directionOffset != 0 ? 1 : 0)*(goalHeight - this.initialY);
         
           this.movementPct += STEP;
           if (this.movementPct < 1.0) {
@@ -329,7 +328,11 @@ class Goalkeeper extends Player {
     protected void resetDrawing() {
         this.direction = '3';
         super.resetDrawing();
-    };
+    }
+    
+    protected void resetPlayer() { // Redundant, but keeps things organized
+        this.resetDrawing();
+    }
     
     public void updateCurrentImage() {                         
         this.currentImage = this.images.get(
@@ -350,6 +353,7 @@ class Goalkeeper extends Player {
     // Constructor
     public Goalkeeper(String team) {
         super(team, width/2, 0, endFieldLineDepth + 40);
+        this.direction = '3';
     };
 }
 
@@ -373,19 +377,16 @@ class Ball extends AnimatedObject {
     }
     
     protected void loadImages() {
-        this.images.put("ball_texture", loadImage("others/Pixel_football.png"));
-    }
-    
-    protected void resizeImages() {
-        PImage ballTexture = this.images.get("ball_texture");
+        PImage ballTexture = loadImage("others/Pixel_football.png");
         ballTexture.resize(0, int(5*this.ballRadius));
+        this.images.put("ball_texture", ballTexture);
     }
     
     protected void moveObject() {
-        float STEP = 0.01;  // Size of each step along the path
+        float STEP = 0.01 * this.ANIMATION_SPEED;  // Size of each step along the path
         float EXP = 2;  // Determines the curve
-        float xDistanceToGoal = 0.85*(this.trajectoryDirection == 'E' ? 1 : -1)*(goalWidth/2 - this.initialX);
-        float yDistanceToGoal = 0.70*(goalHeight - this.initialY);
+        float xDistanceToGoal = (0.55 + this.RANDOM_FLOAT * 0.40)*(this.trajectoryDirection == 'E' ? 1 : -1)*(goalWidth/2 - this.initialX);
+        float yDistanceToGoal = (0.45 + this.RANDOM_FLOAT * 0.40)*(goalHeight - this.initialY);
         float zDistanceToGoal = 0.95*(endFieldLineDepth - this.initialZ);
         
           this.movementPct += STEP;
@@ -409,7 +410,6 @@ class Ball extends AnimatedObject {
         popStyle();
         
         this.loadImages();
-        this.resizeImages();
         this.resetDrawing();
     }
 }
@@ -497,9 +497,13 @@ class Match {
         }
     }
     
-    public void endMatch() {
+    public void endMatch(int goalsA_tx, int goalsB_tx) {
+        this.updateScore(goalsA_tx, goalsB_tx);
+        
         this.winner = (this.goalsA > this.goalsB) ? 'A' : 'B';
         this.round += 1; // corrects num of rounds because it started at 0
+        
+        this.resetDrawings();
     }
     
     public void setCurrentShot(int status) {
@@ -536,6 +540,28 @@ class Match {
         this.currentKicker.drawObject();
     }
     
+    public void resetMatch() {
+        this.round = 0;
+        this.goalsA = 0;
+        this.goalsB = 0;
+        
+        for (int i = 0; i < shotsA.length; i += 1) {
+            this.shotsA[i] = 0;
+            this.shotsB[i] = 0;
+        }
+        
+        this.kickerA.resetPlayer();
+        this.kickerB.resetPlayer();
+        this.goalkeeperA.resetPlayer();
+        this.goalkeeperB.resetPlayer();
+        this.ball.resetDrawing();
+        
+        this.currentKicker = this.kickerA;
+        this.currentGoalkeeper = this.goalkeeperB;
+        
+        this.winner = 'O';
+    }
+    
 
     public Match() {        
         this.round = 0;
@@ -554,6 +580,358 @@ class Match {
     };
 }
 
+abstract class Banner {
+    protected boolean isShowing;
+    protected float showPct;
+    protected HashMap<String,PImage> images;
+    protected float bannerHeight = 0.4*height;
+    
+    protected abstract void loadImages();
+    protected abstract void drawBannerContent();
+    
+    protected void drawBanner() {
+        float STEP = 0.02;
+
+        if (this.isShowing && this.showPct < 1.0) {
+            this.showPct += STEP;
+        }
+        else if (!this.isShowing && this.showPct > 0) {
+            this.showPct -= STEP;
+        }
+        
+        this.drawBannerContent();
+    }
+    
+    public Banner(boolean isShowing) {
+        this.isShowing = isShowing;
+        this.showPct = (isShowing ? 1.0 : 0.0);
+        this.images = new HashMap<String,PImage>();
+    }
+}
+
+
+class StartBanner extends Banner {
+    private float imageHeight = 0.8*this.bannerHeight;
+    
+    protected void loadImages() {
+        PImage compDoMundoLogo = loadImage("logos/Comp_logo.png");
+        compDoMundoLogo.resize(0, int(this.imageHeight));
+        this.images.put("comp_do_mundo_logo", compDoMundoLogo);
+    }
+    
+    public void drawBannerContent() {
+        PImage startLogo = this.images.get("comp_do_mundo_logo");
+        float logoWidth = startLogo.width;
+        
+        pushMatrix();
+        pushStyle();
+        
+        translate(width/2, height/2, 0);
+        
+        beginShape();
+            noStroke();
+            fill(64, 64, 64, this.showPct*200);
+            vertex(-width/2.0, this.bannerHeight/2, 0);
+            vertex(width/2.0, this.bannerHeight/2, 0);
+            vertex(width/2.0, -this.bannerHeight/2, 0);
+            vertex(-width/2.0, -this.bannerHeight/2, 0);
+        endShape();
+        
+        textureMode(NORMAL);
+        beginShape();
+            noStroke();
+            tint(255, this.showPct*255);
+            texture(startLogo);
+            vertex(-logoWidth/2, -this.imageHeight/2, 0, 0, 0);
+            vertex(logoWidth/2, -this.imageHeight/2, 0, 1, 0);
+            vertex(logoWidth/2, this.imageHeight/2, 0, 1, 1);
+            vertex(-logoWidth/2, this.imageHeight/2, 0, 0, 1);
+        endShape();
+        
+        popStyle();
+        popMatrix();
+    }
+    
+    public StartBanner() {
+        super(true);
+        this.loadImages();
+    }
+}
+
+
+class ScoreBanner extends Banner {
+    private float imageHeight = 0.8*this.bannerHeight;
+    private Match matchToShow;
+    
+    protected void loadImages() {
+        PImage cbfLogo = loadImage("logos/CBF_logo2.png");
+        cbfLogo.resize(0, int(this.imageHeight));
+        this.images.put("cbf_logo", cbfLogo);
+        
+        PImage afaLogo = loadImage("logos/AFA_logo.png");
+        afaLogo.resize(0, int(this.imageHeight));
+        this.images.put("afa_logo", afaLogo);
+    }
+    
+    public void drawBannerContent() {
+        PImage cbfLogo = this.images.get("cbf_logo");
+        PImage afaLogo = this.images.get("afa_logo");
+        float cbfLogoWidth = cbfLogo.width;
+        float afaLogoWidth = afaLogo.width;
+        
+        pushMatrix();
+        pushStyle();
+        
+        translate(width/2, height/2, 0);
+        
+        beginShape();
+            noStroke();
+            fill(64, 64, 64, this.showPct*200);
+            vertex(-width/2.0, bannerHeight/2, 0);
+            vertex(width/2.0, bannerHeight/2, 0);
+            vertex(width/2.0, -bannerHeight/2, 0);
+            vertex(-width/2.0, -bannerHeight/2, 0);
+        endShape();
+        
+        textSize(0.75*this.imageHeight);
+        
+        // Brazil side
+        pushMatrix();
+        pushStyle();
+            translate(-width/3, 0, 0);
+            
+            textureMode(NORMAL);
+            beginShape();
+                noStroke();
+                tint(255, this.showPct*255);
+                texture(cbfLogo);
+                vertex(-cbfLogoWidth/2, -this.imageHeight/2, 0, 0, 0);
+                vertex(cbfLogoWidth/2, -this.imageHeight/2, 0, 1, 0);
+                vertex(cbfLogoWidth/2, this.imageHeight/2, 0, 1, 1);
+                vertex(-cbfLogoWidth/2, this.imageHeight/2, 0, 0, 1);
+            endShape();
+        
+            translate(0.18*width, 0, 0);
+            fill(255, this.showPct*255);
+            rectMode(CENTER);
+            textAlign(CENTER, CENTER);
+            text(str(matchToShow.goalsA), 0, 0, width, height);
+        popStyle();
+        popMatrix();
+        
+        // x in the middle
+        pushStyle();
+            textSize(0.6*this.imageHeight);
+            fill(255, this.showPct*255);
+            rectMode(CENTER);
+            textAlign(CENTER, CENTER);
+            text("x", 0, 0, width, height); 
+        popStyle();
+        
+        // Argentina side
+        pushMatrix();
+        pushStyle();
+            translate(width/3, 0, 0);
+            
+            textureMode(NORMAL);
+            beginShape();
+                noStroke();
+                tint(255, this.showPct*255);
+                texture(afaLogo);
+                vertex(-afaLogoWidth/2, -this.imageHeight/2, 0, 0, 0);
+                vertex(afaLogoWidth/2, -this.imageHeight/2, 0, 1, 0);
+                vertex(afaLogoWidth/2, this.imageHeight/2, 0, 1, 1);
+                vertex(-afaLogoWidth/2, this.imageHeight/2, 0, 0, 1);
+            endShape();
+            
+            translate(-0.18*width, 0, 0);
+            fill(255, this.showPct*255);
+            rectMode(CENTER);
+            textAlign(CENTER, CENTER);
+            text(str(matchToShow.goalsB), 0, 0, width, height);
+        popStyle();
+        popMatrix();
+        
+        popStyle();
+        popMatrix();
+    }
+    
+    public ScoreBanner(Match match) {
+        super(false);
+        this.matchToShow = match;
+        this.loadImages();
+    }
+}
+
+
+class HUD {   
+    private Match match;
+    private StartBanner startBanner;
+    private ScoreBanner endmatchBanner;
+
+    // Draws a dynamic scoreboard, showing the number of points
+    // for each team, as well as which shots were goals, etc.
+    private void drawScoreboard() { 
+        float scoreboardX = 0.06 * width;
+        float scoreBoardY = 0.06 * height;
+        float teamScoreHeight = 0.045 * height;
+        
+        float teamNameBoxWidth = 5*teamScoreHeight;
+        float teamScoreBoxWidth = teamScoreHeight;
+        float penaltyPointsBoxWidth = 5.2*teamScoreHeight;
+        
+        float teamMarkerWidth = 0.2*teamScoreHeight;
+        float circleDiameter = 0.35*teamScoreHeight;
+        float circleMargin = circleDiameter;
+        int dividerHeight = 1;
+      
+        float dividerWidth = teamNameBoxWidth + teamScoreBoxWidth + penaltyPointsBoxWidth;
+        float lineOffset = teamNameBoxWidth 
+                         + teamScoreBoxWidth 
+                         + 5*(circleDiameter + circleMargin) 
+                         + 1.5*circleMargin;
+        
+        pushMatrix();
+        pushStyle();
+        
+        translate(scoreboardX, scoreBoardY, 0);
+        textSize(0.5*teamScoreHeight);
+        
+        for (int i = 0; i < 2; i += 1) {
+            char currentScoreboard = boolean(i) ? 'B' : 'A';
+            float scoreStart = i * teamScoreHeight;
+            
+            pushMatrix();
+            pushStyle();
+    
+            translate(0, scoreStart, 0);
+        
+            // Draws divider between both teams' scores
+            if (boolean(i)) {
+                strokeWeight(dividerHeight);
+                stroke(#00000077);
+                line(-teamMarkerWidth, 0, 0, dividerWidth, 0, 0);
+                translate(0, dividerHeight, 0);
+            }
+        
+            // Draws a small rectangle on the left with the color of each team
+            beginShape();
+                noStroke();
+                fill(boolean(i) ? #1981CE : #F58B20);
+                vertex(-teamMarkerWidth, 0, 0);
+                vertex(0, 0, 0);
+                vertex(0, teamScoreHeight, 0);
+                vertex(-teamMarkerWidth, teamScoreHeight, 0);
+            endShape();
+        
+            // Draws the name of each team
+            textInsideBox(
+                (currentScoreboard == 'A' ? "Brasil" : "Argentina"), 
+                teamNameBoxWidth, 
+                teamScoreHeight, 
+                #CBB75D, 
+                #443514
+            );
+            translate(teamNameBoxWidth, 0, 0);
+            
+            // Draws the current score for each team
+            textInsideBox(
+                (currentScoreboard == 'A' 
+                 ? str(this.match.goalsA) 
+                 : str(this.match.goalsB)
+                ),
+                teamScoreBoxWidth, 
+                teamScoreHeight, 
+                #333333, 
+                #FFFFFF
+            );
+            translate(teamScoreBoxWidth, 0, 0);
+    
+            // Draws the box in which circles for each of the first 10 shots will be
+            beginShape();
+                noStroke();
+                fill(64, 64, 64, 200);
+                vertex(0, 0, 0);
+                vertex(penaltyPointsBoxWidth, 0, 0);
+                vertex(penaltyPointsBoxWidth, teamScoreHeight, 0);
+                vertex(0, teamScoreHeight, 0);
+            endShape();
+        
+            // Draws the circles for each of the first 5 shots, and color it based on its 'status'
+            // 0 means the shot has not happened, 1 means it is happening right now;
+            // 2 means the shot was a goal, and -1 means it was a miss
+            translate(0, teamScoreHeight/2, 0);
+            for (int j = 0; j < 5; j += 1) {
+                int[] currentShots = this.match.getShots(currentScoreboard);
+                color goalIndicatorColor = (currentShots[j] == 0 ? #FFFFFF : 
+                                            currentShots[j] == 1 ? #FFFF00 :
+                                            currentShots[j] == 2 ? #00FF00 :
+                                            #FF0000);
+                fill(goalIndicatorColor);
+                translate((circleDiameter + circleMargin), 0, 0);
+                circle(0, 0, circleDiameter);
+            }
+        
+    
+            // Draw the final circle for each team, indicating who won
+            color winnerIndicatorColor = (
+                this.match.winner == 'O' 
+                ? #FFFFFF 
+                : ((this.match.winner == currentScoreboard) 
+                   ? #00FF00 
+                   : #FF0000
+                )
+            );
+                                          
+            fill(winnerIndicatorColor);
+            translate(3*circleMargin, 0, 0);
+            circle(0, 0, circleDiameter);
+            
+            popStyle();
+            popMatrix();
+        }
+    
+        // Draws a line between the final circles and the other ones
+        translate(lineOffset, teamScoreHeight/2, 0);
+        strokeWeight(0.1*circleDiameter);
+        stroke(#FFFFFF);
+        line(0, -8, 0, 0, teamScoreHeight + 8, 0);
+    
+        popStyle();
+        popMatrix();
+    }
+    
+    public void zoomOut() {
+       cam.lookAt(width/2, -0.20*height, 0, 0.25*width, 2000);
+       this.startBanner.isShowing = false;
+       this.endmatchBanner.isShowing = false;
+    }
+    
+    public void zoomIn() {
+       this.endmatchBanner.isShowing = true;
+       cam.reset(2000);
+    }
+    
+    public void drawHUD() {
+        cam.beginHUD();
+        
+        this.drawScoreboard();
+        this.startBanner.drawBanner();
+        this.endmatchBanner.drawBanner();
+        
+        cam.endHUD();
+    }
+    
+    public void loadBanners() {
+        this.startBanner = new StartBanner();
+        this.endmatchBanner = new ScoreBanner(this.match);
+    }
+
+    public HUD(Match match) {
+        this.match = match;
+    }
+}
+
 
 // Global drawing parameters variables
 float fieldWidth, fieldDepth;
@@ -566,9 +944,11 @@ boolean isFirstRender;
 
 // Global object variables
 PeasyCam cam;
+HUD hud;
 Serial serialConnetion;
 PostgresClient client;
 Match currentMatch;
+PFont qatarFont;
 
 // Global hashmaps
 HashMap<String,SoundFile> sounds = new HashMap<String,SoundFile>();
@@ -576,17 +956,28 @@ HashMap<String,PImage> otherImages = new HashMap<String,PImage>();
 
 
 void setup() {
-    // size(2400, 1800, P3D); // actual size to use
-    // size(1400, 1050, P3D); // size when adjusting window position
-    size(800, 600, P3D); // size for Palmiro's screen
+    //size(3600, 1800, P3D);    // size for biger full screens
+    //size(2400, 1800, P3D);    // size for bigger screens
+    size(1400, 1050, P3D);  // size for medium size screens
+    //size(800, 600, P3D);    // size for smaller screens
     
-    cam = new PeasyCam(this, width/2, -0.2*height, 0, 0.25*width);
+    qatarFont = createFont("Qatar2022 Arabic Heavy", 320);
+    textFont(qatarFont);
+    
+    
+    cam = new PeasyCam(this, width/2, -0.1*height, 0, 0.04*width);
+    // Uncomment this for different camera positionS
+    //cam = new PeasyCam(this, width/2, -0.20*height, 0, 0.25*width);
+    //
+    //cam = new PeasyCam(this, width/2, -0.21*height, 0, 0.25*width);
+    //cam.rotateX(0.1);
     cam.setMaximumDistance(3*width);
-    
-    configureSerialComm();
-    client = new PostgresClient();
-    currentMatch = new Match();
 
+    currentMatch = new Match();
+    hud = new HUD(currentMatch);
+    client = new PostgresClient();
+
+    configureSerialComm();
     loadOtherImages();
     loadSounds();
     
@@ -631,7 +1022,7 @@ void loadOtherImages() {
 
 
 void draw() {
-    // Setting drawing variables
+    // Setting drawing variables    
     fieldWidth = 2*width;
     fieldDepth = -0.8*width;
     endFieldLineDepth = 0.8*fieldDepth;
@@ -653,11 +1044,10 @@ void draw() {
     drawGoal();
     drawAdverts();
     drawCrowd();
-    drawScoreboardHUD();
 
-    // For some reason, the order of drawing matters here:
-    // to keep the background of characters transparent, render them last.
-    currentMatch.drawPlayers(); 
+    currentMatch.drawPlayers();
+
+    hud.drawHUD();
 }
 
 
@@ -665,7 +1055,7 @@ void draw() {
 void drawField() {
     int NUM_OF_SUBFIELDS = 4; // Change this to have more/less subfields
     float subfieldWidth = fieldWidth/float(NUM_OF_SUBFIELDS);
-    int lineStroke = 6;
+    int lineStroke = 16;
     float largeAreaLineDepth = 0.04*fieldDepth;
 
     pushMatrix();
@@ -687,33 +1077,83 @@ void drawField() {
             vertex(subfieldStart, 0, -0.5*fieldDepth);
         endShape();
     }
-    
-    noFill();
-    strokeWeight(lineStroke);
-    stroke(#FFFFFF);
+
     
     // Line on the field: large area
     beginShape();
-        vertex(-fieldWidth/3.0, 0, largeAreaLineDepth);
-        vertex(fieldWidth/3.0, 0, largeAreaLineDepth);
-        vertex(fieldWidth/3.0, 0, endFieldLineDepth);
-        vertex(-fieldWidth/3.0, 0, endFieldLineDepth);
-    endShape(CLOSE);
+        noStroke();
+        fill(#FFFFFF);
+        vertex(-fieldWidth/3.0, -1, largeAreaLineDepth);
+        vertex(-fieldWidth/3.0 + lineStroke, -1, largeAreaLineDepth);
+        vertex(-fieldWidth/3.0 + lineStroke, -1, endFieldLineDepth);
+        vertex(-fieldWidth/3.0, -1, endFieldLineDepth);
+    endShape();
     
-    // Line on the field: small area
     beginShape();
-        vertex(-(goalWidth/2 + 0.05*width), 0, smallAreaLineDepth);
-        vertex((goalWidth/2 + 0.05*width), 0, smallAreaLineDepth);
-        vertex((goalWidth/2 + 0.05*width), 0, endFieldLineDepth);
-        vertex(-(goalWidth/2 + 0.05*width), 0, endFieldLineDepth);
-    endShape(CLOSE);
+        noStroke();
+        fill(#FFFFFF);
+        vertex(fieldWidth/3.0 + lineStroke, -1, largeAreaLineDepth);
+        vertex(fieldWidth/3.0, -1, largeAreaLineDepth);
+        vertex(fieldWidth/3.0, -1, endFieldLineDepth);
+        vertex(fieldWidth/3.0 + lineStroke, -1, endFieldLineDepth);
+    endShape();
     
-    // Line on the field: end of field
     beginShape();
-        vertex(-fieldWidth/2.0, 0, endFieldLineDepth);
-        vertex(fieldWidth/2.0, 0, endFieldLineDepth);
-        vertex(fieldWidth/2.0, 0, endFieldLineDepth);
-        vertex(-fieldWidth/2.0, 0, endFieldLineDepth);
+        noStroke();
+        fill(#FFFFFF);
+        vertex(-fieldWidth/3.0, -1, largeAreaLineDepth + lineStroke);
+        vertex(fieldWidth/3.0, -1, largeAreaLineDepth + lineStroke);
+        vertex(fieldWidth/3.0, -1, largeAreaLineDepth);
+        vertex(-fieldWidth/3.0, -1, largeAreaLineDepth);
+    endShape();
+    
+    beginShape();
+        noStroke();
+        fill(#FFFFFF);
+        vertex(-fieldWidth/3.0, -1, endFieldLineDepth + lineStroke);
+        vertex(fieldWidth/3.0, -1, endFieldLineDepth + lineStroke);
+        vertex(fieldWidth/3.0, -1, endFieldLineDepth);
+        vertex(-fieldWidth/3.0, -1, endFieldLineDepth);
+    endShape();
+
+    
+    // Line on the field: small area    
+    beginShape();
+        noStroke();
+        fill(#FFFFFF);
+        vertex(-(goalWidth/2 + 0.05*width), -1, smallAreaLineDepth);
+        vertex(-(goalWidth/2 + 0.05*width) + lineStroke, -1, smallAreaLineDepth);
+        vertex(-(goalWidth/2 + 0.05*width) + lineStroke, -1, endFieldLineDepth);
+        vertex(-(goalWidth/2 + 0.05*width), -1, endFieldLineDepth);
+    endShape();
+    
+    beginShape();
+        noStroke();
+        fill(#FFFFFF);
+        vertex((goalWidth/2 + 0.05*width) + lineStroke, -1, smallAreaLineDepth);
+        vertex((goalWidth/2 + 0.05*width), -1, smallAreaLineDepth);
+        vertex((goalWidth/2 + 0.05*width), -1, endFieldLineDepth);
+        vertex((goalWidth/2 + 0.05*width) + lineStroke, -1, endFieldLineDepth);
+    endShape();
+    
+    beginShape();
+        noStroke();
+        fill(#FFFFFF);
+        vertex(-(goalWidth/2 + 0.05*width), -1, smallAreaLineDepth + lineStroke);
+        vertex((goalWidth/2 + 0.05*width), -1, smallAreaLineDepth + lineStroke);
+        vertex((goalWidth/2 + 0.05*width), -1, smallAreaLineDepth);
+        vertex(-(goalWidth/2 + 0.05*width), -1, smallAreaLineDepth);
+    endShape();
+    
+    
+    // Line on the field: end of field    
+    beginShape();
+        noStroke();
+        fill(#FFFFFF);
+        vertex(-fieldWidth/2.0, -1, endFieldLineDepth + lineStroke);
+        vertex(fieldWidth/2.0, -1, endFieldLineDepth + lineStroke);
+        vertex(fieldWidth/2.0, -1, endFieldLineDepth);
+        vertex(-fieldWidth/2.0, -1, endFieldLineDepth);
     endShape();
      
     // Marking where ball should be
@@ -735,7 +1175,7 @@ void drawGoal() {
     float goalNetThickness = 0.1*goalPostThickness;
 
     float d, h, w;
-    float netSpace = (goalHeight*goalWidth*goalDepth)/1000000;
+    float netSpace = (goalHeight*goalWidth*goalDepth)/8000000;
 
     pushMatrix();
     pushStyle();
@@ -893,144 +1333,6 @@ void drawCrowd() {
 }
 
 
-// Draws a dynamic scoreboard, showing the number of points
-// for each team, as well as which shots were goals, etc.
-void drawScoreboardHUD() {
-
-    float scoreboardX = 0.06 * width;
-    float scoreBoardY = 0.06 * height;
-    float teamScoreHeight = 0.045 * height;
-    
-    int teamNameBoxWidth = 120;
-    int teamScoreBoxWidth = 40;
-    int penaltyPointsBoxWidth = 240;
-    
-    int teamMarkerWidth = 8;
-    int circleDiameter = 16;
-    int circleMargin = 16;
-    int dividerHeight = 1;
-  
-    float dividerWidth = teamNameBoxWidth + teamScoreBoxWidth + penaltyPointsBoxWidth;
-    float lineOffset = teamNameBoxWidth 
-                     + teamScoreBoxWidth 
-                     + 5*(circleDiameter + circleMargin) 
-                     + 1.5*circleMargin;
-
-    cam.beginHUD();
-    
-    pushMatrix();
-    pushStyle();
-    
-    translate(scoreboardX, scoreBoardY, 0);
-    textSize(28);
-    
-    for (int i = 0; i < 2; i += 1) {
-        char currentScoreboard = boolean(i) ? 'B' : 'A';
-        float scoreStart = i * teamScoreHeight;
-        
-        pushMatrix();
-        pushStyle();
-
-        translate(0, scoreStart, 0);
-    
-        // Draws divider between both teams' scores
-        if (boolean(i)) {
-            strokeWeight(dividerHeight);
-            stroke(#00000077);
-            line(-teamMarkerWidth, 0, 0, dividerWidth, 0, 0);
-            translate(0, dividerHeight, 0);
-        }
-    
-        // Draws a small rectangle on the left with the color of each team
-        beginShape();
-            noStroke();
-            fill(boolean(i) ? #1981CE : #F58B20);
-            vertex(-teamMarkerWidth, 0, 0);
-            vertex(0, 0, 0);
-            vertex(0, teamScoreHeight, 0);
-            vertex(-teamMarkerWidth, teamScoreHeight, 0);
-        endShape();
-    
-        // Draws the name of each team
-        textInsideBox(
-            (currentScoreboard == 'A' ? "Brasil" : "Argentina"), 
-            teamNameBoxWidth, 
-            teamScoreHeight, 
-            #CBB75D, 
-            #443514
-        );
-        translate(teamNameBoxWidth, 0, 0);
-        
-        // Draws the current score for each team
-        textInsideBox(
-            (currentScoreboard == 'A' 
-             ? str(currentMatch.goalsA) 
-             : str(currentMatch.goalsB)
-            ),
-            teamScoreBoxWidth, 
-            teamScoreHeight, 
-            #333333, 
-            #FFFFFF
-        );
-        translate(teamScoreBoxWidth, 0, 0);
-
-        // Draws the box in which circles for each of the first 10 shots will be
-        beginShape();
-            noStroke();
-            fill(#00000088);
-            vertex(0, 0, 0);
-            vertex(penaltyPointsBoxWidth, 0, 0);
-            vertex(penaltyPointsBoxWidth, teamScoreHeight, 0);
-            vertex(0, teamScoreHeight, 0);
-        endShape();
-    
-        // Draws the circles for each of the first 5 shots, and color it based on its 'status'
-        // 0 means the shot has not happened, 1 means it is happening right now;
-        // 2 means the shot was a goal, and -1 means it was a miss
-        translate(0, teamScoreHeight/2, 0);
-        for (int j = 0; j < 5; j += 1) {
-            int[] currentShots = currentMatch.getShots(currentScoreboard);
-            color goalIndicatorColor = (currentShots[j] == 0 ? #FFFFFF : 
-                                        currentShots[j] == 1 ? #FFFF00 :
-                                        currentShots[j] == 2 ? #00FF00 :
-                                        #FF0000);
-            fill(goalIndicatorColor);
-            translate((circleDiameter + circleMargin), 0, 0);
-            circle(0, 0, circleDiameter);
-        }
-    
-
-        // Draw the final circle for each team, indicating who won
-        color winnerIndicatorColor = (
-            currentMatch.winner == 'O' 
-            ? #FFFFFF 
-            : ((currentMatch.winner == currentScoreboard) 
-               ? #00FF00 
-               : #FF0000
-            )
-        );
-                                      
-        fill(winnerIndicatorColor);
-        translate(3*circleMargin, 0, 0);
-        circle(0, 0, circleDiameter);
-        
-        popStyle();
-        popMatrix();
-    }
-
-    // Draws a line between the final circles and the other ones
-    translate(lineOffset, teamScoreHeight/2, 0);
-    strokeWeight(1);
-    stroke(#FFFFFF);
-    line(0, -8, 0, 0, teamScoreHeight + 8, 0);
-
-    popStyle();
-    popMatrix();
-    
-    cam.endHUD();
-}
-
-
 // Decodes message received with serial transmission
 void serialEvent (Serial serialConnetion) {
     int MSG_SIZE = 3;
@@ -1057,7 +1359,8 @@ void serialEvent (Serial serialConnetion) {
         // If header is 0, the game has just been turned on
         if (header == '0') {
             println("PARTIDA COMEÇANDO");
-            currentMatch = new Match();
+            currentMatch.resetMatch();
+            hud.zoomOut();
         }
         
         // If header is 1, a match has just begun
@@ -1090,9 +1393,9 @@ void serialEvent (Serial serialConnetion) {
             println("PLACAR FINAL:  A  |  B");
             println("               " + unhex(segment1) + "  |  " + segment2);
             
-            currentMatch.updateScore(unhex(segment1), segment2);
-            currentMatch.endMatch();
-            client.saveMatchToDatabase(currentMatch);
+            currentMatch.endMatch(unhex(segment1), segment2);
+            //client.saveMatchToDatabase(currentMatch);
+            hud.zoomIn();
         }
         
         // If header is any other value, there is a transmission error
@@ -1107,7 +1410,6 @@ void serialEvent (Serial serialConnetion) {
 
 // Detects key press and sends it to the serial port
 void keyPressed() {
-
     
     // Use this during real games
     //if (key == '1' || key == '2' || key == '3' || key == '4' || key == '5') {
@@ -1133,6 +1435,10 @@ void keyPressed() {
     }
     else if (key == 'L') {
         currentMatch.currentGoalkeeper.setDirection('5');
+    }
+    else if (key == 'P') {
+        float[] camCoords = cam.getLookAt();
+        println(camCoords[0], camCoords[1], camCoords[2], cam.getDistance());
     }
 }
 
@@ -1172,6 +1478,8 @@ void firstRender() {
         crowdImage.resize(int(crowdWidth/3), 0);
         crowdHeight = crowdImage.height;
         otherImages.put("crowd", crowdImage);
+
+        hud.loadBanners();
     
         isFirstRender = false;
     }
