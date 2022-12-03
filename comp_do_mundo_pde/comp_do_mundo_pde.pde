@@ -1392,6 +1392,52 @@ void drawField() {
     popMatrix();
 }
 
+void drawGoalLine(
+    float x1, float y1, float z1, 
+    float x2, float y2, float z2, 
+    float thickness, String principalDirection, String depthAspect
+) {
+    if (principalDirection == "width") {
+        beginShape();
+            noStroke();
+            fill(#EEEEEE);
+            vertex(x1, y1, z1);
+            vertex(x1, y1-thickness, z1);
+            vertex(x2, y2-thickness, z2);
+            vertex(x2, y2, z2);
+        endShape();  
+    } else if (principalDirection == "height") {
+        beginShape();
+            noStroke();
+            fill(#EEEEEE);
+            vertex(x1, y1, z1);
+            vertex(x1+thickness, y1, z1);
+            vertex(x2+thickness, y2, z2);
+            vertex(x2, y2, z2);
+        endShape();
+    } else {
+        if (depthAspect == "up") {
+            beginShape();
+                noStroke();
+                fill(#EEEEEE);
+                vertex(x1, y1, z1);
+                vertex(x1+thickness, y1, z1);
+                vertex(x2+thickness, y1, z2);
+                vertex(x2, y2, z2);
+            endShape();
+        } else if (depthAspect == "side") {
+            beginShape();
+                noStroke();
+                fill(#EEEEEE);
+                vertex(x1, y1, z1);
+                vertex(x1, y1-thickness, z1);
+                vertex(x2, y2-thickness, z2);
+                vertex(x2, y2, z2);
+            endShape();
+        }
+    }
+}
+
 
 // Draws the goal on the screen: completely static
 void drawGoal() {
@@ -1405,91 +1451,132 @@ void drawGoal() {
     pushStyle();
     
     translate(width/2, 0, endFieldLineDepth);
-    stroke(#EEEEEE);
 
     // Goal structure
-    strokeWeight(goalPostThickness);
 
-    line((-goalWidth/2), 0, 0, (-goalWidth/2), -goalHeight, 0);
-    line((goalWidth/2), 0, 0, (goalWidth/2), -goalHeight, 0);
-    line(
+    drawGoalLine(
+        (-goalWidth/2), 0, 0, 
         (-goalWidth/2), -goalHeight, 0, 
-        (goalWidth/2), -goalHeight, 0
+        goalPostThickness, "height", ""
+    );
+    drawGoalLine(
+        (goalWidth/2), 0, 0, 
+        (goalWidth/2), -goalHeight, 0, 
+        goalPostThickness, "height", ""
+    );
+    drawGoalLine(
+        (-goalWidth/2), -goalHeight, 0, 
+        (goalWidth/2), -goalHeight, 0,
+        goalPostThickness, "width", ""
     );
 
     // Goal net
-    strokeWeight(goalNetThickness);
 
     h = 0;
     d = -goalDepth;
     while (d <= 0) {
         if (d < -goalDepth/2) {
-            line((-goalWidth/2), h, d, (goalWidth/2), h, d);
-
-            line(
-                (-goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2, 
-                (goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2
+            drawGoalLine(
+                (-goalWidth/2), h, d, 
+                (goalWidth/2), h, d, 
+                goalNetThickness, "width", ""
             );
 
-            line((-goalWidth/2), 0, d, (-goalWidth/2), h, d);
-            line((goalWidth/2), 0, d, (goalWidth/2), h, d);
+            drawGoalLine(
+                (-goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2, 
+                (goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2,
+                goalNetThickness, "width", ""
+            );
 
-            line((-goalWidth/2), h, 0, (-goalWidth/2), h, d);
-            line((goalWidth/2), h, 0, (goalWidth/2), h, d);
+            drawGoalLine(
+                (-goalWidth/2), 0, d, 
+                (-goalWidth/2), h, d, 
+                goalNetThickness, "height", ""
+            );
+            drawGoalLine(
+                (goalWidth/2), 0, d, 
+                (goalWidth/2), h, d, 
+                goalNetThickness, "height", ""
+            );
 
-            line(
+            drawGoalLine(
+                (-goalWidth/2), h, 0, 
+                (-goalWidth/2), h, d, 
+                goalNetThickness, "depth", "side"
+            );
+            drawGoalLine(
+                (goalWidth/2), h, 0, 
+                (goalWidth/2), h, d, 
+                goalNetThickness, "depth", "side"
+            );
+
+            drawGoalLine(
                 (-goalWidth/2), h-(goalHeight/goalDepth)*netSpace, 0, 
-                (-goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2);
-            line(
+                (-goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2,
+                goalNetThickness, "depth", "side"
+            );
+            drawGoalLine(
                 (goalWidth/2), h-(goalHeight/goalDepth)*netSpace, 0, 
-                (goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2
+                (goalWidth/2), h-(goalHeight/goalDepth)*netSpace, d+netSpace/2,
+                goalNetThickness, "depth", "side"
             );
 
             h -= (2*goalHeight/goalDepth)*netSpace;
         } else { // if (d >= -goalDepth/2)
-            line((-goalWidth/2), -goalHeight, d, (goalWidth/2), -goalHeight, d);
-            line((-goalWidth/2), 0, d, (-goalWidth/2), -goalHeight, d);
-            line((goalWidth/2), 0, d, (goalWidth/2), -goalHeight, d);
+            drawGoalLine(
+                (-goalWidth/2), -goalHeight, d, 
+                (goalWidth/2), -goalHeight, d, 
+                goalNetThickness, "width", ""
+            );
+            drawGoalLine(
+                (-goalWidth/2), 0, d, 
+                (-goalWidth/2), -goalHeight, d, 
+                goalNetThickness, "height", ""
+            );
+            drawGoalLine(
+                (goalWidth/2), 0, d, 
+                (goalWidth/2), -goalHeight, d, 
+                goalNetThickness, "height", ""
+            );
         }
         d += netSpace; 
     }
 
     h += (goalHeight/goalDepth)*netSpace;
-    line((-goalWidth/2), h, (-goalDepth/2), (-goalWidth/2), 0, -goalDepth);
-    line((goalWidth/2), h, (-goalDepth/2), (goalWidth/2), 0, -goalDepth);
+    drawGoalLine(
+        (-goalWidth/2), h, (-goalDepth/2), 
+        (-goalWidth/2), 0, -goalDepth,
+        goalNetThickness, "height", ""
+    );
+    drawGoalLine(
+        (goalWidth/2), h, (-goalDepth/2), 
+        (goalWidth/2), 0, -goalDepth,
+        goalNetThickness, "height", ""
+    );
 
     w = -goalWidth/2+netSpace;
     while (w <= goalWidth/2) {
-        line(w, -goalHeight, 0, w, -goalHeight, (-goalDepth/2));
-        line(w, -goalHeight, (-goalDepth/2), w, 0, -goalDepth);
+        drawGoalLine(
+            w, -goalHeight, 0, 
+            w, -goalHeight, (-goalDepth/2),
+            goalNetThickness, "depth", "up"
+        );
+        drawGoalLine(
+            w, -goalHeight, (-goalDepth/2), 
+            w, 0, -goalDepth,
+            goalNetThickness, "height", ""
+        );
         w += netSpace;
     }
 
-    // Triangle
-    // h = 0;
-    // d = -goalDepth;
-    // while (d <= 0) {
-    //     line((-goalWidth/2), h, d, (goalWidth/2), h, d);
-
-    //     line((-goalWidth/2), 0, d, (-goalWidth/2), h, d);
-    //     line((goalWidth/2), 0, d, (goalWidth/2), h, d);
-
-    //     line((-goalWidth/2), h, 0, (-goalWidth/2), h, d);
-    //     line((goalWidth/2), h, 0, (goalWidth/2), h, d);
-
-    //     h -= (goalHeight/goalDepth)*netSpace;
-    //     d += netSpace; 
-    // }
-
-    // w = -goalWidth/2;
-    // while (w <= goalWidth/2) {
-    //     line(w, -goalHeight, 0, w, 0, -goalDepth);
-    //     w += netSpace;
-    // }
-    // line((goalWidth/2), -goalHeight, 0, (goalWidth/2), 0, -goalDepth);
-
-    // line((-goalWidth/2), 0, 0, (-goalWidth/2), 0, -goalDepth);
-    // line((goalWidth/2), 0, 0, (goalWidth/2), 0, -goalDepth);
+    beginShape();
+        noStroke();
+        fill(#EEEEEE);
+        vertex(goalWidth/2, -goalHeight, 0);
+        vertex(goalWidth/2, -goalHeight-goalPostThickness, 0);
+        vertex(goalWidth/2+goalPostThickness, -goalHeight-goalPostThickness, 0);
+        vertex(goalWidth/2+goalPostThickness, -goalHeight, 0);
+    endShape();
 
     popStyle();
     popMatrix();
