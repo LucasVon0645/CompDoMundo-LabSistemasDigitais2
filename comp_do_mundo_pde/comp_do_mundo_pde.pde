@@ -233,6 +233,8 @@ abstract class AnimatedObject {
 // Abtract class for creating players, such as Kickers or Goalkeepers
 abstract class Player extends AnimatedObject {
     protected String team;
+
+    protected abstract void resetPlayer();
     
     public Player(String team, float initialX, float initialY, float initialZ) {
         super(initialX, initialY, initialZ);
@@ -292,6 +294,12 @@ class Kicker extends Player {
               this.completedMovement = true;
               this.updateCurrentImage();
           }
+    }
+
+    protected void resetPlayer() {
+        this.kicks.set("D", 0);
+        this.kicks.set("E", 0);
+        this.resetDrawing();
     }
     
     public void updateCurrentImage() {
@@ -396,7 +404,11 @@ class Goalkeeper extends Player {
     protected void resetDrawing() {
         this.direction = '3';
         super.resetDrawing();
-    };
+    }
+
+    protected void resetPlayer() { // Redundant, but keeps things organized
+        this.resetDrawing();
+    }
     
     public void updateCurrentImage() {                         
         this.currentImage = this.images.get(
@@ -417,6 +429,7 @@ class Goalkeeper extends Player {
     // Constructor
     public Goalkeeper(String team) {
         super(team, width/2, 0, endFieldLineDepth + 40);
+        this.direction = '3';
     };
 }
 
@@ -501,8 +514,16 @@ class Match {
         this.ball.resetDrawing();
     }
 
+    public boolean detectGoalOfA(int goalsA_tx) {
+        return (goalsA_tx != this.goalsA);
+    }
+
+    public boolean detectGoalOfB(int goalsB_tx) {
+        return (goalsB_tx != this.goalsB);
+    }
+
     public void updateGoalsByDirection(int goalsA_tx, int goalsB_tx) {
-        if ((goalsA_tx != this.goalsA || goalsB_tx != this.goalsB)) {
+        if (detectGoalOfA(goalsA_tx) || detectGoalOfB(goalsB_tx)) {
             this.goalsWithLeftKicks += (this.lastKickerDirection == 'E') ? 1 : 0;
             this.goalsWithRightKicks += (this.lastKickerDirection == 'D') ? 1 : 0;
         }
@@ -563,11 +584,11 @@ class Match {
     
         } else {
             if (this.currentKicker.id == 'A') {
-                this.setCurrentShot((goalsA_tx != this.goalsA) ? 2 : -1);
+                this.setCurrentShot(detectGoalOfA(goalsA_tx) ? 2 : -1);
                 this.goalsA = goalsA_tx;
             }
             else if (this.currentKicker.id == 'B') {
-                this.setCurrentShot((goalsB_tx != this.goalsB) ? 2 : -1);
+                this.setCurrentShot(detectGoalOfB(goalsB_tx) ? 2 : -1);
                 this.goalsB = goalsB_tx;
             }
         }
@@ -576,6 +597,9 @@ class Match {
     public void endMatch() {
         this.winner = (this.goalsA > this.goalsB) ? 'A' : 'B';
         this.round += 1; // corrects num of rounds because it started at 0
+
+        this.resetDrawings();
+        cam.reset(2000);
     }
     
     public void setCurrentShot(int status) {
@@ -612,6 +636,29 @@ class Match {
         this.currentKicker.drawObject();
     }
     
+    public void resetMatch() {
+        this.round = 0;
+        this.goalsA = 0;
+        this.goalsB = 0;
+
+        for (int i = 0; i < shotsA.length; i += 1) {
+            this.shotsA[i] = 0;
+            this.shotsB[i] = 0;
+        }
+
+        this.kickerA.resetPlayer();
+        this.kickerB.resetPlayer();
+        this.goalkeeperA.resetPlayer();
+        this.goalkeeperB.resetPlayer();
+
+        this.currentKicker = this.kickerA;
+        this.currentGoalkeeper = this.goalkeeperB;
+
+        this.winner = 'O';
+
+        cam.lookAt(width/2, -0.20*height, 0, 0.25*width, 2000);
+    }
+
 
     public Match() {        
         this.round = 0;
@@ -635,6 +682,340 @@ class Match {
 }
 
 
+class Banner {
+    private boolean isShowing;
+    private float showPct;
+    private PImage image;
+    private float bannerHeight = 0.4*height;
+    private float imageHeight = 0.8*bannerHeight;
+
+    private void loadImages() {
+        this.image = loadImage("others/Comp_logo.png");
+        this.image.resize(0, int(imageHeight));
+    }
+
+    public void drawBanner() {
+        float STEP = 0.02;
+        float logoWidth = this.image.width;
+
+        if (this.isShowing && this.showPct < 1.0) {
+            this.showPct += STEP;
+        }
+        else if (!this.isShowing && this.showPct > 0) {
+            this.showPct -= STEP;
+        }
+
+        pushMatrix();
+        pushStyle();
+
+        translate(width/2, height/2, 0);
+
+        beginShape();
+            noStroke();
+            fill(64, 64, 64, this.showPct*200);
+            vertex(-width/2.0, bannerHeight/2, 0);
+            vertex(width/2.0, bannerHeight/2, 0);
+            vertex(width/2.0, -bannerHeight/2, 0);
+            vertex(-width/2.0, -bannerHeight/2, 0);
+        endShape();
+
+        textureMode(NORMAL);
+        beginShape();
+            noStroke();
+            tint(255, this.showPct*255);
+            texture(this.image);
+            vertex(-logoWidth/2, -imageHeight/2, 0, 0, 0);
+            vertex(logoWidth/2, -imageHeight/2, 0, 1, 0);
+            vertex(logoWidth/2, imageHeight/2, 0, 1, 1);
+            vertex(-logoWidth/2, imageHeight/2, 0, 0, 1);
+        endShape();
+
+        popStyle();
+        popMatrix();
+    }
+
+    public Banner(boolean isShowing) {
+        this.isShowing = isShowing;
+        this.showPct = (isShowing ? 1.0 : 0.0);
+        this.loadImages();
+    }
+}
+
+class GoalBanner {
+    private boolean isShowing;
+    private float goalBannerHeight = 0.2*height;
+
+    private float goalTextX, proxGoalTextX;
+    private color goalTextColor = #FFFFFF;
+    private int goalTextSize = int(0.8*goalBannerHeight);
+    private float goalTextY = goalBannerHeight/4;
+    private float goalTextVx = width/80;
+    private String goalText = "GOOOOOL!!!";
+
+    private int exibitionTime;
+    private int timeLimit = 180;
+
+    public void drawGoalBanner() {
+        if (isShowing) {
+            if (exibitionTime == timeLimit) {
+                isShowing = false;
+            } else {
+                exibitionTime += 1;
+            }
+
+            pushMatrix();
+            pushStyle();
+
+            translate(0, height/2, 0);
+
+            // Goal text box
+            beginShape();
+                noStroke();
+                fill(64, 64, 64, 200);
+                vertex(0, goalBannerHeight/2, 0);
+                vertex(width, goalBannerHeight/2, 0);
+                vertex(width, -goalBannerHeight/2, 0);
+                vertex(0, -goalBannerHeight/2, 0);
+            endShape();
+
+            // Goal Text            
+            fill(goalTextColor);
+            // textSize(goalTextSize);
+            textMode(SHAPE);
+            f = createFont("Qatar2022 Arabic Bold", goalTextSize);
+            textFont(f);
+
+            proxGoalTextX = goalTextX + goalTextVx;
+            goalTextX = (proxGoalTextX > width) ? -textWidth(goalText) : proxGoalTextX;
+            
+            text(goalText, goalTextX, goalTextY);
+
+            popStyle();
+            popMatrix();
+        }
+    }
+
+    public GoalBanner() {
+        this.goalTextX = 0;
+        this.exibitionTime = 0;
+    }
+}
+
+
+class HUD {    
+    private Banner startBanner;
+    private GoalBanner goalBanner;
+
+    private boolean isShowingSuggestion;
+
+    // Draws a dynamic scoreboard, showing the number of points
+    // for each team, as well as which shots were goals, etc.
+    private void drawScoreboard() { 
+        float scoreboardX = 0.06 * width;
+        float scoreBoardY = 0.06 * height;
+        float teamScoreHeight = 0.045 * height;
+
+        int teamNameBoxWidth = 120;
+        int teamScoreBoxWidth = 40;
+        int penaltyPointsBoxWidth = 240;
+
+        int teamMarkerWidth = 8;
+        int circleDiameter = 16;
+        int circleMargin = 16;
+        int dividerHeight = 1;
+
+        float dividerWidth = teamNameBoxWidth + teamScoreBoxWidth + penaltyPointsBoxWidth;
+        float lineOffset = teamNameBoxWidth 
+                         + teamScoreBoxWidth 
+                         + 5*(circleDiameter + circleMargin) 
+                         + 1.5*circleMargin;
+
+        pushMatrix();
+        pushStyle();
+
+        translate(scoreboardX, scoreBoardY, 0);
+        textSize(28);
+
+        for (int i = 0; i < 2; i += 1) {
+            char currentScoreboard = boolean(i) ? 'B' : 'A';
+            float scoreStart = i * teamScoreHeight;
+
+            pushMatrix();
+            pushStyle();
+
+            translate(0, scoreStart, 0);
+
+            // Draws divider between both teams' scores
+            if (boolean(i)) {
+                strokeWeight(dividerHeight);
+                stroke(#00000077);
+                line(-teamMarkerWidth, 0, 0, dividerWidth, 0, 0);
+                translate(0, dividerHeight, 0);
+            }
+
+            // Draws a small rectangle on the left with the color of each team
+            beginShape();
+                noStroke();
+                fill(boolean(i) ? #1981CE : #F58B20);
+                vertex(-teamMarkerWidth, 0, 0);
+                vertex(0, 0, 0);
+                vertex(0, teamScoreHeight, 0);
+                vertex(-teamMarkerWidth, teamScoreHeight, 0);
+            endShape();
+
+            // Draws the name of each team
+            textInsideBox(
+                (currentScoreboard == 'A' ? "Brasil" : "Argentina"), 
+                teamNameBoxWidth, 
+                teamScoreHeight, 
+                #CBB75D, 
+                #443514
+            );
+            translate(teamNameBoxWidth, 0, 0);
+
+            // Draws the current score for each team
+            textInsideBox(
+                (currentScoreboard == 'A' 
+                 ? str(currentMatch.goalsA) 
+                 : str(currentMatch.goalsB)
+                ),
+                teamScoreBoxWidth, 
+                teamScoreHeight, 
+                #333333, 
+                #FFFFFF
+            );
+            translate(teamScoreBoxWidth, 0, 0);
+
+            // Draws the box in which circles for each of the first 10 shots will be
+            beginShape();
+                noStroke();
+                fill(64, 64, 64, 200);
+                vertex(0, 0, 0);
+                vertex(penaltyPointsBoxWidth, 0, 0);
+                vertex(penaltyPointsBoxWidth, teamScoreHeight, 0);
+                vertex(0, teamScoreHeight, 0);
+            endShape();
+
+            // Draws the circles for each of the first 5 shots, and color it based on its 'status'
+            // 0 means the shot has not happened, 1 means it is happening right now;
+            // 2 means the shot was a goal, and -1 means it was a miss
+            translate(0, teamScoreHeight/2, 0);
+            for (int j = 0; j < 5; j += 1) {
+                int[] currentShots = currentMatch.getShots(currentScoreboard);
+                color goalIndicatorColor = (currentShots[j] == 0 ? #FFFFFF : 
+                                            currentShots[j] == 1 ? #FFFF00 :
+                                            currentShots[j] == 2 ? #00FF00 :
+                                            #FF0000);
+                fill(goalIndicatorColor);
+                translate((circleDiameter + circleMargin), 0, 0);
+                circle(0, 0, circleDiameter);
+            }
+
+
+            // Draw the final circle for each team, indicating who won
+            color winnerIndicatorColor = (
+                currentMatch.winner == 'O' 
+                ? #FFFFFF 
+                : ((currentMatch.winner == currentScoreboard) 
+                   ? #00FF00 
+                   : #FF0000
+                )
+            );
+
+            fill(winnerIndicatorColor);
+            translate(3*circleMargin, 0, 0);
+            circle(0, 0, circleDiameter);
+
+            popStyle();
+            popMatrix();
+        }
+
+        // Draws a line between the final circles and the other ones
+        translate(lineOffset, teamScoreHeight/2, 0);
+        strokeWeight(1);
+        stroke(#FFFFFF);
+        line(0, -8, 0, 0, teamScoreHeight + 8, 0);
+
+        popStyle();
+        popMatrix();
+    }
+
+    // Draws a suggestion banner, showing kick direction and goal
+    // occurrence stats in previous matches
+    void drawSuggestionHUD() {
+        float suggestionBannerX = 0.50 * width;
+        float suggestionBannerY = 0.06 * height;
+
+        float suggestionBannerWidth = 0.44 * width;
+        float suggestionBannerHeight = 0.045 * height;
+
+        color rectColor = #f3da6b;
+        color textColor = #443514;
+
+        String text = "Chute para a " + suggestedDirection + " (" + str(hitProb) + "% de chance de acerto)";
+        
+        pushMatrix();
+        pushStyle();
+
+        translate(suggestionBannerX, suggestionBannerY, 0);
+
+        fill(rectColor);
+        rect(0, 0, suggestionBannerWidth, suggestionBannerHeight, (suggestionBannerWidth/100));
+        
+        fill(textColor);
+        rectMode(CORNER);
+        textAlign(CENTER, BASELINE);
+        textSize(20);
+        text(text, 0, 0, suggestionBannerWidth, suggestionBannerHeight); 
+
+        popStyle();
+        popMatrix();
+    }
+
+    public void showStartScreen() {
+        this.startBanner.isShowing = true;
+    }
+
+    public void hideStartScreen() {
+        this.startBanner.isShowing = false;
+    }
+
+    public void showGoalBanner() {
+        this.goalBanner.isShowing = true;
+        this.goalBanner.exibitionTime = 0;
+    }
+
+    public void showSuggestionHUD() {
+        this.isShowingSuggestion = true;
+    }
+
+    public void hideSuggestionHUD() {
+        this.isShowingSuggestion = false;
+    }
+
+    public void drawHUD() {
+        cam.beginHUD();
+
+        this.drawScoreboard();
+        this.drawSuggestionHUD();
+        this.startBanner.drawBanner();
+        this.goalBanner.drawGoalBanner();
+
+        cam.endHUD();
+    }
+
+    public void loadBanners() {
+        this.startBanner = new Banner(true);
+        this.goalBanner = new GoalBanner();
+    }
+
+    public HUD() {
+        this.isShowingSuggestion = false;
+    }
+}
+
+
+
 // Global drawing parameters variables
 float fieldWidth, fieldDepth;
 float goalHeight, goalWidth, goalDepth;
@@ -643,15 +1024,16 @@ float ballMarkerDiameter, ballMarkerDepth;
 float advertHeight;
 float crowdWidth, crowdHeight;
 boolean isFirstRender;
-boolean playing;
 String suggestedDirection;
 float hitProb;
 
 // Global object variables
 PeasyCam cam;
+HUD hud;
 Serial serialConnetion;
 PostgresClient client;
 Match currentMatch;
+PFont f;
 
 // Global hashmaps
 HashMap<String,SoundFile> sounds = new HashMap<String,SoundFile>();
@@ -659,17 +1041,23 @@ HashMap<String,PImage> otherImages = new HashMap<String,PImage>();
 
 
 void setup() {
-    // size(2400, 1800, P3D); // actual size to use
-    // size(1400, 1050, P3D); // size when adjusting window position
-    size(900, 675, P3D); // size for Palmiro's screen
+    // size(2400, 1800, P3D);    // size for bigger screens
+    //size(1400, 1050, P3D);  // size for medium size screens
+    size(800, 600, P3D);    // size for smaller screens
     
-    cam = new PeasyCam(this, width/2, -0.2*height, 0, 0.25*width);
+    cam = new PeasyCam(this, width/2, -0.1*height, 0, 0.04*width);
+    // Uncomment this for different camera positionS
+    //cam = new PeasyCam(this, width/2, -0.20*height, 0, 0.25*width);
+    //
+    //cam = new PeasyCam(this, width/2, -0.21*height, 0, 0.25*width);
+    //cam.rotateX(0.1);
     cam.setMaximumDistance(3*width);
-    
-    configureSerialComm();
+
+    hud = new HUD();
     client = new PostgresClient();
     currentMatch = new Match();
 
+    configureSerialComm();
     loadOtherImages();
     loadSounds();
     
@@ -739,15 +1127,10 @@ void draw() {
     drawGoal();
     drawAdverts();
     drawCrowd();
-    drawScoreboardHUD();
 
-    if (playing) {
-        drawSuggestionHUD();
-    }
+    currentMatch.drawPlayers();
 
-    // For some reason, the order of drawing matters here:
-    // to keep the background of characters transparent, render them last.
-    currentMatch.drawPlayers(); 
+    hud.drawHUD();
 }
 
 
@@ -825,7 +1208,7 @@ void drawGoal() {
     float goalNetThickness = 0.1*goalPostThickness;
 
     float d, h, w;
-    float netSpace = (goalHeight*goalWidth*goalDepth)/1000000;
+    float netSpace = (goalHeight*goalWidth*goalDepth)/8000000;
 
     pushMatrix();
     pushStyle();
@@ -983,183 +1366,6 @@ void drawCrowd() {
 }
 
 
-// Draws a dynamic scoreboard, showing the number of points
-// for each team, as well as which shots were goals, etc.
-void drawScoreboardHUD() {
-
-    float scoreboardX = 0.06 * width;
-    float scoreBoardY = 0.06 * height;
-    float teamScoreHeight = 0.045 * height;
-    
-    int teamNameBoxWidth = 120;
-    int teamScoreBoxWidth = 40;
-    int penaltyPointsBoxWidth = 240;
-    
-    int teamMarkerWidth = 8;
-    int circleDiameter = 16;
-    int circleMargin = 16;
-    int dividerHeight = 1;
-  
-    float dividerWidth = teamNameBoxWidth + teamScoreBoxWidth + penaltyPointsBoxWidth;
-    float lineOffset = teamNameBoxWidth 
-                     + teamScoreBoxWidth 
-                     + 5*(circleDiameter + circleMargin) 
-                     + 1.5*circleMargin;
-
-    cam.beginHUD();
-    
-    pushMatrix();
-    pushStyle();
-    
-    translate(scoreboardX, scoreBoardY, 0);
-    textSize(20);
-    
-    for (int i = 0; i < 2; i += 1) {
-        char currentScoreboard = boolean(i) ? 'B' : 'A';
-        float scoreStart = i * teamScoreHeight;
-        
-        pushMatrix();
-        pushStyle();
-
-        translate(0, scoreStart, 0);
-    
-        // Draws divider between both teams' scores
-        if (boolean(i)) {
-            strokeWeight(dividerHeight);
-            stroke(#00000077);
-            line(-teamMarkerWidth, 0, 0, dividerWidth, 0, 0);
-            translate(0, dividerHeight, 0);
-        }
-    
-        // Draws a small rectangle on the left with the color of each team
-        beginShape();
-            // noStroke();
-            stroke(#00000077);
-            fill(boolean(i) ? #00bbd4 : #fff200);
-            vertex(-teamMarkerWidth, 0, 0);
-            vertex(0, 0, 0);
-            vertex(0, teamScoreHeight, 0);
-            vertex(-teamMarkerWidth, teamScoreHeight, 0);
-        endShape();
-    
-        // Draws the name of each team
-        textInsideBox(
-            (currentScoreboard == 'A' ? "Brasil" : "Argentina"), 
-            teamNameBoxWidth, 
-            teamScoreHeight, 
-            #f3da6b, 
-            #443514
-        );
-        translate(teamNameBoxWidth, 0, 0);
-        
-        // Draws the current score for each team
-        textInsideBox(
-            (currentScoreboard == 'A' 
-             ? str(currentMatch.goalsA) 
-             : str(currentMatch.goalsB)
-            ),
-            teamScoreBoxWidth, 
-            teamScoreHeight, 
-            #333333, 
-            #FFFFFF
-        );
-        translate(teamScoreBoxWidth, 0, 0);
-
-        // Draws the box in which circles for each of the first 10 shots will be
-        beginShape();
-            noStroke();
-            fill(#00000088);
-            vertex(0, 0, 0);
-            vertex(penaltyPointsBoxWidth, 0, 0);
-            vertex(penaltyPointsBoxWidth, teamScoreHeight, 0);
-            vertex(0, teamScoreHeight, 0);
-        endShape();
-    
-        // Draws the circles for each of the first 5 shots, and color it based on its 'status'
-        // 0 means the shot has not happened, 1 means it is happening right now;
-        // 2 means the shot was a goal, and -1 means it was a miss
-        translate(0, teamScoreHeight/2, 0);
-        for (int j = 0; j < 5; j += 1) {
-            int[] currentShots = currentMatch.getShots(currentScoreboard);
-            color goalIndicatorColor = (currentShots[j] == 0 ? #FFFFFF : 
-                                        currentShots[j] == 1 ? #FFFF00 :
-                                        currentShots[j] == 2 ? #00FF00 :
-                                        #FF0000);
-            fill(goalIndicatorColor);
-            translate((circleDiameter + circleMargin), 0, 0);
-            circle(0, 0, circleDiameter);
-        }
-    
-
-        // Draw the final circle for each team, indicating who won
-        color winnerIndicatorColor = (
-            currentMatch.winner == 'O' 
-            ? #FFFFFF 
-            : ((currentMatch.winner == currentScoreboard) 
-               ? #00FF00 
-               : #FF0000
-            )
-        );
-                                      
-        fill(winnerIndicatorColor);
-        translate(3*circleMargin, 0, 0);
-        circle(0, 0, circleDiameter);
-        
-        popStyle();
-        popMatrix();
-    }
-
-    // Draws a line between the final circles and the other ones
-    translate(lineOffset, teamScoreHeight/2, 0);
-    strokeWeight(1);
-    stroke(#FFFFFF);
-    line(0, -8, 0, 0, teamScoreHeight + 8, 0);
-
-    popStyle();
-    popMatrix();
-    
-    cam.endHUD();
-}
-
-
-// Draws a suggestion banner, showing kick direction and goal
-// occurrence stats in previous matches
-void drawSuggestionHUD() {
-
-    float suggestionBannerX = 0.50 * width;
-    float suggestionBannerY = 0.06 * height;
-
-    float suggestionBannerWidth = 0.44 * width;
-    float suggestionBannerHeight = 0.045 * height;
-
-    color rectColor = #f3da6b;
-    color textColor = #443514;
-
-    String text = "Chute para a " + suggestedDirection + " (" + str(hitProb) + "% de chance de acerto)";
-
-    cam.beginHUD();
-    
-    pushMatrix();
-    pushStyle();
-
-    translate(suggestionBannerX, suggestionBannerY, 0);
-
-    fill(rectColor);
-    rect(0, 0, suggestionBannerWidth, suggestionBannerHeight, (suggestionBannerWidth/100));
-    
-    fill(textColor);
-    rectMode(CORNER);
-    textAlign(CENTER, BASELINE);
-    textSize(20);
-    text(text, 0, 0, suggestionBannerWidth, suggestionBannerHeight); 
-
-    popStyle();
-    popMatrix();
-    
-    cam.endHUD();
-}
-
-
 // Decodes message received with serial transmission
 void serialEvent (Serial serialConnetion) {
     int MSG_SIZE = 3;
@@ -1186,20 +1392,21 @@ void serialEvent (Serial serialConnetion) {
         // If header is 0, the game has just been turned on
         if (header == '0') {
             println("PARTIDA COMEÇANDO");
-            currentMatch = new Match();
+            currentMatch.resetMatch();
+            hud.hideStartScreen();
+            client.getSuggestionsFromDatabase(100);
         }
         
         // If header is 1, a match has just begun
         else if (header == '1') {
             println("RODADA " + segment2 + ": JOGADOR " + segment1 + " BATENDO");
             currentMatch.updateRound(segment1.charAt(0), segment2);
-            client.getSuggestionsFromDatabase(100);
+            hud.showSuggestionHUD();
         }
         
         // If header is 2, the game is preparing itself for a new shot
         else if (header == '2') {
             println("JOGADOR JÁ PODE BATER");
-            playing = true;
             sounds.get("whistle").play();
         }
         
@@ -1211,9 +1418,12 @@ void serialEvent (Serial serialConnetion) {
         else if (header == '4') {
             println("NOVO PLACAR:  A  |  B");
             println("              " + unhex(segment1) + "  |  " + segment2);
-            
-            if (unhex(segment1) != currentMatch.goalsA) {
-                sounds.get("brasil").play();
+
+            if (currentMatch.detectGoalOfA(unhex(segment1)) || currentMatch.detectGoalOfB(segment2)) {
+                if (currentMatch.detectGoalOfA(unhex(segment1))) {
+                    sounds.get("brasil").play();
+                }
+                hud.showGoalBanner();
             }
 
             currentMatch.updateGoalsByDirection(unhex(segment1), segment2);
@@ -1226,10 +1436,11 @@ void serialEvent (Serial serialConnetion) {
             println("PLACAR FINAL:  A  |  B");
             println("               " + unhex(segment1) + "  |  " + segment2);
             
+            
             currentMatch.updateScore(unhex(segment1), segment2);
             currentMatch.endMatch();
             client.saveMatchToDatabase(currentMatch);
-            playing = false;
+            hud.hideSuggestionHUD();
         }
         
         // If header is any other value, there is a transmission error
@@ -1244,7 +1455,6 @@ void serialEvent (Serial serialConnetion) {
 
 // Detects key press and sends it to the serial port
 void keyPressed() {
-
     
     // Use this during real games
     //if (key == '1' || key == '2' || key == '3' || key == '4' || key == '5') {
@@ -1270,6 +1480,10 @@ void keyPressed() {
     }
     else if (key == 'L') {
         currentMatch.currentGoalkeeper.setDirection('5');
+    }
+    else if (key == 'P') {
+        float[] camCoords = cam.getLookAt();
+        println(camCoords[0], camCoords[1], camCoords[2], cam.getDistance());
     }
 }
 
@@ -1309,6 +1523,8 @@ void firstRender() {
         crowdImage.resize(int(crowdWidth/3), 0);
         crowdHeight = crowdImage.height;
         otherImages.put("crowd", crowdImage);
+
+        hud.loadBanners();
     
         isFirstRender = false;
     }
