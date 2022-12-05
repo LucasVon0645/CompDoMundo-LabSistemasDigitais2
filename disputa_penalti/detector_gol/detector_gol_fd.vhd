@@ -15,7 +15,8 @@ entity detector_gol_fd is
         distancia_menor     : out std_logic;
         pronto_med          : out std_logic;
         fim_timer_medicao   : out std_logic;
-        fim_timeout         : out std_logic
+        fim_timeout         : out std_logic;
+		  db_medida           : out std_logic_vector(11 downto 0)
     );
 end entity;
 
@@ -120,6 +121,11 @@ begin
             maior  => open
         );
 
-    s_zera_interface <= reset or zera_interface;
+		  
+    -- Estados internos
+	 s_zera_interface <= reset or zera_interface;
+	 
+	 -- Depuracao
+	 db_medida <= s_medida;
     
 end architecture arch;

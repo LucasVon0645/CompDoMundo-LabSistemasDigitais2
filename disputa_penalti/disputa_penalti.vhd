@@ -26,7 +26,9 @@ entity disputa_penalti is
         db_gols_A          : out std_logic_vector (3 downto 0);
         db_gols_B          : out std_logic_vector (3 downto 0);
         db_rodada          : out std_logic_vector (3 downto 0);
-        db_estado          : out std_logic_vector (3 downto 0)
+        db_estado_uc       : out std_logic_vector (3 downto 0);
+		  db_distancia       : out std_logic_vector (11 downto 0);
+		  db_estado_detector : out std_logic_vector (3 downto 0)
     );
 end entity;
 
@@ -78,6 +80,7 @@ architecture arch_disputa_penalti of disputa_penalti is
             gol       : out std_logic;
             pronto    : out std_logic;
             trigger   : out std_logic;
+				db_medida : out std_logic_vector(11 downto 0);
             db_estado : out std_logic_vector (3 downto 0)
         );
     end component;
@@ -197,7 +200,8 @@ begin
             gol        => s_gol,
             pronto     => s_fim_penalti,
             trigger    => trigger,
-            db_estado  => open
+				db_medida  => db_distancia,
+            db_estado  => db_estado_detector
         );
 
     placar_info: placar
@@ -252,7 +256,7 @@ begin
             posiciona_goleiro   => s_posiciona_goleiro,
             verifica_gol        => s_verifica_gol,
             transcode           => s_transcode,
-            db_estado           => db_estado
+            db_estado           => db_estado_uc
         );
 
 

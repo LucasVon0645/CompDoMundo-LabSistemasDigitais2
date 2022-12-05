@@ -852,7 +852,7 @@ class GoalBanner extends Banner {
     protected void loadImages() {};
 
     protected void drawBannerContent() {
-        int TIME_LIMIT = 300;
+        int TIME_LIMIT = 150;
 
         int goalTextSize = int(0.8*this.goalBannerHeight);
         float goalTextY = this.goalBannerHeight/4;
@@ -1188,7 +1188,7 @@ void setup() {
     loadOtherImages();
     loadSounds();
     
-    // sounds.get("background").loop();
+    sounds.get("background").loop();
     
     isFirstRender = true;
 }
@@ -1196,14 +1196,14 @@ void setup() {
 
 // Configures serial port for communication
 void configureSerialComm() {
-    String port = "COM3";   // <-- change value depending on machine
+    String port = "COM8";   // <-- change value depending on machine
     int baudrate = 115200;  // 115200 bauds
     char parity = 'E';      // even
     int databits = 7;       // 7 data bits
     float stopbits = 2.0;   // 2 stop bits
     
-    //int lf = 10;  // ASCII for linefeed -> actual value to use
-    int lf = 46;  // ASCII for . -> use this for debugging
+    int lf = 10;  // ASCII for linefeed -> actual value to use
+    //int lf = 46;  // ASCII for . -> use this for debugging
     
     serialConnetion = new Serial(this, port, baudrate, parity, databits, stopbits);
     serialConnetion.bufferUntil(lf);
@@ -1216,7 +1216,6 @@ void loadSounds() {
     SoundFile brasil = new SoundFile(this, "sounds/Brasil_sil_sil.wav");
 
     whistle.amp(0.1);
-    brasil.amp(0.1);
     
     sounds.put("background", new SoundFile(this, "sounds/Crowd_background_noise.wav"));
     sounds.put("whistle", whistle);
@@ -1693,7 +1692,7 @@ void serialEvent (Serial serialConnetion) {
         // If header is 2, the game is preparing itself for a new shot
         else if (header == '2') {
             println("JOGADOR JÁ PODE BATER");
-            //sounds.get("whistle").play();
+            sounds.get("whistle").play();
         }
         
         else if (header == '3') {
@@ -1749,34 +1748,34 @@ void serialEvent (Serial serialConnetion) {
 void keyPressed() {
     
     // Use this during real games
-    //if (key == '1' || key == '2' || key == '3' || key == '4' || key == '5') {
-    //    println("Enviando tecla '" + key + "' para a porta serial.");
-    //    serialConnetion.write(key);
-    //    currentMatch.currentGoalkeeper.setDirection(key);
-    //}
+    if (key == '1' || key == '2' || key == '3' || key == '4' || key == '5') {
+        println("Enviando tecla '" + key + "' para a porta serial.");
+        serialConnetion.write(key);
+        currentMatch.currentGoalkeeper.setDirection(key);
+    }
     
     // Debug
-    println("Enviando tecla '" + key + "' para a porta serial.");
-    serialConnetion.write(key);
-    if (key == 'G') {
-        currentMatch.currentGoalkeeper.setDirection('1');
-    }
-    else if (key == 'H') {
-        currentMatch.currentGoalkeeper.setDirection('2');
-    }
-    else if (key == 'J') {
-        currentMatch.currentGoalkeeper.setDirection('3');
-    }
-    else if (key == 'K') {
-        currentMatch.currentGoalkeeper.setDirection('4');
-    }
-    else if (key == 'L') {
-        currentMatch.currentGoalkeeper.setDirection('5');
-    }
-    else if (key == 'P') {
-        float[] camCoords = cam.getLookAt();
-        println(camCoords[0], camCoords[1], camCoords[2], cam.getDistance());
-    }
+    //println("Enviando tecla '" + key + "' para a porta serial.");
+    //serialConnetion.write(key);
+    //if (key == 'G') {
+    //    currentMatch.currentGoalkeeper.setDirection('1');
+    //}
+    //else if (key == 'H') {
+    //    currentMatch.currentGoalkeeper.setDirection('2');
+    //}
+    //else if (key == 'J') {
+    //    currentMatch.currentGoalkeeper.setDirection('3');
+    //}
+    //else if (key == 'K') {
+    //    currentMatch.currentGoalkeeper.setDirection('4');
+    //}
+    //else if (key == 'L') {
+    //    currentMatch.currentGoalkeeper.setDirection('5');
+    //}
+    //else if (key == 'P') {
+    //    float[] camCoords = cam.getLookAt();
+    //    println(camCoords[0], camCoords[1], camCoords[2], cam.getDistance());
+    //}
 }
 
 

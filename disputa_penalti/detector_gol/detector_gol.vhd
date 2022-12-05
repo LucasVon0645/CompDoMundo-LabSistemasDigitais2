@@ -11,6 +11,7 @@ entity detector_gol is
         gol       : out std_logic;
         pronto    : out std_logic;
         trigger   : out std_logic;
+		  db_medida : out std_logic_vector(11 downto 0);
         db_estado : out std_logic_vector (3 downto 0)
     );
 end entity;
@@ -30,7 +31,8 @@ architecture arch of detector_gol is
             distancia_menor     : out std_logic;
             pronto_med          : out std_logic;
             fim_timer_medicao   : out std_logic;
-            fim_timeout         : out std_logic
+            fim_timeout         : out std_logic;
+				db_medida           : out std_logic_vector(11 downto 0)
         );
     end component;
 
@@ -71,7 +73,8 @@ architecture arch of detector_gol is
             distancia_menor     => s_distancia_menor,
             pronto_med          => s_pronto_med,
             fim_timer_medicao   => s_fim_timer_medicao,
-            fim_timeout         => s_fim_timeout
+            fim_timeout         => s_fim_timeout,
+				db_medida           => db_medida
         );
 
         UC_detector_gol: detector_gol_uc
