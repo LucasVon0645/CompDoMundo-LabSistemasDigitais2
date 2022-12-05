@@ -72,8 +72,8 @@ begin
 				 BITS => 6
 			)
 			port map (
-				 D1      => enables0,
-				 D0      => enables1,
+				 D1      => enables1,
+				 D0      => enables0,
 				 SEL     => config_displays,
 				 MUX_OUT => enables_finais
 			);
@@ -125,11 +125,11 @@ begin
 	 s_ganhador_hex <= "101" & ganhador;
 		  
 	 -- depuracao (config = 0)
-	 sinais0  <= rodada & gols_A & traco & gols_B & s_ganhador_hex & estado_uc;
-	 enables0 <= "1101" & fim_jogo & '1';
+	 sinais0  <= rodada & traco & gols_A & gols_B & s_ganhador_hex & estado_uc;
+	 enables0 <= "1011" & fim_jogo & '1';
 	  
 	 -- depuracao (config = 1)
 	 sinais1  <= distancia & "0000" & detector_gol_uc & estado_uc;
-	 enables1 <= "111111";
+	 enables1 <= "111011";
 	 
 end architecture;
