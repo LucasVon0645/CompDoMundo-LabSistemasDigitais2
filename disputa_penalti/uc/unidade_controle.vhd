@@ -30,6 +30,7 @@ end entity;
 
 architecture fsm_arch of unidade_controle is
     type tipo_estado is (inicial,
+                         espera_inicio,
                          transmite_inicio,
                          reset_componentes,
                          transmite_preparacao,
@@ -59,9 +60,13 @@ begin
     process (Eatual, iniciar, fim_preparacao, bater, fim_penalti, fim_jogo, fim_transmissao) 
     begin
         case Eatual is
-            when inicial  =>  if iniciar = '1' then Eprox <= transmite_inicio;
+            when inicial  =>  if fim_transmissao = '1' then Eprox <= espera_inicio;
                               else Eprox <= inicial;
                               end if;
+                              
+            when espera_inicio =>  if iniciar = '1' then Eprox <= transmite_inicio;
+                                   else Eprox <= espera_inicio;
+                                   end if;
 
             when transmite_inicio =>  if fim_transmissao = '1' then Eprox <= reset_componentes;
                                       else Eprox <= transmite_inicio;
@@ -103,11 +108,11 @@ begin
                                          else Eprox <= transmite_rodada;
                                          end if;
 
-            when transmite_resultado =>  if fim_transmissao = '1' then Eprox <= inicial;
+            when transmite_resultado =>  if fim_transmissao = '1' then Eprox <= espera_inicio;
                                          else Eprox <= transmite_resultado;
                                          end if;
 
-            when others =>              Eprox <= inicial;
+            when others =>               Eprox <= inicial;
         end case;
     end process;
 
@@ -138,7 +143,7 @@ begin
     
     with Eatual select 
         transmite <= '1' when transmite_inicio | transmite_preparacao | transmite_batedor |
-                              transmite_chute | transmite_rodada | transmite_resultado,
+                              transmite_chute | transmite_rodada | transmite_resultado | inicial,
                      '0' when others;
 
     with Eatual select 
@@ -158,23 +163,25 @@ begin
                      "011" when transmite_chute,
                      "100" when transmite_rodada,
                      "101" when transmite_resultado,
+                     "110" when inicial,
                      "111" when others;
 
     -- db_estado
     with Eatual select
         db_estado <= "0000" when inicial,
-                     "0001" when transmite_inicio,
-                     "0010" when reset_componentes,
-                     "0011" when transmite_preparacao,
-                     "0100" when preparacao,
-                     "0101" when transmite_batedor,
-                     "0110" when batedor,
-                     "0111" when transmite_chute,
-                     "1000" when chute,
-                     "1001" when gol,
-                     "1010" when placar,
-                     "1011" when transmite_rodada,
-                     "1100" when transmite_resultado,
+                     "0001" when espera_inicio,
+                     "0010" when transmite_inicio,
+                     "0011" when reset_componentes,
+                     "0100" when transmite_preparacao,
+                     "0101" when preparacao,
+                     "0110" when transmite_batedor,
+                     "0111" when batedor,
+                     "1000" when transmite_chute,
+                     "1001" when chute,
+                     "1010" when gol,
+                     "1011" when placar,
+                     "1100" when transmite_rodada,
+                     "1101" when transmite_resultado,
                      "1111" when others;
 
 end architecture;

@@ -1098,12 +1098,19 @@ class HUD {
         this.goalBanner.isShowing = true;
     }
 
-    public void showSuggestionHUD() {
+    public void showSuggestion() {
         this.isShowingSuggestion = true;
     }
 
-    public void hideSuggestionHUD() {
+    public void hideSuggestion() {
         this.isShowingSuggestion = false;
+    }
+    
+    public void reset() {
+       this.endmatchBanner.isShowing = false;
+       this.isShowingSuggestion = false;
+       this.startBanner.isShowing = true;
+       cam.reset(2000);
     }
     
     public void drawHUD() {
@@ -1158,8 +1165,8 @@ HashMap<String,PImage> otherImages = new HashMap<String,PImage>();
 
 void setup() {
     //size(3600, 1800, P3D);    // size for biger full screens
-    size(2400, 1800, P3D);    // size for bigger screens
-    //size(1400, 1050, P3D);  // size for medium size screens
+    //size(2400, 1800, P3D);    // size for bigger screens
+    size(1400, 1050, P3D);  // size for medium size screens
     //size(800, 600, P3D);    // size for smaller screens
     
     qatarFont = createFont("Qatar2022 Arabic Heavy", 320);
@@ -1681,7 +1688,7 @@ void serialEvent (Serial serialConnetion) {
         else if (header == '1') {
             println("RODADA " + segment2 + ": JOGADOR " + segment1 + " BATENDO");
             currentMatch.updateRound(segment1.charAt(0), segment2);
-            hud.showSuggestionHUD();
+            hud.showSuggestion();
         }
         
         // If header is 2, the game is preparing itself for a new shot
@@ -1718,8 +1725,15 @@ void serialEvent (Serial serialConnetion) {
             
             currentMatch.endMatch(unhex(segment1), segment2);
             client.saveMatchToDatabase(currentMatch);
-            hud.hideSuggestionHUD();
+            hud.hideSuggestion();
             hud.zoomIn();
+        }
+        
+        // If header is 6, a reset must occur
+        else if (header == '6') {
+            println("RESET");
+            currentMatch.resetMatch();
+            hud.reset();
         }
         
         // If header is any other value, there is a transmission error
