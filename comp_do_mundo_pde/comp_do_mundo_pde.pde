@@ -1164,9 +1164,8 @@ HashMap<String,PImage> otherImages = new HashMap<String,PImage>();
 
 
 void setup() {
-    //size(3600, 1800, P3D);    // size for biger full screens
-    //size(2400, 1800, P3D);    // size for bigger screens
-    size(1400, 1050, P3D);  // size for medium size screens
+    size(2666, 2000, P3D);    // size for bigger screens
+    //size(1400, 1050, P3D);  // size for medium size screens
     //size(800, 600, P3D);    // size for smaller screens
     
     qatarFont = createFont("Qatar2022 Arabic Heavy", 320);
