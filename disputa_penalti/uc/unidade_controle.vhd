@@ -30,6 +30,7 @@ end entity;
 
 architecture fsm_arch of unidade_controle is
     type tipo_estado is (inicial,
+                         transmite_reset,
                          espera_inicio,
                          transmite_inicio,
                          reset_componentes,
@@ -60,9 +61,11 @@ begin
     process (Eatual, iniciar, fim_preparacao, bater, fim_penalti, fim_jogo, fim_transmissao) 
     begin
         case Eatual is
-            when inicial  =>  if fim_transmissao = '1' then Eprox <= espera_inicio;
-                              else Eprox <= inicial;
-                              end if;
+            when inicial  =>          Eprox <= transmite_reset;
+
+            when transmite_reset  =>  if fim_transmissao = '1' then Eprox <= espera_inicio;
+                                      else Eprox <= transmite_reset;
+                                      end if;
                               
             when espera_inicio =>  if iniciar = '1' then Eprox <= transmite_inicio;
                                    else Eprox <= espera_inicio;
@@ -118,22 +121,22 @@ begin
 
     -- saidas de controle
     with Eatual select 
-        reset_preparacao <= '1' when reset_componentes, '0' when others;
+        reset_preparacao <= '1' when reset_componentes | inicial, '0' when others;
 
     with Eatual select 
-        reset_goleiro <= '1' when reset_componentes, '0' when others;
+        reset_goleiro <= '1' when reset_componentes | inicial, '0' when others;
 
     with Eatual select 
-        reset_batedor <= '1' when reset_componentes, '0' when others;
+        reset_batedor <= '1' when reset_componentes | inicial, '0' when others;
 
     with Eatual select 
-        reset_gol <= '1' when reset_componentes, '0' when others;
+        reset_gol <= '1' when reset_componentes | inicial, '0' when others;
 
     with Eatual select 
-        reset_placar <= '1' when reset_componentes, '0' when others;
+        reset_placar <= '1' when reset_componentes | inicial, '0' when others;
 
     with Eatual select 
-        reset_transmissor <= '1' when reset_componentes, '0' when others;
+        reset_transmissor <= '1' when reset_componentes | inicial, '0' when others;
     
     with Eatual select 
         conta_preparacao <= '1' when preparacao, '0' when others;
@@ -143,7 +146,7 @@ begin
     
     with Eatual select 
         transmite <= '1' when transmite_inicio | transmite_preparacao | transmite_batedor |
-                              transmite_chute | transmite_rodada | transmite_resultado | inicial,
+                              transmite_chute | transmite_rodada | transmite_resultado | transmite_reset,
                      '0' when others;
 
     with Eatual select 
@@ -163,25 +166,26 @@ begin
                      "011" when transmite_chute,
                      "100" when transmite_rodada,
                      "101" when transmite_resultado,
-                     "110" when inicial,
+                     "110" when transmite_reset,
                      "111" when others;
 
     -- db_estado
     with Eatual select
         db_estado <= "0000" when inicial,
-                     "0001" when espera_inicio,
-                     "0010" when transmite_inicio,
-                     "0011" when reset_componentes,
-                     "0100" when transmite_preparacao,
-                     "0101" when preparacao,
-                     "0110" when transmite_batedor,
-                     "0111" when batedor,
-                     "1000" when transmite_chute,
-                     "1001" when chute,
-                     "1010" when gol,
-                     "1011" when placar,
-                     "1100" when transmite_rodada,
-                     "1101" when transmite_resultado,
+                     "0001" when transmite_reset,
+                     "0010" when espera_inicio,
+                     "0011" when transmite_inicio,
+                     "0100" when reset_componentes,
+                     "0101" when transmite_preparacao,
+                     "0110" when preparacao,
+                     "0111" when transmite_batedor,
+                     "1000" when batedor,
+                     "1001" when transmite_chute,
+                     "1010" when chute,
+                     "1011" when gol,
+                     "1100" when placar,
+                     "1101" when transmite_rodada,
+                     "1110" when transmite_resultado,
                      "1111" when others;
 
 end architecture;
