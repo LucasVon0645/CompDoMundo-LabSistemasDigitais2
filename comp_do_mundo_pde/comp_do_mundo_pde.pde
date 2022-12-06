@@ -1171,13 +1171,7 @@ void setup() {
     qatarFont = createFont("Qatar2022 Arabic Heavy", 320);
     textFont(qatarFont);
     
-    
     cam = new PeasyCam(this, width/2, -0.1*height, 0, 0.04*width);
-    // Uncomment this for different camera positionS
-    //cam = new PeasyCam(this, width/2, -0.20*height, 0, 0.25*width);
-    //
-    //cam = new PeasyCam(this, width/2, -0.21*height, 0, 0.25*width);
-    //cam.rotateX(0.1);
     cam.setMaximumDistance(3*width);
 
     currentMatch = new Match();
@@ -1228,6 +1222,7 @@ void loadOtherImages() {
     otherImages.put("pcs_logo", loadImage("adverts/PCS_logo.png"));
     otherImages.put("comp_logo", loadImage("adverts/CompDoMundo_ad.png"));
     otherImages.put("crowd", loadImage("others/Pixel_crowd.jpg"));
+    otherImages.put("capibara", loadImage("others/Capibara.png"));
 }
 
 
@@ -1254,6 +1249,7 @@ void draw() {
     drawGoal();
     drawAdverts();
     drawCrowd();
+    drawCapibara();
 
     currentMatch.drawPlayers();
 
@@ -1650,6 +1646,33 @@ void drawCrowd() {
 }
 
 
+// Draws the capibara
+void drawCapibara() {
+    PImage capibara = otherImages.get("capibara");
+    int capibaraHeight = capibara.height;
+    int capibaraWidth = capibara.width;
+    
+    pushMatrix();
+    pushStyle();
+    
+    translate(-0.19*width, -0.37*height, 1.19*fieldDepth);
+
+    textureMode(NORMAL);
+    beginShape();
+        noStroke();
+        textureWrap(REPEAT);
+        texture(capibara);
+        vertex(-capibaraWidth/2, -capibaraHeight, 0, 0, 0);
+        vertex(capibaraWidth/2, -capibaraHeight, 0, 1, 0);
+        vertex(capibaraWidth/2, 0, 0, 1, 1);
+        vertex(-capibaraWidth/2, 0, 0, 0, 1);
+    endShape();
+
+    popStyle();
+    popMatrix();
+}
+
+
 // Decodes message received with serial transmission
 void serialEvent (Serial serialConnetion) {
     int MSG_SIZE = 3;
@@ -1814,6 +1837,10 @@ void firstRender() {
         crowdImage.resize(int(crowdWidth/3), 0);
         crowdHeight = crowdImage.height;
         otherImages.put("crowd", crowdImage);
+
+        PImage capibaraImage = otherImages.get("capibara");
+        capibaraImage.resize(0, int(0.1*crowdHeight));
+        otherImages.put("capibara", capibaraImage);
 
         hud.loadBanners();
     
